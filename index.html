@@ -80,9 +80,11 @@
   .sq2.last::before { background: rgba(232, 207, 106, .38); }
   .sq2.sel::before { background: rgba(227, 162, 70, .6); }
   .sq2.chk::before { background: radial-gradient(circle, rgba(212, 85, 63, .85) 0 35%, rgba(212, 85, 63, .25) 70%); }
-  .sq2 .pc { position: relative; font-family: var(--glyph); font-size: calc(var(--sq) * .82); line-height: 1; }
-  .sq2 .pc.w, .taken .w { color: #fbf7ee; -webkit-text-stroke: 1.2px #1b1712; }
-  .sq2 .pc.b, .taken .b { color: #1e1a16; -webkit-text-stroke: 1px #000; }
+  .fly { position: absolute; display: grid; place-items: center; z-index: 4; pointer-events: none; transition: transform .5s cubic-bezier(.45, 0, .2, 1); }
+  .sq2 img.pc, .fly img.pc { position: relative; width: 92%; height: 92%; user-select: none; -webkit-user-drag: none; }
+  .sq2 .pc, .fly .pc { position: relative; font-family: var(--glyph); font-size: calc(var(--sq) * .82); line-height: 1; }
+  .sq2 .pc.w, .fly .pc.w, .taken .w { color: #fbf7ee; -webkit-text-stroke: 1.2px #1b1712; }
+  .sq2 .pc.b, .fly .pc.b, .taken .b { color: #1e1a16; -webkit-text-stroke: 1px #000; }
   .sq2 .pc.b { text-shadow: 0 0 1px rgba(255, 240, 210, .35); }
   .sq2 .dot { position: absolute; width: 28%; height: 28%; border-radius: 50%; background: rgba(29, 20, 12, .45); }
   .sq2 .ring { position: absolute; inset: 6%; border-radius: 50%; border: 4px solid rgba(212, 85, 63, .85); }
@@ -96,8 +98,12 @@
   .taken { display: flex; align-items: center; min-width: 0; overflow: hidden; font-family: var(--glyph); font-size: 21px; line-height: 1; background: #d9c9a3; border-radius: 3px; padding: 2px 6px 1px; }
   .taken:empty { display: none; }
   .taken .grp { display: inline-flex; margin-right: 6px; }
-  .taken .grp span + span { margin-left: -9px; }
+  .taken img { width: 22px; height: 22px; display: block; }
+  .taken .grp img + img { margin-left: -12px; }
+  .pbar .clock { font-family: var(--display); font-weight: 600; font-variant-numeric: tabular-nums; font-size: 15px; padding: 2px 8px; border-radius: 3px; background: rgba(0,0,0,.35); color: var(--muted); min-width: 58px; text-align: right; }
+  .pbar.turn .clock { background: var(--ink); color: #1d140c; }
   .pbar .adv { margin-left: auto; padding-left: 8px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+  body:not(.mode2d) .only2d { display: none; }
   body.mode2d .hint, body.mode2d #resetv, body.mode2d label[for-3d] { display: none; }
 </style>
 
@@ -127,6 +133,12 @@
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
   <button id="skip" hidden>Saltear pelea</button>
   <button id="view2d" aria-pressed="false">Vista 2D</button>
+  <label class="chk only2d" for="pset">Piezas
+    <select id="pset">
+      <option value="cburnett">Cburnett</option><option value="merida">Merida</option><option value="chessnut">Chessnut</option>
+      <option value="celtic">Celtic</option><option value="fantasy">Fantasy</option>
+    </select>
+  </label>
   <button id="resetv">Vista inicial</button>
   <button id="drawoffer">Ofrecer tablas</button>
   <button id="resign">Abandonar</button>
@@ -135,8 +147,8 @@
     <span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span>
   </div>
 </div>
-<div class="pbar" id="pTop"><span class="chip"></span><span class="pname"></span><span class="taken"></span><span class="adv"></span></div>
-<div class="pbar" id="pBot"><span class="chip"></span><span class="pname"></span><span class="taken"></span><span class="adv"></span></div>
+<div class="pbar" id="pTop"><span class="chip"></span><span class="pname"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
+<div class="pbar" id="pBot"><span class="chip"></span><span class="pname"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
 <div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="card">
     <h2 id="mTitle"></h2>
@@ -169,6 +181,79 @@ const ASSETS = {
   "anim_CombatRanged": "assets/anims/CombatRanged.glb",
   "anim_Simulation": "assets/anims/Simulation.glb"
 };
+// Juegos de piezas 2D (SVG). Cburnett y Merida: GPLv2+; Chessnut: Apache 2.0; Celtic y Fantasy (Maurizio Monge): MIT. Tomados de lichess.org.
+const PIECE_SETS = {
+  "cburnett": {
+    "wk": "assets/pieces/cburnett/wK.svg",
+    "wq": "assets/pieces/cburnett/wQ.svg",
+    "wr": "assets/pieces/cburnett/wR.svg",
+    "wb": "assets/pieces/cburnett/wB.svg",
+    "wn": "assets/pieces/cburnett/wN.svg",
+    "wp": "assets/pieces/cburnett/wP.svg",
+    "bk": "assets/pieces/cburnett/bK.svg",
+    "bq": "assets/pieces/cburnett/bQ.svg",
+    "br": "assets/pieces/cburnett/bR.svg",
+    "bb": "assets/pieces/cburnett/bB.svg",
+    "bn": "assets/pieces/cburnett/bN.svg",
+    "bp": "assets/pieces/cburnett/bP.svg"
+  },
+  "merida": {
+    "wk": "assets/pieces/merida/wK.svg",
+    "wq": "assets/pieces/merida/wQ.svg",
+    "wr": "assets/pieces/merida/wR.svg",
+    "wb": "assets/pieces/merida/wB.svg",
+    "wn": "assets/pieces/merida/wN.svg",
+    "wp": "assets/pieces/merida/wP.svg",
+    "bk": "assets/pieces/merida/bK.svg",
+    "bq": "assets/pieces/merida/bQ.svg",
+    "br": "assets/pieces/merida/bR.svg",
+    "bb": "assets/pieces/merida/bB.svg",
+    "bn": "assets/pieces/merida/bN.svg",
+    "bp": "assets/pieces/merida/bP.svg"
+  },
+  "chessnut": {
+    "wk": "assets/pieces/chessnut/wK.svg",
+    "wq": "assets/pieces/chessnut/wQ.svg",
+    "wr": "assets/pieces/chessnut/wR.svg",
+    "wb": "assets/pieces/chessnut/wB.svg",
+    "wn": "assets/pieces/chessnut/wN.svg",
+    "wp": "assets/pieces/chessnut/wP.svg",
+    "bk": "assets/pieces/chessnut/bK.svg",
+    "bq": "assets/pieces/chessnut/bQ.svg",
+    "br": "assets/pieces/chessnut/bR.svg",
+    "bb": "assets/pieces/chessnut/bB.svg",
+    "bn": "assets/pieces/chessnut/bN.svg",
+    "bp": "assets/pieces/chessnut/bP.svg"
+  },
+  "celtic": {
+    "wk": "assets/pieces/celtic/wK.svg",
+    "wq": "assets/pieces/celtic/wQ.svg",
+    "wr": "assets/pieces/celtic/wR.svg",
+    "wb": "assets/pieces/celtic/wB.svg",
+    "wn": "assets/pieces/celtic/wN.svg",
+    "wp": "assets/pieces/celtic/wP.svg",
+    "bk": "assets/pieces/celtic/bK.svg",
+    "bq": "assets/pieces/celtic/bQ.svg",
+    "br": "assets/pieces/celtic/bR.svg",
+    "bb": "assets/pieces/celtic/bB.svg",
+    "bn": "assets/pieces/celtic/bN.svg",
+    "bp": "assets/pieces/celtic/bP.svg"
+  },
+  "fantasy": {
+    "wk": "assets/pieces/fantasy/wK.svg",
+    "wq": "assets/pieces/fantasy/wQ.svg",
+    "wr": "assets/pieces/fantasy/wR.svg",
+    "wb": "assets/pieces/fantasy/wB.svg",
+    "wn": "assets/pieces/fantasy/wN.svg",
+    "wp": "assets/pieces/fantasy/wP.svg",
+    "bk": "assets/pieces/fantasy/bK.svg",
+    "bq": "assets/pieces/fantasy/bQ.svg",
+    "br": "assets/pieces/fantasy/bR.svg",
+    "bb": "assets/pieces/fantasy/bB.svg",
+    "bn": "assets/pieces/fantasy/bN.svg",
+    "bp": "assets/pieces/fantasy/bP.svg"
+  }
+};
 </script>
 <script>
 (function () {
@@ -195,6 +280,8 @@ const ASSETS = {
   const sideAdj = (c, g) => is2D ? (c === 'w' ? (g === 'f' ? 'blanca' : 'blanco') : (g === 'f' ? 'negra' : 'negro'))
                                   : (c === 'w' ? 'azul' : (g === 'f' ? 'roja' : 'rojo'));
   const sidePl = c => is2D ? (c === 'w' ? 'blancas' : 'negras') : (c === 'w' ? 'azules' : 'rojos');
+  const art = c => (is2D ? 'las ' : 'los ') + sidePl(c);
+  const Art = c => (is2D ? 'Las ' : 'Los ') + sidePl(c);
   const nameOf = (t, c) => PIECES[t].name[0] + ' ' + sideAdj(c, PIECES[t].name[1]);
   const lc = s => s.charAt(0).toLowerCase() + s.slice(1);
 
@@ -629,8 +716,9 @@ const ASSETS = {
   function spread() { const p = [...pointers.values()]; return p.length < 2 ? 0 : Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y); }
 
   function pick(e) {
+    if (!started) return;
     if (viewPos) { caption('Estás viendo una jugada anterior: tocá » para volver a la partida'); return; }
-    if (busy || isOver() || (vsCpu && chess.turn() === 'b') || cam.mode !== 'board') return;
+    if (busy || isOver() || (cpuTurn()) || cam.mode !== 'board') return;
     const r = el.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
@@ -818,7 +906,7 @@ const ASSETS = {
     updateStatus();
     drawMarks();
     checkEnd();
-    if (vsCpu && chess.turn() === 'b' && !isOver()) {
+    if (cpuTurn() && !isOver()) {
       busy = true;
       await wait(0.5);
       busy = false;
@@ -876,7 +964,7 @@ const ASSETS = {
     const turn = chess.turn(), side = sidePl(turn), other = sidePl(turn === 'w' ? 'b' : 'w');
     st.className = turn === 'w' ? '' : 'b';
     st.classList.toggle('alert', chess.in_check());
-    if (ended && ended.reason === 'resign') st.textContent = 'Abandonan las ' + sidePl(opp(ended.result)) + '. Ganan las ' + sidePl(ended.result);
+    if (ended && ended.reason === 'resign') st.textContent = 'Abandonan ' + art(opp(ended.result)) + '. Ganan ' + art(ended.result);
     else if (ended && ended.reason === 'agreed') st.textContent = 'Tablas de común acuerdo';
     else if (chess.in_checkmate()) st.textContent = 'Jaque mate. Ganan las ' + other;
     else if (chess.in_stalemate()) st.textContent = 'Tablas por ahogado';
@@ -886,13 +974,14 @@ const ASSETS = {
     else if (chess.in_check()) st.textContent = 'Jaque a las ' + side;
     else st.textContent = 'Juegan las ' + side;
     if (!is2D) st.textContent = st.textContent.replace(/las (azules|rojos)/g, 'los $1');
-    if (!moving && !isOver()) caption(vsCpu && turn === 'b' ? 'La CPU está pensando' : 'Tocá una pieza ' + sideAdj(turn, 'f') + ' para moverla');
+    if (!moving && !isOver()) caption(vsCpu && turn !== localColor ? 'La CPU está pensando' : 'Tocá una pieza ' + sideAdj(turn, 'f') + ' para moverla');
     updatePlayers();
   }
 
   /* Barras de jugador al estilo chess.com: piezas capturadas (silueta clásica) y ventaja de material.
      El jugador local va abajo; el rival, arriba. */
-  let localColor = 'w';   // en una partida online será el color asignado a este dispositivo
+  let localColor = 'w';   // se sortea en cada partida; en el modo online lo asignará el servidor
+  const cpuTurn = () => vsCpu && chess.turn() !== localColor;
   function updatePlayers() {
     const full = { p: 8, n: 2, b: 2, r: 2, q: 1 };
     const count = { w: {}, b: {} }, mat = { w: 0, b: 0 };
@@ -902,7 +991,7 @@ const ASSETS = {
       let html = '';
       ['p', 'n', 'b', 'r', 'q'].forEach(t => {
         const n = Math.max(0, full[t] - (count[o][t] || 0));
-        if (n) html += '<span class="grp">' + ('<span class="' + o + '">' + GLYPH[t] + '\uFE0E</span>').repeat(n) + '</span>';
+        if (n) html += '<span class="grp">' + ('<img src="' + pieceImg(o, t) + '" alt="">').repeat(n) + '</span>';
       });
       el.querySelector('.taken').innerHTML = html;
       const adv = mat[c] - mat[o];
@@ -941,7 +1030,7 @@ const ASSETS = {
     $('m2').setAttribute('aria-pressed', String(!cpu));
     $('mcpu').setAttribute('aria-pressed', String(cpu));
     updateStatus();
-    if (vsCpu && chess.turn() === 'b' && !busy && !isOver()) { const m = pickCpu(); if (m) play_move(m.from, m.to); }
+    if (started && cpuTurn() && !busy && !isOver()) { const m = pickCpu(); if (m) play_move(m.from, m.to); }
   }
   $('m2').addEventListener('click', () => setMode(false));
   $('mcpu').addEventListener('click', () => setMode(true));
@@ -950,8 +1039,49 @@ const ASSETS = {
     closeModal();
     chess.reset(); selected = null; targets = []; lastMove = null; ended = null; viewPos = null; viewLast = null;
     hideArrows(); updateHist();
-    setupBoard(); dirty3d = false; drawMarks(); updateStatus();
+    setupBoard(); dirty3d = false;
+    drawColors();
   });
+
+  // Sorteo de colores al comenzar cada partida
+  let started = false;
+  function drawColors() {
+    started = false;
+    localColor = Math.random() < 0.5 ? 'w' : 'b';
+    times.w = times.b = 0;
+    build2D(); render2D(); drawMarks(); updateStatus(); layout();
+    const mine = sidePl(localColor);
+    caption(vsCpu ? 'Sorteo: jugás con las ' + mine + (localColor === 'b' ? '. Empieza la CPU' : '. Te toca empezar')
+                  : 'Sorteo: abajo juegan las ' + mine);
+    // Cartel de inicio: lo toca quien juega con blancas (contra la CPU, siempre el jugador local)
+    const whiteIsCpu = vsCpu && localColor === 'b';
+    const msg = vsCpu ? (whiteIsCpu ? 'Te tocaron ' + art('b') + '. La CPU juega con ' + art('w') + ' y mueve primero.'
+                                     : 'Te tocaron ' + art('w') + '. Movés primero.')
+                      : 'Abajo juegan ' + art(localColor) + '. Que toquen Comenzar ' + art('w') + '.';
+    showModal('Nueva partida', msg + ' Los relojes arrancan al comenzar.', [{ label: 'Comenzar', primary: true, onClick: startGame }]);
+  }
+  function startGame() {
+    started = true;
+    clockLast = performance.now();
+    updateStatus();
+    if (cpuTurn()) {
+      busy = true;
+      setTimeout(() => { busy = false; const m = pickCpu(); if (m) play_move(m.from, m.to); }, 600);
+    }
+  }
+
+  /* Reloj acumulado de cada jugador (todavía sin límite de tiempo).
+     Corre para el bando que mueve; se detiene durante las animaciones, los carteles y al terminar. */
+  const times = { w: 0, b: 0 };
+  let clockLast = performance.now();
+  const fmt = ms => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, ss = String(s % 60).padStart(2, '0');
+                      return h ? h + ':' + String(m).padStart(2, '0') + ':' + ss : m + ':' + ss; };
+  setInterval(() => {
+    const now = performance.now(), dt = now - clockLast; clockLast = now;
+    if (started && !busy && !isOver() && modal.hidden && $('loading').hidden) times[chess.turn()] += dt;
+    $('pBot').querySelector('.clock').textContent = fmt(times[localColor]);
+    $('pTop').querySelector('.clock').textContent = fmt(times[opp(localColor)]);
+  }, 200);
 
   /* ---------- Fin de partida: mate, tablas y abandono ---------- */
   const modal = $('modal');
@@ -1002,7 +1132,7 @@ const ASSETS = {
       else showModal('Derrota', 'Perdés esta partida en ' + mv + ' (' + how + ').', again);
     } else {
       const W = sidePl(result), L = sidePl(opp(result));
-      showModal('¡Felicitaciones, ' + W + '!', 'Ganan ' + how + ' en ' + mv + '. Las ' + L + ' pierden esta partida en ' + mv + '.', again);
+      showModal('¡Felicitaciones, ' + W + '!', 'Ganan ' + how + ' en ' + mv + '. ' + Art(opp(result)) + ' pierden esta partida en ' + mv + '.', again);
     }
   }
 
@@ -1013,16 +1143,16 @@ const ASSETS = {
   }
 
   $('resign').addEventListener('click', () => {
-    if (busy || isOver()) return;
+    if (!started || busy || isOver()) return;
     const who = vsCpu ? localColor : chess.turn();
-    showModal('¿Abandonar la partida?', (vsCpu ? 'Vas a perder' : 'Las ' + sidePl(who) + ' van a perder') + ' por abandono. No se puede deshacer.', [
+    showModal('¿Abandonar la partida?', (vsCpu ? 'Vas a perder' : Art(who) + ' van a perder') + ' por abandono. No se puede deshacer.', [
       { label: 'Abandonar', primary: true, onClick: () => endGame(opp(who), 'resign') },
       { label: 'Seguir jugando' }
     ]);
   });
 
   $('drawoffer').addEventListener('click', () => {
-    if (busy || isOver()) return;
+    if (!started || busy || isOver()) return;
     if (vsCpu) {
       // La CPU acepta solo si no va ganando en material
       const m = material(), cpu = opp(localColor);
@@ -1031,9 +1161,9 @@ const ASSETS = {
       return;
     }
     const from = chess.turn(), to = opp(from);
-    showModal('Oferta de tablas', 'Las ' + sidePl(from) + ' ofrecen tablas. ' + sidePl(to).charAt(0).toUpperCase() + sidePl(to).slice(1) + ', ¿aceptan?', [
+    showModal('Oferta de tablas', Art(from) + ' ofrecen tablas. ' + sidePl(to).charAt(0).toUpperCase() + sidePl(to).slice(1) + ', ¿aceptan?', [
       { label: 'Aceptar tablas', primary: true, onClick: () => endGame('draw', 'agreed') },
-      { label: 'Rechazar', onClick: () => caption('Las ' + sidePl(to) + ' rechazaron las tablas') }
+      { label: 'Rechazar', onClick: () => caption(Art(to) + ' rechazaron las tablas') }
     ]);
   });
 
@@ -1148,7 +1278,18 @@ const ASSETS = {
   /* ---------- Vista 2D tradicional ---------- */
   let is2D = false, dirty3d = false;
   const GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+  let pieceSet = 'cburnett';
+  try { const s = localStorage.getItem('chaskiboom.pieces'); if (s && PIECE_SETS[s]) pieceSet = s; } catch (_) {}
+  const pieceImg = (c, t) => PIECE_SETS[pieceSet][c + t];
+  $('pset').value = pieceSet;
+  $('pset').addEventListener('change', e => {
+    pieceSet = e.target.value;
+    try { localStorage.setItem('chaskiboom.pieces', pieceSet); } catch (_) {}
+    render2D(); updatePlayers();
+  });
   const board2d = $('board2d');
+  function build2D() {
+  board2d.querySelectorAll('.sq2').forEach(el => el.remove());
   for (let i = 0; i < 64; i++) {
     // el lado del jugador local queda abajo
     const r = localColor === 'w' ? Math.floor(i / 8) : 7 - Math.floor(i / 8);
@@ -1161,26 +1302,29 @@ const ASSETS = {
     d.setAttribute('aria-label', sq);
     board2d.appendChild(d);
   }
+  }
+  build2D();
   board2d.addEventListener('click', e => {
     const cell = e.target.closest('.sq2');
     if (cell && viewPos) { caption('Estás viendo una jugada anterior: tocá » para volver a la partida'); return; }
-    if (!cell || busy || isOver() || (vsCpu && chess.turn() === 'b')) return;
+    if (!cell || !started || busy || isOver() || cpuTurn()) return;
     const sq = cell.dataset.sq;
     if (selected && targets.some(m => m.to === sq)) { play_move(selected, sq); return; }
     const pc = chess.get(sq);
     if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
     else select(null);
   });
-  function render2D() {
-    const P = shownPos(), L = shownLast();
+  function render2D(opt) {
+    opt = opt || {};
+    const P = opt.pos || shownPos(), L = 'last' in opt ? opt.last : shownLast();
     const chk = P.in_check() ? kingSquare2d(P, P.turn()) : null;
     board2d.querySelectorAll('.sq2').forEach(cell => {
-      const sq = cell.dataset.sq, p = P.get(sq);
+      const sq = cell.dataset.sq, p = opt.hide && opt.hide.has(sq) ? null : P.get(sq);
       cell.classList.toggle('last', !!L && (L.from === sq || L.to === sq));
       cell.classList.toggle('sel', selected === sq);
       cell.classList.toggle('chk', chk === sq);
       const m = targets.find(t => t.to === sq);
-      let html = p ? '<span class="pc ' + p.color + '">' + GLYPH[p.type] + '\uFE0E</span>' : '';
+      let html = p ? '<img class="pc" src="' + pieceImg(p.color, p.type) + '" alt="">' : '';
       if (m) html += m.captured ? '<span class="ring"></span>' : '<span class="dot"></span>';
       const bottomRank = localColor === 'w' ? '1' : '8', leftFile = localColor === 'w' ? 'a' : 'h';
       if (sq[1] === bottomRank) html += '<span class="co f">' + sq[0] + '</span>';
@@ -1193,18 +1337,43 @@ const ASSETS = {
     for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const p = b[r][c]; if (p && p.type === 'k' && p.color === color) return FILES[c] + (8 - r); }
     return null;
   }
+  // La pieza se desliza medio segundo hasta su casilla (en el enroque, también la torre)
+  function fly(from, to, color, type) {
+    const a = board2d.querySelector('[data-sq="' + from + '"]'), b = board2d.querySelector('[data-sq="' + to + '"]');
+    const el = document.createElement('div');
+    el.className = 'fly';
+    Object.assign(el.style, { left: a.offsetLeft + 'px', top: a.offsetTop + 'px', width: a.offsetWidth + 'px', height: a.offsetHeight + 'px' });
+    el.innerHTML = '<img class="pc" src="' + pieceImg(color, type) + '" alt="">';
+    board2d.appendChild(el);
+    void el.offsetWidth;
+    el.style.transform = 'translate(' + (b.offsetLeft - a.offsetLeft) + 'px,' + (b.offsetTop - a.offsetTop) + 'px)';
+  }
   function move2d(from, to) {
     if (viewPos) goLive();
+    const before = new Chess(chess.fen());
     const mv = chess.move({ from, to, promotion: 'q' });
     if (!mv) return;
+    busy = true;
     selected = null; targets = []; lastMove = { from, to }; dirty3d = true;
     showArrow(from, to); updateHist();
-    updateStatus(); render2D(); checkEnd();
-    if (mv.captured) caption(nameOf(mv.piece, mv.color) + ' captura ' + lc(nameOf(mv.captured, mv.color === 'w' ? 'b' : 'w')));
-    if (vsCpu && chess.turn() === 'b' && !isOver()) {
-      busy = true;
-      setTimeout(() => { busy = false; const m = pickCpu(); if (m) play_move(m.from, m.to); }, 450);
+    const flights = [[from, to, mv.color, mv.piece]];
+    if (mv.flags.includes('k') || mv.flags.includes('q')) {
+      const rank = from[1];
+      flights.push(mv.flags.includes('k') ? ['h' + rank, 'f' + rank, mv.color, 'r'] : ['a' + rank, 'd' + rank, mv.color, 'r']);
     }
+    // se muestra la posición previa sin las piezas que viajan (la capturada sigue en su casilla hasta que llega el atacante)
+    render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
+    flights.forEach(f => fly(...f));
+    setTimeout(() => {
+      board2d.querySelectorAll('.fly').forEach(el => el.remove());
+      busy = false;
+      updateStatus(); render2D(); checkEnd();
+      if (mv.captured) caption(nameOf(mv.piece, mv.color) + ' captura ' + lc(nameOf(mv.captured, opp(mv.color))));
+      if (cpuTurn() && !isOver()) {
+        busy = true;
+        setTimeout(() => { busy = false; const m = pickCpu(); if (m) play_move(m.from, m.to); }, 350);
+      }
+    }, 520);
   }
   $('view2d').addEventListener('click', () => {
     if (busy) return;
@@ -1234,6 +1403,7 @@ const ASSETS = {
       boardView(); cam.pos.copy(cam.wantPos); cam.look.copy(cam.wantLook);
       updateStatus(); drawMarks(); layout(); updateHist();
       $('loading').hidden = true;
+      drawColors();
       document.fonts.ready.then(layout);
       window.__game = { chess, units, play_move: (f, t) => play_move(f, t), get busy() { return busy; } };
     } catch (e) {

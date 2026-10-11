@@ -18,5 +18,10 @@ y abrí http://localhost:8000
 ## Créditos
 
 - Personajes, armas y animaciones: [KayKit](https://kaylousberg.com) de Kay Lousberg (CC0).
+- Piezas 2D (tomadas de [lichess](https://github.com/lichess-org/lila)):
+  - Cburnett: Colin M.L. Burnett, GPLv2+.
+  - Merida: Armando Hernández Marroquín, GPLv2+.
+  - Chessnut: Alexis Luengas, Apache 2.0.
+  - Celtic y Fantasy: Maurizio Monge, MIT.
 - Motor 3D: [three.js](https://threejs.org) r147. Reglas de ajedrez: [chess.js](https://github.com/jhlywa/chess.js) 0.10.3.
 - Tipografías: Cinzel y EB Garamond (Google Fonts, SIL Open Font License).
