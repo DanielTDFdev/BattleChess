@@ -131,6 +131,7 @@
   </div>
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
+  <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
   <button id="skip" hidden>Saltear pelea</button>
   <button id="view2d" aria-pressed="false">Vista 2D</button>
   <label class="chk only2d" for="pset">Piezas
@@ -253,6 +254,33 @@ const PIECE_SETS = {
     "bn": "assets/pieces/fantasy/bN.svg",
     "bp": "assets/pieces/fantasy/bP.svg"
   }
+};
+// Efectos de sonido (clave -> archivo). Los de batalla suenan solo en las peleas 3D. Los que terminan en número tienen variantes que se eligen al azar.
+const SOUNDS = {
+  "armor1": "assets/sounds/armor1.mp3",
+  "armor2": "assets/sounds/armor2.mp3",
+  "armor3": "assets/sounds/armor3.mp3",
+  "axe1": "assets/sounds/axe1.mp3",
+  "axe2": "assets/sounds/axe2.mp3",
+  "check": "assets/sounds/check.mp3",
+  "grunt_m1": "assets/sounds/grunt_m1.mp3",
+  "grunt_m2": "assets/sounds/grunt_m2.mp3",
+  "grunt_m3": "assets/sounds/grunt_m3.mp3",
+  "grunt_q1": "assets/sounds/grunt_q1.mp3",
+  "grunt_q2": "assets/sounds/grunt_q2.mp3",
+  "grunt_q3": "assets/sounds/grunt_q3.mp3",
+  "grunt_q4": "assets/sounds/grunt_q4.mp3",
+  "grunt_q5": "assets/sounds/grunt_q5.mp3",
+  "grunt_q6": "assets/sounds/grunt_q6.mp3",
+  "lose": "assets/sounds/lose.mp3",
+  "magic1": "assets/sounds/magic1.mp3",
+  "magic2": "assets/sounds/magic2.mp3",
+  "move_b": "assets/sounds/move_b.mp3",
+  "move_w": "assets/sounds/move_w.mp3",
+  "sword1": "assets/sounds/sword1.mp3",
+  "sword2": "assets/sounds/sword2.mp3",
+  "sword3": "assets/sounds/sword3.mp3",
+  "win": "assets/sounds/win.mp3"
 };
 </script>
 <script>
@@ -526,6 +554,7 @@ const PIECE_SETS = {
     if (final && $('slow').checked && !skipping) { timeScale = 0.18; setTimeout(() => { timeScale = 1; }, 520); }
   }
   async function bolt(from, to, color, big) {
+    sfx('magic', 2, { vol: big ? 1 : 0.75 });   // dama y alfil
     const orb = new THREE.Mesh(new THREE.SphereGeometry(big ? 0.28 : 0.16, 16, 12), new THREE.MeshBasicMaterial({ color }));
     orb.add(new THREE.PointLight(color, big ? 3 : 2, 5, 2));
     const dir = to.root.position.clone().sub(from.root.position).setY(0).normalize();
@@ -745,6 +774,61 @@ const PIECE_SETS = {
   }
   $('resetv').addEventListener('click', () => Object.assign(orbit, ORBIT0));
 
+  /* ---------- Sonido ---------- */
+  let actx = null;
+  const sbuf = {}, lastPick = {};
+  function audioInit() {
+    if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { return; }
+    Object.entries(SOUNDS).forEach(async ([k, src]) => {
+      try {
+        const ab = src.startsWith('data:') ? toBuffer(src.split(',')[1]) : await (await fetch(src)).arrayBuffer();
+        sbuf[k] = await actx.decodeAudioData(ab);
+      } catch (e) { console.warn('No se pudo cargar el sonido', k, e); }
+    });
+  }
+  // El navegador solo permite sonido después de un gesto del jugador
+  window.addEventListener('pointerdown', audioInit, { capture: true });
+  window.addEventListener('keydown', audioInit, { capture: true });
+  try { if (localStorage.getItem('chaskiboom.sound') === '0') $('sound').checked = false; } catch (_) {}
+  $('sound').addEventListener('change', e => { try { localStorage.setItem('chaskiboom.sound', e.target.checked ? '1' : '0'); } catch (_) {} });
+
+  // sfx('sword', 3) elige una de sword1..sword3 al azar, sin repetir la última
+  function sfx(base, n, opt = {}) {
+    if (!actx || !$('sound').checked) return;
+    let key = base;
+    if (n) {
+      let i;
+      do { i = 1 + Math.floor(Math.random() * n); } while (n > 1 && i === lastPick[base]);
+      lastPick[base] = i; key = base + i;
+    }
+    const b = sbuf[key];
+    if (!b) return;
+    const s = actx.createBufferSource(), g = actx.createGain();
+    s.buffer = b;
+    s.playbackRate.value = opt.rate || (opt.exact ? 1 : 0.95 + Math.random() * 0.1);
+    g.gain.value = opt.vol == null ? 1 : opt.vol;
+    s.connect(g).connect(actx.destination);
+    s.start(actx.currentTime + (opt.delay || 0));
+  }
+  const isKnight = u => u.type === 'n' || u.type === 'k';          // llevan armadura
+  const isMale = u => u.type === 'n' || u.type === 'k' || u.type === 'r';
+  // golpe del arma del atacante
+  function weaponSfx(u, vol = 1) {
+    if (u.type === 'r') sfx('axe', 2, { vol });
+    else if (u.type === 'n' || u.type === 'k') sfx('sword', 3, { vol });
+    else if (u.type === 'p') sfx('sword', 3, { vol: vol * 0.7, rate: 1.18 });   // daga: más agudo y liviano
+  }
+  // el golpe recibido: armadura de los caballeros y quejido
+  function hurtSfx(u, opt = {}) {
+    if (isKnight(u) && opt.armor !== false) sfx('armor', 3, { vol: 0.9 });
+    if (opt.grunt !== false) {
+      if (isMale(u)) sfx('grunt_m', 3, { delay: 0.05, rate: opt.deep ? 0.86 : undefined });
+      else sfx('grunt_q', 6, { delay: 0.05 });   // dama, peón y alfil (personajes femeninos)
+    }
+  }
+  const moveSfx = color => sfx(color === 'w' ? 'move_w' : 'move_b', 0, { exact: true });
+
   /* ---------- La pelea, en el tablero ---------- */
   async function strike(u, clip) {
     play(u, clip, { once: true, fade: 0.1 });
@@ -775,8 +859,8 @@ const PIECE_SETS = {
     // 1. Primer golpe
     await strike(A, PA.strike);
     if (PA.ranged) await bolt(A, D, PA.bolt, false);
-    if (PD.shield) { play(D, 'Melee_Block_Hit', { once: true, fade: 0.05 }); impact(D, A, 0.5, 0xdfe8ff, false); }
-    else { play(D, 'Hit_B', { once: true, fade: 0.05 }); impact(D, A, 0.5, PA.ranged ? PA.bolt : null, false); }
+    if (PD.shield) { play(D, 'Melee_Block_Hit', { once: true, fade: 0.05 }); impact(D, A, 0.5, 0xdfe8ff, false); weaponSfx(A); sfx('armor', 3); }
+    else { play(D, 'Hit_B', { once: true, fade: 0.05 }); impact(D, A, 0.5, PA.ranged ? PA.bolt : null, false); weaponSfx(A); hurtSfx(D); }
     await wait(0.7);
 
     // 2. Contraataque
@@ -784,8 +868,9 @@ const PIECE_SETS = {
     if (PD.ranged || !PA.ranged) {
       await strike(D, PD.counter);
       if (PD.ranged) await bolt(D, A, PD.bolt, false);
-      if (PA.shield) { play(A, 'Melee_Block_Hit', { once: true, fade: 0.05 }); impact(A, D, 0.4, 0xdfe8ff, false); }
+      if (PA.shield) { play(A, 'Melee_Block_Hit', { once: true, fade: 0.05 }); impact(A, D, 0.4, 0xdfe8ff, false); weaponSfx(D); sfx('armor', 3); }
       else {
+        weaponSfx(D, 0.35);   // el golpe corta el aire
         play(A, 'Dodge_Backward', { once: true, fade: 0.05 });
         const back = A.root.position.clone().sub(D.root.position).setY(0).normalize().multiplyScalar(0.6);
         const keep = A.face;
@@ -811,11 +896,13 @@ const PIECE_SETS = {
     await strike(A, PA.finisher);
     if (PA.ranged) await bolt(A, D, PA.bolt, true);
     play(D, 'Hit_A', { once: true, fade: 0.05, speed: 1.5 });
+    weaponSfx(A); hurtSfx(D);
     impact(D, A, PA.heavy ? 1.6 : 1.1, PA.ranged ? PA.bolt : null, true);
     if (PA.heavy || /Jump|Spin/.test(PA.finisher)) D.vel.copy(D.root.position).sub(A.root.position).setY(0).normalize().multiplyScalar(4);
     await wait(0.25);
     caption(nameOf(D.type, D.side) + ' cae');
     play(D, PD.death, { once: true, fade: 0.1 });
+    hurtSfx(D, { deep: true, armor: false });
     await wait(Math.max(1.1, dur(PD.death) * 0.75));
     play(A, 'Cheering', { once: true, fade: 0.3 });
     await wait(1.4);
@@ -892,6 +979,8 @@ const PIECE_SETS = {
     units[to] = A; A.sq = to;
     extra.delete(A);
     await Promise.all(moves);
+    moveSfx(mv.color);
+    if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
 
     // Coronación
     if (mv.promotion) {
@@ -1061,6 +1150,7 @@ const PIECE_SETS = {
     showModal('Nueva partida', msg + ' Los relojes arrancan al comenzar.', [{ label: 'Comenzar', primary: true, onClick: startGame }]);
   }
   function startGame() {
+    audioInit();
     started = true;
     clockLast = performance.now();
     updateStatus();
@@ -1118,6 +1208,7 @@ const PIECE_SETS = {
 
   function showResult() {
     const { result, reason } = ended;
+    if (result !== 'draw') sfx(vsCpu && result !== localColor ? 'lose' : 'win', 0, { exact: true, vol: 0.8 });
     const moves = Math.max(1, Math.ceil(chess.history().length / 2));
     const mv = moves + (moves === 1 ? ' movimiento' : ' movimientos');
     const how = reason === 'mate' ? 'por jaque mate' : 'por abandono';
@@ -1367,6 +1458,8 @@ const PIECE_SETS = {
     setTimeout(() => {
       board2d.querySelectorAll('.fly').forEach(el => el.remove());
       busy = false;
+      moveSfx(mv.color);
+      if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
       updateStatus(); render2D(); checkEnd();
       if (mv.captured) caption(nameOf(mv.piece, mv.color) + ' captura ' + lc(nameOf(mv.captured, opp(mv.color))));
       if (cpuTurn() && !isOver()) {
@@ -1405,7 +1498,7 @@ const PIECE_SETS = {
       $('loading').hidden = true;
       drawColors();
       document.fonts.ready.then(layout);
-      window.__game = { chess, units, play_move: (f, t) => play_move(f, t), get busy() { return busy; } };
+      window.__game = { chess, units, play_move: (f, t) => play_move(f, t), get busy() { return busy; }, get sounds() { return Object.keys(sbuf).length; } };
     } catch (e) {
       $('loading').textContent = 'No se pudieron cargar los modelos';
       console.error(e);
