@@ -1,0 +1,1318 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ChaskiBoom Battle Chess</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:wght@400;500;600&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; }
+  [hidden] { display: none !important; }
+  /* Layout: tablero 3D a pantalla completa; estado arriba, consola de mando abajo. Un solo tema oscuro (salón de castillo de noche). */
+  :root {
+    --bg: #19141d;
+    --panel: rgba(30, 24, 36, .9);
+    --line: #3b3145;
+    --ink: #ede4d1;
+    --muted: #a99cb2;
+    --torch: #e3a246;
+    --blue: #4d8bf0;
+    --red: #e0554a;
+    --display: "Cinzel", "Trajan Pro", Georgia, serif;
+    --body: "EB Garamond", Garamond, Georgia, serif;
+    --glyph: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", "Apple Symbols", serif;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--ink); }
+  body { font-family: var(--body); font-size: 17px; overflow: hidden; }
+  #stage { position: fixed; inset: 0; touch-action: none; }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  .top { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; padding: 12px 16px; display: grid; justify-items: center; gap: 4px; pointer-events: none; }
+  .top .sub { margin: -4px 0 2px; font-family: var(--body); font-style: italic; font-size: 14px; color: var(--muted); letter-spacing: .04em; text-shadow: 0 1px 2px #000; }
+  .top h1 { font-family: var(--display); font-weight: 700; color: var(--torch); margin: 0; font-size: clamp(19px, 3.2vw, 28px); letter-spacing: .06em; text-shadow: 0 2px 0 #000; text-wrap: balance; text-align: center; }
+  #status { font-family: var(--display); font-weight: 600; letter-spacing: .03em; font-size: clamp(15px, 2.3vw, 19px); padding: 4px 14px; border-radius: 3px; background: rgba(20, 15, 24, .75); border-bottom: 3px solid var(--blue); }
+  #status.b { border-bottom-color: var(--red); }
+  #status.alert { color: #ffd0c4; }
+  #caption { margin: 0; font-size: clamp(15px, 2.3vw, 19px); min-height: 1.3em; padding: 2px 12px; border-radius: 3px; background: rgba(20, 15, 24, .7); }
+  #caption:empty { visibility: hidden; }
+  .bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(820px, calc(100% - 32px)); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; backdrop-filter: blur(6px); }
+  .seg { display: flex; }
+  .seg button { border-radius: 0; }
+  .seg button:first-child { border-radius: 3px 0 0 3px; }
+  .seg button:last-child { border-radius: 0 3px 3px 0; border-left: 0; }
+  button, select { font: inherit; color: var(--ink); background: #241c2a; border: 1px solid var(--line); padding: 7px 12px; border-radius: 3px; cursor: pointer; }
+  button:hover { border-color: var(--torch); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--torch); outline-offset: 2px; }
+  .seg button[aria-pressed="true"] { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
+  label.chk { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  input[type=checkbox] { accent-color: var(--torch); width: 17px; height: 17px; }
+  #skip { margin-left: auto; }
+  #newg { border-color: var(--torch); color: var(--torch); font-weight: 600; }
+  .caps { width: 100%; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--muted); }
+  .caps b { font-weight: 600; }
+  .caps .hint { margin-left: auto; font-size: 14px; }
+  .caps .bl { color: var(--blue); } .caps .rd { color: var(--red); }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; font-family: var(--display); color: var(--torch); font-size: 22px; text-align: center; padding: 16px; background: var(--bg); }
+  #loading[hidden] { display: none; }
+  #arrow2d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; opacity: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
+  .hist { display: flex; align-items: center; gap: 4px; width: 100%; }
+  .hist button { min-width: 36px; padding: 4px 8px; font-size: 20px; line-height: 1; }
+  .hist button:disabled { opacity: .35; cursor: default; }
+  #hLabel { min-width: 0; flex: 1; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.reviewing #hLabel { color: var(--torch); }
+  #modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(10, 7, 12, .62); z-index: 20; }
+  #modal[hidden] { display: none; }
+  #modal .card { width: min(420px, 100%); background: #221b28; border: 2px solid var(--torch); outline: 1px solid #5a4330; outline-offset: 4px; border-radius: 4px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
+  #modal h2 { font-family: var(--display); font-weight: 700; color: var(--torch); margin: 0 0 10px; font-size: 26px; letter-spacing: .04em; text-wrap: balance; }
+  #modal p { margin: 0 0 20px; font-size: 18px; line-height: 1.45; }
+  .mBtns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .mBtns .primary { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
+  #resign:hover { border-color: var(--red); }
+  #stage.off { visibility: hidden; }
+  #board2d { position: fixed; --sq: 60px; box-sizing: border-box; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); border: 6px solid #3a2a1e; box-shadow: 0 0 0 2px #5a4330, 0 18px 40px rgba(0,0,0,.5); user-select: none; }
+  #board2d[hidden] { display: none; }
+  .sq2 { position: relative; display: grid; place-items: center; cursor: pointer; min-width: 0; min-height: 0; overflow: hidden; }
+  .sq2.l { background: #cdb98f; } .sq2.d { background: #7a5c43; }
+  .sq2.last::before, .sq2.sel::before, .sq2.chk::before { content: ""; position: absolute; inset: 0; }
+  .sq2.last::before { background: rgba(232, 207, 106, .38); }
+  .sq2.sel::before { background: rgba(227, 162, 70, .6); }
+  .sq2.chk::before { background: radial-gradient(circle, rgba(212, 85, 63, .85) 0 35%, rgba(212, 85, 63, .25) 70%); }
+  .sq2 .pc { position: relative; font-family: var(--glyph); font-size: calc(var(--sq) * .82); line-height: 1; }
+  .sq2 .pc.w, .taken .w { color: #fbf7ee; -webkit-text-stroke: 1.2px #1b1712; }
+  .sq2 .pc.b, .taken .b { color: #1e1a16; -webkit-text-stroke: 1px #000; }
+  .sq2 .pc.b { text-shadow: 0 0 1px rgba(255, 240, 210, .35); }
+  .sq2 .dot { position: absolute; width: 28%; height: 28%; border-radius: 50%; background: rgba(29, 20, 12, .45); }
+  .sq2 .ring { position: absolute; inset: 6%; border-radius: 50%; border: 4px solid rgba(212, 85, 63, .85); }
+  .sq2 .co { position: absolute; font-family: var(--display); font-size: 11px; font-weight: 600; opacity: .85; }
+  .sq2 .co.f { right: 3px; bottom: 1px; } .sq2 .co.r { left: 3px; top: 1px; }
+  .sq2.l .co { color: #7a5c43; } .sq2.d .co { color: #cdb98f; }
+  .pbar { position: fixed; box-sizing: border-box; height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; pointer-events: none; }
+  .pbar.turn { border-color: var(--torch); box-shadow: 0 0 0 1px var(--torch); }
+  .pbar .chip { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.5); }
+  .pbar .pname { font-family: var(--display); font-weight: 600; font-size: 15px; white-space: nowrap; }
+  .taken { display: flex; align-items: center; min-width: 0; overflow: hidden; font-family: var(--glyph); font-size: 21px; line-height: 1; background: #d9c9a3; border-radius: 3px; padding: 2px 6px 1px; }
+  .taken:empty { display: none; }
+  .taken .grp { display: inline-flex; margin-right: 6px; }
+  .taken .grp span + span { margin-left: -9px; }
+  .pbar .adv { margin-left: auto; padding-left: 8px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+  body.mode2d .hint, body.mode2d #resetv, body.mode2d label[for-3d] { display: none; }
+</style>
+
+</head>
+<body>
+<div id="stage"></div>
+<div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
+<div class="top">
+  <h1>ChaskiBoom Battle Chess</h1>
+  <p class="sub">© 2026 by Daniel Camargo</p>
+  <div id="status">Juegan los azules</div>
+  <p id="caption">Tocá una pieza azul para moverla</p>
+</div>
+<div class="bar">
+  <div class="hist" role="group" aria-label="Historial de jugadas">
+    <button id="hFirst" aria-label="Ir al inicio">«</button>
+    <button id="hPrev" aria-label="Jugada anterior">‹</button>
+    <span id="hLabel">Sin jugadas</span>
+    <button id="hNext" aria-label="Jugada siguiente">›</button>
+    <button id="hLast" aria-label="Volver a la partida">»</button>
+  </div>
+  <div class="seg" role="group" aria-label="Modo de juego">
+    <button id="m2" aria-pressed="true">2 jugadores</button>
+    <button id="mcpu" aria-pressed="false">Contra la CPU</button>
+  </div>
+  <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
+  <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
+  <button id="skip" hidden>Saltear pelea</button>
+  <button id="view2d" aria-pressed="false">Vista 2D</button>
+  <button id="resetv">Vista inicial</button>
+  <button id="drawoffer">Ofrecer tablas</button>
+  <button id="resign">Abandonar</button>
+  <button id="newg">Nueva partida</button>
+  <div class="caps">
+    <span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span>
+  </div>
+</div>
+<div class="pbar" id="pTop"><span class="chip"></span><span class="pname"></span><span class="taken"></span><span class="adv"></span></div>
+<div class="pbar" id="pBot"><span class="chip"></span><span class="pname"></span><span class="taken"></span><span class="adv"></span></div>
+<div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="card">
+    <h2 id="mTitle"></h2>
+    <p id="mText"></p>
+    <div class="mBtns" id="mBtns"></div>
+  </div>
+</div>
+<div id="loading">Preparando ChaskiBoom Battle Chess…</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
+<script>
+const ASSETS = {
+  "Rogue": "assets/models/Rogue.glb",
+  "Knight": "assets/models/Knight.glb",
+  "Mage": "assets/models/Mage.glb",
+  "Barbarian": "assets/models/Barbarian.glb",
+  "sword_1handed": "assets/models/sword_1handed.glb",
+  "shield_badge_color": "assets/models/shield_badge_color.glb",
+  "dagger": "assets/models/dagger.glb",
+  "staff": "assets/models/staff.glb",
+  "wand": "assets/models/wand.glb",
+  "axe_2handed": "assets/models/axe_2handed.glb",
+  "anim_General": "assets/anims/General.glb",
+  "anim_MovementBasic": "assets/anims/MovementBasic.glb",
+  "anim_MovementAdvanced": "assets/anims/MovementAdvanced.glb",
+  "anim_CombatMelee": "assets/anims/CombatMelee.glb",
+  "anim_CombatRanged": "assets/anims/CombatRanged.glb",
+  "anim_Simulation": "assets/anims/Simulation.glb"
+};
+</script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const stage = $('stage');
+
+  /* ---------- Piezas ---------- */
+  // strike: primer golpe (el rival lo resiste), counter: contraataque, finisher: golpe final.
+  const PIECES = {
+    p: { name: ['Peón', 'm'], char: 'Rogue', right: 'dagger', run: 'Running_A',
+         strike: 'Melee_1H_Attack_Stab', counter: 'Melee_1H_Attack_Stab', finisher: 'Melee_1H_Attack_Slice_Horizontal', death: 'Death_A' },
+    n: { name: ['Caballo', 'm'], char: 'Knight', right: 'sword_1handed', left: 'shield_badge_color', shield: true, run: 'Running_A',
+         strike: 'Melee_1H_Attack_Slice_Diagonal', counter: 'Melee_1H_Attack_Chop', finisher: 'Melee_1H_Attack_Jump_Chop', death: 'Death_B' },
+    b: { name: ['Alfil', 'm'], char: 'Mage', right: 'staff', ranged: true, bolt: 0x9d7bff, run: 'Walking_A',
+         strike: 'Ranged_Magic_Shoot', counter: 'Ranged_Magic_Shoot', finisher: 'Ranged_Magic_Spellcasting', death: 'Death_A' },
+    r: { name: ['Torre', 'f'], char: 'Barbarian', right: 'axe_2handed', teamMesh: ['Barbarian_BearHat'], run: 'Running_B', heavy: true,
+         strike: 'Melee_2H_Attack_Slice', counter: 'Melee_2H_Attack_Chop', finisher: 'Melee_2H_Attack_Spin', death: 'Death_B' },
+    q: { name: ['Dama', 'f'], char: 'Mage', right: 'wand', crown: true, hide: ['Mage_Hat'], ranged: true, bolt: 0xffc35a, run: 'Walking_A',
+         strike: 'Ranged_Magic_Shoot', counter: 'Ranged_Magic_Shoot', finisher: 'Ranged_Magic_Summon', death: 'Death_A' },
+    k: { name: ['Rey', 'm'], char: 'Knight', right: 'sword_1handed', left: 'shield_badge_color', shield: true, crown: true, hide: ['Knight_Helmet', 'Knight_HelmetVisor'], run: 'Walking_A',
+         strike: 'Melee_1H_Attack_Slice_Horizontal', counter: 'Melee_1H_Attack_Chop', finisher: 'Melee_1H_Attack_Chop', death: 'Death_B' }
+  };
+  // En 3D los bandos son azules y rojos; en la vista 2D clásica, blancas y negras.
+  const sideAdj = (c, g) => is2D ? (c === 'w' ? (g === 'f' ? 'blanca' : 'blanco') : (g === 'f' ? 'negra' : 'negro'))
+                                  : (c === 'w' ? 'azul' : (g === 'f' ? 'roja' : 'rojo'));
+  const sidePl = c => is2D ? (c === 'w' ? 'blancas' : 'negras') : (c === 'w' ? 'azules' : 'rojos');
+  const nameOf = (t, c) => PIECES[t].name[0] + ' ' + sideAdj(c, PIECES[t].name[1]);
+  const lc = s => s.charAt(0).toLowerCase() + s.slice(1);
+
+  /* ---------- Medidas ---------- */
+  const TS = 2;                 // lado de una casilla
+  const SCALE = 0.92;           // escala de los personajes
+  // distancia entre centros al pelear cuerpo a cuerpo, según el alcance del arma del atacante
+  const REACH = { p: 1.8, n: 2.0, r: 2.3, k: 2.0 };
+  const gapOf = u => REACH[u.type] || 2.0;
+  const RANGE_GAP = 3.4;        // distancia desde la que dispara un mago
+  const CHEST = 1.25;           // altura del pecho
+  const FILES = 'abcdefgh';
+  const sqPos = sq => new THREE.Vector3((FILES.indexOf(sq[0]) - 3.5) * TS, 0, (4.5 - Number(sq[1])) * TS);
+  const FACE = { w: Math.PI, b: 0 };   // azules miran hacia los rojos (-Z), rojos hacia +Z
+
+  /* ---------- Escena ---------- */
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  stage.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x19141d);
+  scene.fog = new THREE.Fog(0x19141d, 30, 60);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 120);
+
+  scene.add(new THREE.HemisphereLight(0xffe9cc, 0x2a2033, 0.75));
+  const sun = new THREE.DirectionalLight(0xffe2b8, 1.15);
+  sun.position.set(-8, 16, 10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 1, far: 50 });
+  sun.shadow.bias = -0.0005;
+  scene.add(sun);
+  const torches = [];
+  [[-11, 5, 0], [11, 5, 0]].forEach(p => {
+    const l = new THREE.PointLight(0xff9a3c, 1.3, 22, 2);
+    l.position.set(...p); scene.add(l); torches.push(l);
+  });
+
+  const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+  const cx = cv.getContext('2d');
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    cx.fillStyle = (r + c) % 2 ? '#7a5c43' : '#cdb98f';
+    cx.fillRect(c * 64, r * 64, 64, 64);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 8;
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(8 * TS, 8 * TS), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 }));
+  board.rotation.x = -Math.PI / 2; board.receiveShadow = true; scene.add(board);
+  const rim = new THREE.Mesh(new THREE.BoxGeometry(8 * TS + 1.2, 0.6, 8 * TS + 1.2), new THREE.MeshStandardMaterial({ color: 0x3a2a1e, roughness: 0.9 }));
+  rim.position.y = -0.31; rim.receiveShadow = true; scene.add(rim);
+
+  // Letras y números del borde
+  function label(text, x, z) {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#cdb98f'; g.font = '600 38px Cinzel, Georgia, serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 32, 34);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), new THREE.MeshBasicMaterial({ map: t, transparent: true }));
+    m.rotation.x = -Math.PI / 2; m.position.set(x, 0.01, z); scene.add(m);
+  }
+  Promise.race([document.fonts.load('600 38px Cinzel'), new Promise(r => setTimeout(r, 2500))]).catch(() => {}).then(() => {
+    for (let i = 0; i < 8; i++) {
+      label(FILES[i], (i - 3.5) * TS, 8.3);
+      label(String(i + 1), -8.3, (3.5 - i) * TS);
+    }
+  });
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize); resize();
+
+  /* ---------- Tiempo de juego (con cámara lenta) ---------- */
+  const clock = new THREE.Clock();
+  let timeScale = 1, gameTime = 0;
+  const waits = [];
+  const wait = s => new Promise(r => waits.push({ at: gameTime + s, r }));
+
+  /* ---------- Carga de modelos ---------- */
+  function toBuffer(b64) {
+    const bin = atob(b64), buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    return buf.buffer;
+  }
+  const loader = new THREE.GLTFLoader();
+  const parse = url => new Promise((res, rej) => loader.load(url, res, undefined, rej));   // cada modelo es un archivo .glb del repo
+  const models = {}, clips = {};
+
+  /* ---------- Colores de bando ---------- */
+  const TEAM_HUE = { w: 216, b: 2 };
+  const teamCache = new Map();
+  function teamTexture(src, side, force) {
+    const key = src.uuid + side + (force ? 'f' : '');
+    if (teamCache.has(key)) return teamCache.get(key);
+    const img = src.image;
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height), px = d.data;
+    const H = TEAM_HUE[side] / 360;
+    for (let i = 0; i < px.length; i += 4) {
+      const r = px[i] / 255, gg = px[i + 1] / 255, b = px[i + 2] / 255;
+      const max = Math.max(r, gg, b), min = Math.min(r, gg, b), l = (max + min) / 2, delta = max - min;
+      if (force ? (max > 0.86 || max < 0.06) : delta < 0.12) continue;
+      const s = delta / Math.max(1e-6, 1 - Math.abs(2 * l - 1));
+      let h;
+      if (max === r) h = ((gg - b) / delta) % 6; else if (max === gg) h = (b - r) / delta + 2; else h = (r - gg) / delta + 4;
+      h = (h * 60 + 360) % 360;
+      if (!force && (s < 0.16 || (h >= 14 && h <= 58))) continue;
+      const ns = Math.max(s, 0.6);
+      const q = l < 0.5 ? l * (1 + ns) : l + ns - l * ns, p = 2 * l - q;
+      const hue2 = t => { t = (t + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < 1 / 2 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; };
+      px[i] = hue2(H + 1 / 3) * 255; px[i + 1] = hue2(H) * 255; px[i + 2] = hue2(H - 1 / 3) * 255;
+    }
+    g.putImageData(d, 0, 0);
+    const t = new THREE.CanvasTexture(c);
+    t.flipY = src.flipY; t.encoding = src.encoding;
+    t.wrapS = src.wrapS; t.wrapT = src.wrapT;
+    t.magFilter = src.magFilter; t.minFilter = src.minFilter;
+    teamCache.set(key, t);
+    return t;
+  }
+
+  function makeCrown(radius) {
+    const g = new THREE.Group();
+    const gold = new THREE.MeshStandardMaterial({ color: 0xf0c04a, metalness: 0.8, roughness: 0.3, emissive: 0x3a2400, side: THREE.DoubleSide });
+    g.add(new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 0.92, radius * 0.45, 16, 1, true), gold));
+    const gemMat = new THREE.MeshStandardMaterial({ color: 0xc0283c, roughness: 0.2 });
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.2, radius * 0.5, 6), gold);
+      spike.position.set(Math.cos(a) * radius * 0.9, radius * 0.45, Math.sin(a) * radius * 0.9);
+      g.add(spike);
+      const gem = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.09, 8, 8), gemMat);
+      gem.position.set(Math.cos(a + 0.5) * radius, 0, Math.sin(a + 0.5) * radius);
+      g.add(gem);
+    }
+    g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    return g;
+  }
+
+  /* ---------- Personajes ---------- */
+  const units = {};   // casilla -> personaje
+  const extra = new Set();   // personajes fuera de una casilla (en plena pelea o hundiéndose)
+
+  function makeUnit(type, side, sq) {
+    const P = PIECES[type];
+    const root = THREE.SkeletonUtils.clone(models[P.char].scene);
+    const mats = [];
+    (P.hide || []).forEach(n => { const o = root.getObjectByName(n); if (o) o.visible = false; });
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.frustumCulled = false;
+      const m = o.material.clone();
+      if (m.map) m.map = teamTexture(m.map, side, (P.teamMesh || []).includes(o.name));
+      m.emissive = new THREE.Color(0);
+      o.material = m; mats.push(m);
+    });
+    const attach = (slotName, key) => {
+      if (!key) return;
+      const w = models[key].scene.clone(true);
+      w.traverse(o => { if (o.isMesh) { o.castShadow = true; o.material = o.material.clone(); if (o.material.map) o.material.map = teamTexture(o.material.map, side); mats.push(o.material); } });
+      root.getObjectByName(slotName).add(w);
+    };
+    attach('handslotr', P.right);
+    attach('handslotl', P.left);
+    if (P.crown) {
+      root.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(root.getObjectByName(P.char + '_Head'));
+      const size = box.getSize(new THREE.Vector3());
+      const crown = makeCrown(size.x * 0.3);
+      root.add(crown);
+      crown.position.set((box.min.x + box.max.x) / 2, box.max.y - size.y * 0.08, (box.min.z + box.max.z) / 2);
+      root.updateMatrixWorld(true);
+      root.getObjectByName('head').attach(crown);
+    }
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.68, 0.07, 32),
+      new THREE.MeshStandardMaterial({ color: side === 'w' ? 0x2f6fd6 : 0xd33a2c, roughness: 0.4, metalness: 0.2 }));
+    base.position.y = 0.035; base.receiveShadow = true;
+    root.add(base); mats.push(base.material);
+
+    root.scale.setScalar(SCALE);
+    root.position.copy(sqPos(sq));
+    root.rotation.y = FACE[side];
+    scene.add(root);
+    const u = { type, side, sq, root, mixer: new THREE.AnimationMixer(root), actions: {}, mats, current: null,
+                target: null, vel: new THREE.Vector3(), flash: 0, face: FACE[side], sink: false };
+    play(u, 'Idle_A');
+    u.current.time = Math.random() * dur('Idle_A');   // que no respiren todos a la vez
+    return u;
+  }
+
+  function removeUnit(u) {
+    scene.remove(u.root);
+    u.mixer.stopAllAction();
+  }
+
+  function play(u, name, opts = {}) {
+    const { once = false, fade = 0.2, speed = 1 } = opts;
+    const next = u.actions[name] || (u.actions[name] = u.mixer.clipAction(clips[name]));
+    const prev = u.current;
+    next.reset();
+    next.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, once ? 1 : Infinity);
+    next.clampWhenFinished = once;
+    next.setEffectiveTimeScale(speed);
+    next.setEffectiveWeight(1);
+    next.play();
+    if (prev && prev !== next) prev.crossFadeTo(next, fade, false);
+    u.current = next;
+  }
+  const dur = n => clips[n].duration;
+  const faceTo = (u, pos) => { const d = pos.clone().sub(u.root.position); u.face = Math.atan2(d.x, d.z); };
+  const walkTo = (u, pos, speed) => new Promise(res => { faceTo(u, pos); u.target = { pos: pos.clone(), speed, res }; });
+
+  /* ---------- Efectos ---------- */
+  let shake = 0;
+  const sparks = [];
+  const sparkGeo = new THREE.SphereGeometry(0.045, 6, 6);
+  function burst(pos, color, n) {
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(sparkGeo, new THREE.MeshBasicMaterial({ color: i % 3 ? color : 0xff7a3c, transparent: true }));
+      m.position.copy(pos);
+      const v = new THREE.Vector3((Math.random() - 0.5) * 4, Math.random() * 3.5 + 0.8, (Math.random() - 0.5) * 4);
+      scene.add(m); sparks.push({ m, v, life: 0.5 + Math.random() * 0.4 });
+    }
+  }
+  function impact(target, from, strength, color, final) {
+    target.flash = final ? 1 : 0.45;
+    shake = Math.max(shake, 0.22 * strength);
+    const toward = from.root.position.clone().sub(target.root.position).setY(0).normalize().multiplyScalar(0.4);
+    burst(target.root.position.clone().add(toward).setY(CHEST), color || 0xffd27a, final ? 30 : 12);
+    if (final && $('slow').checked && !skipping) { timeScale = 0.18; setTimeout(() => { timeScale = 1; }, 520); }
+  }
+  async function bolt(from, to, color, big) {
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(big ? 0.28 : 0.16, 16, 12), new THREE.MeshBasicMaterial({ color }));
+    orb.add(new THREE.PointLight(color, big ? 3 : 2, 5, 2));
+    const dir = to.root.position.clone().sub(from.root.position).setY(0).normalize();
+    orb.position.copy(from.root.position).addScaledVector(dir, 0.7).setY(CHEST + 0.25);
+    scene.add(orb);
+    const a = orb.position.clone(), b = to.root.position.clone().addScaledVector(dir, -0.2).setY(CHEST);
+    const T = big ? 0.42 : 0.3, t0 = gameTime;
+    await new Promise(res => {
+      const step = () => {
+        const k = Math.min(1, (gameTime - t0) / T);
+        orb.position.lerpVectors(a, b, k * k);
+        orb.scale.setScalar(1 + Math.sin(gameTime * 40) * 0.15);
+        if (k >= 1) res(); else requestAnimationFrame(step);
+      };
+      step();
+    });
+    scene.remove(orb);
+  }
+
+  /* Instante de impacto de cada clip: cuando la mano del arma alcanza su mayor velocidad. */
+  const hitTime = {};
+  function computeHitTimes() {
+    const names = new Set();
+    Object.values(PIECES).forEach(P => [P.strike, P.counter, P.finisher].forEach(n => names.add(n)));
+    const probe = THREE.SkeletonUtils.clone(models.Knight.scene);
+    const hand = probe.getObjectByName('handr');
+    const mixer = new THREE.AnimationMixer(probe);
+    const p = new THREE.Vector3(), prev = new THREE.Vector3();
+    names.forEach(n => {
+      const clip = clips[n];
+      mixer.stopAllAction();
+      mixer.clipAction(clip).reset().play();
+      let best = 0, bestT = clip.duration * 0.45;
+      const steps = Math.ceil(clip.duration * 60);
+      for (let i = 0; i <= steps; i++) {
+        const t = clip.duration * i / steps;
+        mixer.setTime(t); probe.updateMatrixWorld(true);
+        hand.getWorldPosition(p);
+        if (i > 0 && t > clip.duration * 0.15 && t < clip.duration * 0.85) {
+          const v = p.distanceTo(prev);
+          if (v > best) { best = v; bestT = t; }
+        }
+        prev.copy(p);
+      }
+      hitTime[n] = bestT;
+    });
+    mixer.stopAllAction();
+  }
+
+  /* ---------- Cámara ---------- */
+  const cam = { pos: new THREE.Vector3(), look: new THREE.Vector3(), wantPos: new THREE.Vector3(), wantLook: new THREE.Vector3(), mode: 'board', fight: null };
+  // Vista del tablero: órbita alrededor del centro (clic derecho o dos dedos para girar, rueda o pellizco para acercar)
+  const ORBIT0 = { yaw: 0, pitch: 1.07, zoom: 1 };
+  const orbit = Object.assign({}, ORBIT0);
+  function boardView() {
+    const narrow = camera.aspect < 0.9;
+    const d = (narrow ? 37.7 : 27.4) * orbit.zoom;
+    cam.wantLook.set(0, 0, 0);
+    const yaw = orbit.yaw + (localColor === 'b' ? Math.PI : 0);   // el jugador local mira desde su lado
+    cam.wantPos.set(Math.sin(yaw) * Math.cos(orbit.pitch) * d, Math.sin(orbit.pitch) * d, Math.cos(yaw) * Math.cos(orbit.pitch) * d);
+  }
+  function orbitBy(dx, dy) {
+    orbit.yaw -= dx * 0.008;
+    orbit.pitch = Math.min(1.45, Math.max(0.42, orbit.pitch + dy * 0.006));
+  }
+  const zoomBy = f => { orbit.zoom = Math.min(1.45, Math.max(0.5, orbit.zoom * f)); };
+  function fightView(a, b) {
+    const mid = a.root.position.clone().add(b.root.position).multiplyScalar(0.5);
+    const dir = b.root.position.clone().sub(a.root.position).setY(0).normalize();
+    let perp = new THREE.Vector3(dir.z, 0, -dir.x);
+    if (perp.dot(cam.pos.clone().sub(mid).setY(0)) < 0) perp.negate();   // del lado desde donde mira el jugador
+    const dist = Math.max(7.5, a.root.position.distanceTo(b.root.position) * 1.3 + 4);
+    cam.wantPos.copy(mid).addScaledVector(perp, camera.aspect < 0.9 ? dist * 1.5 : dist).add(new THREE.Vector3(0, 2.9, 0));
+    cam.wantLook.copy(mid).setY(0.55);
+    // las piezas entre la cámara y la pelea también se vuelven translúcidas
+    const seg = new THREE.Line3(cam.wantPos.clone().setY(0), mid.clone().setY(0)), q = new THREE.Vector3();
+    Object.values(units).forEach(u => {
+      const p = u.root.position.clone().setY(0);
+      seg.closestPointToPoint(p, true, q);
+      if (p.distanceTo(q) < 1.5 && !ghosts.has(u)) { setGhost(u, true); ghosts.add(u); }
+    });   // apuntar bajo deja a los combatientes por encima de la consola
+  }
+
+  /* ---------- Juego ---------- */
+  const chess = new Chess();
+  let busy = false, vsCpu = false, selected = null, targets = [], lastMove = null, skipping = false;
+  let ended = null;   // { result: 'w' | 'b' | 'draw', reason }
+  const isOver = () => !!ended || chess.game_over();
+  const opp = c => c === 'w' ? 'b' : 'w';
+  const caption = t => { $('caption').textContent = t; };
+  // Posición que se muestra: la actual, o una anterior si el jugador está revisando el historial
+  let viewPos = null, viewLast = null;
+  const shownPos = () => viewPos || chess;
+  const shownLast = () => viewPos ? viewLast : lastMove;
+
+  function setupBoard(src) {
+    Object.values(units).forEach(removeUnit);
+    for (const k in units) delete units[k];
+    (src || chess).board().forEach((row, r) => row.forEach((p, c) => {
+      if (!p) return;
+      const sq = FILES[c] + (8 - r);
+      units[sq] = makeUnit(p.type, p.color, sq);
+    }));
+  }
+
+  /* Marcas sobre el tablero */
+  const marks = new THREE.Group(); scene.add(marks);
+  const markGeo = new THREE.PlaneGeometry(TS, TS);
+  const dotGeo = new THREE.CircleGeometry(0.28, 24);
+  const ringGeo = new THREE.RingGeometry(0.72, 0.92, 32);
+  const M = {
+    sel: new THREE.MeshBasicMaterial({ color: 0xe3a246, transparent: true, opacity: 0.55 }),
+    last: new THREE.MeshBasicMaterial({ color: 0xe8cf6a, transparent: true, opacity: 0.35 }),
+    check: new THREE.MeshBasicMaterial({ color: 0xd4553f, transparent: true, opacity: 0.55 }),
+    dot: new THREE.MeshBasicMaterial({ color: 0x1d140c, transparent: true, opacity: 0.45 }),
+    ring: new THREE.MeshBasicMaterial({ color: 0xd4553f, transparent: true, opacity: 0.8 })
+  };
+  function mark(geo, mat, sq, y) {
+    const m = new THREE.Mesh(geo, mat);
+    m.rotation.x = -Math.PI / 2;
+    m.position.copy(sqPos(sq)).setY(y);
+    marks.add(m);
+  }
+  function kingSquare(color) {
+    for (const [sq, u] of Object.entries(units)) if (u.type === 'k' && u.side === color) return sq;
+    return null;
+  }
+  function drawMarks() {
+    if (is2D) render2D();
+    marks.clear();
+    if (busy) return;
+    const L = shownLast(), P = shownPos();
+    if (L) { mark(markGeo, M.last, L.from, 0.011); mark(markGeo, M.last, L.to, 0.011); }
+    if (P.in_check()) { const k = kingSquare(P.turn()); if (k) mark(markGeo, M.check, k, 0.012); }
+    if (selected) mark(markGeo, M.sel, selected, 0.013);
+    targets.forEach(m => m.captured ? mark(ringGeo, M.ring, m.to, 0.02) : mark(dotGeo, M.dot, m.to, 0.02));
+  }
+
+  function select(sq) {
+    selected = sq;
+    targets = sq ? chess.moves({ square: sq, verbose: true }) : [];
+    drawMarks();
+  }
+
+  /* Elegir casilla con el puntero */
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const el = renderer.domElement;
+  const pointers = new Map();
+  let drag = null, pinch = 0, tapStart = null;
+  el.addEventListener('contextmenu', e => e.preventDefault());
+  el.addEventListener('wheel', e => { e.preventDefault(); zoomBy(e.deltaY > 0 ? 1.08 : 0.93); }, { passive: false });
+  el.addEventListener('pointerdown', e => {
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    if (e.pointerType === 'mouse') {
+      if (e.button === 2 || e.button === 1) { drag = { x: e.clientX, y: e.clientY }; return; }
+      if (e.button === 0) pick(e);
+      return;
+    }
+    if (pointers.size === 1) tapStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+    else { tapStart = null; drag = centerOf(); pinch = spread(); }
+  });
+  el.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (e.pointerType === 'mouse') {
+      if (drag) { orbitBy(e.clientX - drag.x, e.clientY - drag.y); drag = { x: e.clientX, y: e.clientY }; }
+      return;
+    }
+    if (pointers.size >= 2 && drag) {
+      const c = centerOf(), s = spread();
+      orbitBy(c.x - drag.x, c.y - drag.y);
+      if (pinch > 0 && s > 0) zoomBy(pinch / s);
+      drag = c; pinch = s;
+    }
+  });
+  const endPointer = e => {
+    if (e.pointerType !== 'mouse' && tapStart && pointers.size === 1 &&
+        Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) < 12 && performance.now() - tapStart.t < 600) pick(e);
+    pointers.delete(e.pointerId);
+    if (e.pointerType === 'mouse' || pointers.size < 2) { drag = null; pinch = 0; }
+    if (!pointers.size) tapStart = null;
+  };
+  el.addEventListener('pointerup', endPointer);
+  el.addEventListener('pointercancel', endPointer);
+  function centerOf() { let x = 0, y = 0; pointers.forEach(p => { x += p.x; y += p.y; }); return { x: x / pointers.size, y: y / pointers.size }; }
+  function spread() { const p = [...pointers.values()]; return p.length < 2 ? 0 : Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y); }
+
+  function pick(e) {
+    if (viewPos) { caption('Estás viendo una jugada anterior: tocá » para volver a la partida'); return; }
+    if (busy || isOver() || (vsCpu && chess.turn() === 'b') || cam.mode !== 'board') return;
+    const r = el.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    // Primero, los personajes (se toca la figura, no solo la casilla)
+    let sq = null;
+    const hits = ray.intersectObjects(Object.values(units).map(u => u.root), true);
+    if (hits.length) {
+      for (const [s, u] of Object.entries(units)) {
+        let o = hits[0].object; while (o && o !== u.root) o = o.parent;
+        if (o === u.root) { sq = s; break; }
+      }
+    }
+    if (!sq) {
+      const p = new THREE.Vector3();
+      if (!ray.ray.intersectPlane(ground, p)) return;
+      const c = Math.floor(p.x / TS + 4), rr = Math.floor(p.z / TS + 4);
+      if (c < 0 || c > 7 || rr < 0 || rr > 7) { select(null); return; }
+      sq = FILES[c] + (8 - rr);
+    }
+    if (selected && targets.some(m => m.to === sq)) { play_move(selected, sq); return; }
+    const pc = chess.get(sq);
+    if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
+    else select(null);
+  }
+  $('resetv').addEventListener('click', () => Object.assign(orbit, ORBIT0));
+
+  /* ---------- La pelea, en el tablero ---------- */
+  async function strike(u, clip) {
+    play(u, clip, { once: true, fade: 0.1 });
+    await wait(hitTime[clip]);
+  }
+
+  async function fight(A, D) {
+    const PA = PIECES[A.type], PD = PIECES[D.type];
+    cam.mode = 'fight'; fightView(A, D);
+    $('skip').hidden = false;
+    caption(nameOf(A.type, A.side) + ' ataca a ' + lc(nameOf(D.type, D.side)));
+    faceTo(D, A.root.position);
+    if (PD.shield) play(D, 'Melee_Blocking', { fade: 0.3 });
+    ghostBystanders(A, D, PA.ranged ? RANGE_GAP : gapOf(A));
+    await wait(0.6);
+
+    // Acercamiento
+    const dist = A.root.position.distanceTo(D.root.position);
+    const want = PA.ranged ? RANGE_GAP : gapOf(A);
+    if (dist > want) {
+      const dir = A.root.position.clone().sub(D.root.position).setY(0).normalize();
+      play(A, PA.run);
+      await walkTo(A, D.root.position.clone().addScaledVector(dir, want), PA.run.startsWith('Walk') ? 2.2 : 4.5);
+    }
+    faceTo(A, D.root.position); faceTo(D, A.root.position);
+    fightView(A, D);
+
+    // 1. Primer golpe
+    await strike(A, PA.strike);
+    if (PA.ranged) await bolt(A, D, PA.bolt, false);
+    if (PD.shield) { play(D, 'Melee_Block_Hit', { once: true, fade: 0.05 }); impact(D, A, 0.5, 0xdfe8ff, false); }
+    else { play(D, 'Hit_B', { once: true, fade: 0.05 }); impact(D, A, 0.5, PA.ranged ? PA.bolt : null, false); }
+    await wait(0.7);
+
+    // 2. Contraataque
+    caption(nameOf(D.type, D.side) + ' contraataca');
+    if (PD.ranged || !PA.ranged) {
+      await strike(D, PD.counter);
+      if (PD.ranged) await bolt(D, A, PD.bolt, false);
+      if (PA.shield) { play(A, 'Melee_Block_Hit', { once: true, fade: 0.05 }); impact(A, D, 0.4, 0xdfe8ff, false); }
+      else {
+        play(A, 'Dodge_Backward', { once: true, fade: 0.05 });
+        const back = A.root.position.clone().sub(D.root.position).setY(0).normalize().multiplyScalar(0.6);
+        const keep = A.face;
+        await walkTo(A, A.root.position.clone().add(back), 2.5);
+        A.face = keep;
+      }
+      await wait(0.5);
+      if (!PA.ranged) {
+        const dir = A.root.position.clone().sub(D.root.position).setY(0).normalize();
+        play(A, PA.run);
+        await walkTo(A, D.root.position.clone().addScaledVector(dir, gapOf(A)), 3);
+        faceTo(A, D.root.position);
+      }
+    } else {
+      // Un guerrero no alcanza a un mago: carga y el hechizo final lo frena
+      play(D, PD.run, { fade: 0.15 });
+      const dir = A.root.position.clone().sub(D.root.position).setY(0).normalize();
+      await walkTo(D, D.root.position.clone().addScaledVector(dir, 0.9), 3);
+    }
+
+    // 3. Golpe final
+    caption(nameOf(A.type, A.side) + ' remata');
+    await strike(A, PA.finisher);
+    if (PA.ranged) await bolt(A, D, PA.bolt, true);
+    play(D, 'Hit_A', { once: true, fade: 0.05, speed: 1.5 });
+    impact(D, A, PA.heavy ? 1.6 : 1.1, PA.ranged ? PA.bolt : null, true);
+    if (PA.heavy || /Jump|Spin/.test(PA.finisher)) D.vel.copy(D.root.position).sub(A.root.position).setY(0).normalize().multiplyScalar(4);
+    await wait(0.25);
+    caption(nameOf(D.type, D.side) + ' cae');
+    play(D, PD.death, { once: true, fade: 0.1 });
+    await wait(Math.max(1.1, dur(PD.death) * 0.75));
+    play(A, 'Cheering', { once: true, fade: 0.3 });
+    await wait(1.4);
+    D.sink = true;
+    await wait(dur('Cheering') - 1.4);
+    unghostAll();
+  }
+
+  /* Las piezas que quedan en el camino o junto a la pelea se vuelven translúcidas
+     para que no se mezclen con los combatientes. */
+  const ghosts = new Set();
+  function setGhost(u, on) {
+    u.mats.forEach(m => { m.transparent = on; m.opacity = on ? 0.16 : 1; m.depthWrite = !on; m.needsUpdate = true; });
+    u.root.traverse(o => { if (o.isMesh) o.castShadow = !on; });
+  }
+  function ghostBystanders(A, D, gap) {
+    const a = A.root.position.clone().setY(0), d = D.root.position.clone().setY(0);
+    const dist = a.distanceTo(d);
+    const stop = dist > gap ? d.clone().add(a.clone().sub(d).normalize().multiplyScalar(gap)) : a.clone();
+    const seg = new THREE.Line3(a, stop), q = new THREE.Vector3();
+    Object.values(units).forEach(u => {
+      const p = u.root.position.clone().setY(0);
+      seg.closestPointToPoint(p, true, q);
+      if (p.distanceTo(q) < 1.6 || p.distanceTo(d) < 2.4 || p.distanceTo(stop) < 2.4) { setGhost(u, true); ghosts.add(u); }
+    });
+  }
+  function unghostAll() { ghosts.forEach(u => setGhost(u, false)); ghosts.clear(); }
+
+  async function quickCapture(A, D) {
+    D.flash = 1;
+    play(D, PIECES[D.type].death, { once: true, fade: 0.1, speed: 2 });
+    await wait(0.5);
+    D.sink = true;
+  }
+
+  async function play_move(from, to) {
+    if (is2D) return move2d(from, to);
+    busy = true;
+    if (viewPos) goLive();
+    const mv = chess.move({ from, to, promotion: 'q' });
+    if (!mv) { busy = false; return; }
+    selected = null; targets = []; lastMove = { from, to };
+    showArrow(from, to); updateHist();
+    drawMarks();
+    updateStatus(true);
+    const A = units[from];
+    delete units[from];
+    extra.add(A);
+
+    if (mv.captured) {
+      const capSq = mv.flags.includes('e') ? to[0] + from[1] : to;
+      const D = units[capSq];
+      delete units[capSq];
+      extra.add(D);
+      skipping = false;
+      if ($('fights').checked) await fight(A, D); else await quickCapture(A, D);
+      $('skip').hidden = true;
+      timeScale = 1;
+      unghostAll();
+      if (!D.removed) { await waitSink(D); }
+    }
+
+    // Caminar a la casilla final
+    cam.mode = 'board'; boardView();
+    caption(chess.history().slice(-1)[0] ? 'Jugada: ' + sanEs(chess.history().slice(-1)[0]) : '');
+    const moves = [walkHome(A, to)];
+    if (mv.flags.includes('k') || mv.flags.includes('q')) {
+      const rank = from[1];
+      const [rf, rt] = mv.flags.includes('k') ? ['h' + rank, 'f' + rank] : ['a' + rank, 'd' + rank];
+      const R = units[rf]; delete units[rf];
+      moves.push(walkHome(R, rt));
+      units[rt] = R; R.sq = rt;
+    }
+    units[to] = A; A.sq = to;
+    extra.delete(A);
+    await Promise.all(moves);
+
+    // Coronación
+    if (mv.promotion) {
+      burst(A.root.position.clone().setY(1.2), 0xffe28a, 40);
+      removeUnit(A);
+      units[to] = makeUnit(mv.promotion, A.side, to);
+      caption(nameOf('p', A.side) + ' corona: ahora es ' + lc(nameOf(mv.promotion, A.side)));
+    }
+
+    checkSync();
+    busy = false;
+    updateStatus();
+    drawMarks();
+    checkEnd();
+    if (vsCpu && chess.turn() === 'b' && !isOver()) {
+      busy = true;
+      await wait(0.5);
+      busy = false;
+      const m = pickCpu();
+      if (m) play_move(m.from, m.to);
+    }
+  }
+
+  function waitSink(u) { return new Promise(res => { u.onRemoved = res; }); }
+
+  async function walkHome(u, sq) {
+    const dest = sqPos(sq);
+    if (u.root.position.distanceTo(dest) > 0.05) {
+      play(u, u.root.position.distanceTo(dest) > 3 ? (PIECES[u.type].run || 'Running_A') : 'Walking_A');
+      await walkTo(u, dest, PIECES[u.type].run === 'Walking_A' ? 2.6 : 4.2);
+    }
+    u.face = FACE[u.side];
+    play(u, 'Idle_A', { fade: 0.3 });
+  }
+
+  // Si algo quedó desfasado con las reglas, se reconstruye el tablero
+  function checkSync() {
+    let ok = true;
+    chess.board().forEach((row, r) => row.forEach((p, c) => {
+      const sq = FILES[c] + (8 - r), u = units[sq];
+      if ((p && (!u || u.type !== p.type || u.side !== p.color)) || (!p && u)) ok = false;
+    }));
+    if (Object.keys(units).length !== chess.board().flat().filter(Boolean).length) ok = false;
+    if (!ok) { console.warn('Tablero resincronizado'); setupBoard(); }
+  }
+
+  function pickCpu() {
+    const V = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+    let best = null, bestS = -Infinity;
+    for (const m of chess.moves({ verbose: true })) {
+      let s = (m.captured ? V[m.captured] * 10 : 0) + (m.promotion ? 80 : 0);
+      chess.move({ from: m.from, to: m.to, promotion: 'q' });
+      if (chess.in_checkmate()) s += 10000;
+      else {
+        if (chess.in_check()) s += 3;
+        let worst = 0;
+        for (const o of chess.moves({ verbose: true })) if (o.captured) worst = Math.max(worst, V[o.captured] * 10);
+        s -= worst * 0.9;
+      }
+      chess.undo();
+      s += Math.random() * 2;
+      if (s > bestS) { bestS = s; best = m; }
+    }
+    return best;
+  }
+
+  const VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  function updateStatus(moving) {
+    const st = $('status');
+    const turn = chess.turn(), side = sidePl(turn), other = sidePl(turn === 'w' ? 'b' : 'w');
+    st.className = turn === 'w' ? '' : 'b';
+    st.classList.toggle('alert', chess.in_check());
+    if (ended && ended.reason === 'resign') st.textContent = 'Abandonan las ' + sidePl(opp(ended.result)) + '. Ganan las ' + sidePl(ended.result);
+    else if (ended && ended.reason === 'agreed') st.textContent = 'Tablas de común acuerdo';
+    else if (chess.in_checkmate()) st.textContent = 'Jaque mate. Ganan las ' + other;
+    else if (chess.in_stalemate()) st.textContent = 'Tablas por ahogado';
+    else if (chess.in_threefold_repetition()) st.textContent = 'Tablas por repetición';
+    else if (chess.insufficient_material()) st.textContent = 'Tablas: material insuficiente';
+    else if (chess.in_draw()) st.textContent = 'Tablas';
+    else if (chess.in_check()) st.textContent = 'Jaque a las ' + side;
+    else st.textContent = 'Juegan las ' + side;
+    if (!is2D) st.textContent = st.textContent.replace(/las (azules|rojos)/g, 'los $1');
+    if (!moving && !isOver()) caption(vsCpu && turn === 'b' ? 'La CPU está pensando' : 'Tocá una pieza ' + sideAdj(turn, 'f') + ' para moverla');
+    updatePlayers();
+  }
+
+  /* Barras de jugador al estilo chess.com: piezas capturadas (silueta clásica) y ventaja de material.
+     El jugador local va abajo; el rival, arriba. */
+  let localColor = 'w';   // en una partida online será el color asignado a este dispositivo
+  function updatePlayers() {
+    const full = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+    const count = { w: {}, b: {} }, mat = { w: 0, b: 0 };
+    shownPos().board().flat().forEach(p => { if (p) { count[p.color][p.type] = (count[p.color][p.type] || 0) + 1; mat[p.color] += VAL[p.type]; } });
+    const fill = (el, c) => {
+      const o = opp(c);   // lo que capturó este jugador son piezas del rival
+      let html = '';
+      ['p', 'n', 'b', 'r', 'q'].forEach(t => {
+        const n = Math.max(0, full[t] - (count[o][t] || 0));
+        if (n) html += '<span class="grp">' + ('<span class="' + o + '">' + GLYPH[t] + '\uFE0E</span>').repeat(n) + '</span>';
+      });
+      el.querySelector('.taken').innerHTML = html;
+      const adv = mat[c] - mat[o];
+      el.querySelector('.adv').textContent = adv > 0 ? '+' + adv : '';
+      el.querySelector('.chip').style.background = is2D ? (c === 'w' ? '#fbf7ee' : '#1e1a16') : (c === 'w' ? 'var(--blue)' : 'var(--red)');
+      const who = vsCpu ? (c === localColor ? 'Vos' : 'CPU') : (c === localColor ? 'Vos' : 'Rival');
+      el.querySelector('.pname').textContent = who + ' · ' + sidePl(c);
+      el.classList.toggle('turn', chess.turn() === c && !isOver());
+    };
+    fill($('pBot'), localColor);
+    fill($('pTop'), opp(localColor));
+  }
+
+  // Ubica las barras de jugador (y el tablero 2D) entre el encabezado y la consola
+  function layout() {
+    const topY = document.querySelector('.top').getBoundingClientRect().bottom + 6;
+    const botY = document.querySelector('.bar').getBoundingClientRect().top - 6;
+    const pTop = $('pTop'), pBot = $('pBot'), BH = 36, GAP = 6;
+    if (is2D) {
+      const avail = botY - topY - 2 * (BH + GAP);
+      const size = Math.max(160, Math.min(window.innerWidth - 32, avail, 680));
+      const left = (window.innerWidth - size) / 2, top = topY + BH + GAP + Math.max(0, (avail - size) / 2);
+      Object.assign(board2d.style, { left: left + 'px', top: top + 'px', width: size + 'px', height: size + 'px' });
+      board2d.style.setProperty('--sq', ((size - 12) / 8) + 'px');
+      [[pTop, top - BH - GAP], [pBot, top + size + GAP]].forEach(([el, y]) => Object.assign(el.style, { left: left + 'px', top: y + 'px', width: size + 'px' }));
+    } else {
+      // en 3D, barras compactas en la esquina para no tapar las filas de atrás
+      [[pTop, topY], [pBot, botY - BH]].forEach(([el, y]) => Object.assign(el.style, { left: '16px', top: y + 'px', width: 'auto', maxWidth: (window.innerWidth - 32) + 'px' }));
+    }
+  }
+  window.addEventListener('resize', layout);
+
+
+  function setMode(cpu) {
+    vsCpu = cpu;
+    $('m2').setAttribute('aria-pressed', String(!cpu));
+    $('mcpu').setAttribute('aria-pressed', String(cpu));
+    updateStatus();
+    if (vsCpu && chess.turn() === 'b' && !busy && !isOver()) { const m = pickCpu(); if (m) play_move(m.from, m.to); }
+  }
+  $('m2').addEventListener('click', () => setMode(false));
+  $('mcpu').addEventListener('click', () => setMode(true));
+  $('newg').addEventListener('click', () => {
+    if (busy) return;
+    closeModal();
+    chess.reset(); selected = null; targets = []; lastMove = null; ended = null; viewPos = null; viewLast = null;
+    hideArrows(); updateHist();
+    setupBoard(); dirty3d = false; drawMarks(); updateStatus();
+  });
+
+  /* ---------- Fin de partida: mate, tablas y abandono ---------- */
+  const modal = $('modal');
+  function showModal(title, text, buttons) {
+    $('mTitle').textContent = title;
+    $('mText').textContent = text;
+    const box = $('mBtns'); box.innerHTML = '';
+    buttons.forEach(b => {
+      const el = document.createElement('button');
+      el.textContent = b.label;
+      if (b.primary) el.className = 'primary';
+      el.addEventListener('click', () => { closeModal(); if (b.onClick) b.onClick(); });
+      box.appendChild(el);
+    });
+    modal.hidden = false;
+    const first = box.querySelector('.primary') || box.querySelector('button');
+    if (first) first.focus();
+  }
+  function closeModal() { modal.hidden = true; }
+
+  function checkEnd() {
+    if (ended || !chess.game_over()) return;
+    if (chess.in_checkmate()) endGame(opp(chess.turn()), 'mate');
+    else endGame('draw', chess.in_stalemate() ? 'stalemate' : chess.in_threefold_repetition() ? 'repetition' : chess.insufficient_material() ? 'material' : 'rule50');
+  }
+
+  function endGame(result, reason) {
+    ended = { result, reason };
+    select(null);
+    updateStatus();
+    caption('');
+    showResult();
+  }
+
+  function showResult() {
+    const { result, reason } = ended;
+    const moves = Math.max(1, Math.ceil(chess.history().length / 2));
+    const mv = moves + (moves === 1 ? ' movimiento' : ' movimientos');
+    const how = reason === 'mate' ? 'por jaque mate' : 'por abandono';
+    const again = [{ label: 'Nueva partida', primary: true, onClick: () => $('newg').click() }, { label: 'Ver el tablero' }];
+    if (result === 'draw') {
+      const why = { agreed: 'Los dos jugadores acordaron tablas.', stalemate: 'Tablas por ahogado: el bando que mueve no tiene jugadas legales y no está en jaque.',
+                    repetition: 'Tablas por triple repetición de la posición.', material: 'Tablas: no queda material suficiente para dar mate.', rule50: 'Tablas por la regla de los 50 movimientos.' }[reason];
+      showModal('Tablas', why + ' La partida duró ' + mv + '.', again);
+    } else if (vsCpu) {
+      // Cada jugador ve su propio cartel (en el modo online, cada dispositivo mostrará el suyo)
+      if (result === localColor) showModal('¡Felicitaciones!', 'Ganaste ' + how + ' en ' + mv + '.', again);
+      else showModal('Derrota', 'Perdés esta partida en ' + mv + ' (' + how + ').', again);
+    } else {
+      const W = sidePl(result), L = sidePl(opp(result));
+      showModal('¡Felicitaciones, ' + W + '!', 'Ganan ' + how + ' en ' + mv + '. Las ' + L + ' pierden esta partida en ' + mv + '.', again);
+    }
+  }
+
+  function material() {
+    const m = { w: 0, b: 0 };
+    chess.board().flat().forEach(p => { if (p) m[p.color] += VAL[p.type]; });
+    return m;
+  }
+
+  $('resign').addEventListener('click', () => {
+    if (busy || isOver()) return;
+    const who = vsCpu ? localColor : chess.turn();
+    showModal('¿Abandonar la partida?', (vsCpu ? 'Vas a perder' : 'Las ' + sidePl(who) + ' van a perder') + ' por abandono. No se puede deshacer.', [
+      { label: 'Abandonar', primary: true, onClick: () => endGame(opp(who), 'resign') },
+      { label: 'Seguir jugando' }
+    ]);
+  });
+
+  $('drawoffer').addEventListener('click', () => {
+    if (busy || isOver()) return;
+    if (vsCpu) {
+      // La CPU acepta solo si no va ganando en material
+      const m = material(), cpu = opp(localColor);
+      if (m[cpu] <= m[localColor]) endGame('draw', 'agreed');
+      else showModal('La CPU rechaza las tablas', 'Va ganando en material y prefiere seguir. La partida continúa.', [{ label: 'Seguir jugando', primary: true }]);
+      return;
+    }
+    const from = chess.turn(), to = opp(from);
+    showModal('Oferta de tablas', 'Las ' + sidePl(from) + ' ofrecen tablas. ' + sidePl(to).charAt(0).toUpperCase() + sidePl(to).slice(1) + ', ¿aceptan?', [
+      { label: 'Aceptar tablas', primary: true, onClick: () => endGame('draw', 'agreed') },
+      { label: 'Rechazar', onClick: () => caption('Las ' + sidePl(to) + ' rechazaron las tablas') }
+    ]);
+  });
+
+  /* ---------- Flecha de la jugada (1,5 s y se desvanece) ---------- */
+  const sanEs = s => s.replace(/[NBRQK]/g, c => ({ N: 'C', B: 'A', R: 'T', Q: 'D', K: 'R' })[c]);
+  function arrowPoints(from, to) {
+    const f = [FILES.indexOf(from[0]), Number(from[1]) - 1], d = [FILES.indexOf(to[0]), Number(to[1]) - 1];
+    const df = d[0] - f[0], dr = d[1] - f[1], pts = [f];
+    if (Math.abs(df * dr) === 2) pts.push(Math.abs(df) === 2 ? [d[0], f[1]] : [f[0], d[1]]);   // caballo: la L, primero el tramo largo
+    pts.push(d);
+    return pts;
+  }
+  const arrowMat = new THREE.MeshBasicMaterial({ color: 0xe8590c, transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false });
+  let arrow3d = null, arrowTimer = null;
+  function hideArrows() {
+    if (arrow3d) { scene.remove(arrow3d.group); arrow3d = null; }
+    const svg = $('arrow2d'); svg.innerHTML = ''; clearTimeout(arrowTimer);
+  }
+  function showArrow(from, to) {
+    hideArrows();
+    const pts = arrowPoints(from, to);
+    const HEAD = 0.42;   // en casillas
+    // tramos, con el último acortado para dejar lugar a la punta
+    const seg = pts.map(p => p.slice());
+    const a = seg[seg.length - 2], b = seg[seg.length - 1];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const tail = [b[0] - (b[0] - a[0]) / len * HEAD, b[1] - (b[1] - a[1]) / len * HEAD];
+    const body = seg.slice(0, -1).concat([tail]);
+    const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+
+    // 2D (SVG sobre el tablero)
+    const X = p => (localColor === 'w' ? p[0] : 7 - p[0]) + 0.5, Y = p => (localColor === 'w' ? 7 - p[1] : p[1]) + 0.5;
+    const s2 = localColor === 'w' ? 1 : -1;
+    const hx = X(b), hy = Y(b), dx = Math.cos(ang) * s2, dy = -Math.sin(ang) * s2;
+    const bx = hx - dx * HEAD, by = hy - dy * HEAD;
+    const svg = $('arrow2d');
+    svg.innerHTML = '<polyline points="' + body.map(p => X(p) + ',' + Y(p)).join(' ') + '" fill="none" stroke="#e3a246" stroke-width="0.17" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<polygon points="' + hx + ',' + hy + ' ' + (bx - dy * 0.24) + ',' + (by + dx * 0.24) + ' ' + (bx + dy * 0.24) + ',' + (by - dx * 0.24) + '" fill="#e3a246"/>';
+    svg.style.transition = 'none'; svg.style.opacity = '0.88';
+    void svg.getBoundingClientRect();
+    arrowTimer = setTimeout(() => { svg.style.transition = 'opacity .6s'; svg.style.opacity = '0'; }, 1500);
+
+    // 3D (cinta plana sobre el tablero)
+    const W = (p) => new THREE.Vector3((p[0] - 3.5) * TS, 0.045, (3.5 - p[1]) * TS);
+    const group = new THREE.Group();
+    const piece = (geo, pos, yaw) => {
+      const holder = new THREE.Object3D(); holder.position.copy(pos); holder.rotation.y = yaw;
+      const m = new THREE.Mesh(geo, arrowMat); m.rotation.x = -Math.PI / 2; m.renderOrder = 5;
+      holder.add(m); group.add(holder);
+    };
+    const width = 0.34;
+    for (let i = 0; i < body.length - 1; i++) {
+      const p = W(body[i]), q = W(body[i + 1]), d = q.clone().sub(p);
+      piece(new THREE.PlaneGeometry(d.length(), width), p.clone().add(q).multiplyScalar(0.5), -Math.atan2(d.z, d.x));
+      if (i > 0) piece(new THREE.CircleGeometry(width / 2, 16), p, 0);
+    }
+    const shape = new THREE.Shape();
+    const hl = HEAD * TS, hw = 0.48 * TS * 0.5;
+    shape.moveTo(0, -hw); shape.lineTo(hl, 0); shape.lineTo(0, hw); shape.lineTo(0, -hw);
+    const tip = W(tail), dir = W(b).sub(W(a));
+    piece(new THREE.ShapeGeometry(shape), tip, -Math.atan2(dir.z, dir.x));
+    scene.add(group);
+    arrow3d = { group, t: 0 };
+  }
+
+  /* ---------- Historial: revisar jugadas hacia atrás y adelante ---------- */
+  function updateHist() {
+    const h = chess.history();
+    const n = viewPos ? viewPly : h.length;
+    const lbl = $('hLabel');
+    if (!h.length) lbl.textContent = 'Sin jugadas';
+    else if (n === 0) lbl.textContent = 'Inicio · 0/' + h.length;
+    else lbl.textContent = Math.ceil(n / 2) + (n % 2 ? '. ' : '… ') + sanEs(h[n - 1]) + ' · ' + n + '/' + h.length;
+    $('hFirst').disabled = $('hPrev').disabled = n === 0;
+    $('hNext').disabled = $('hLast').disabled = n === h.length;
+    document.body.classList.toggle('reviewing', !!viewPos);
+  }
+  let viewPly = 0;
+  function viewAt(n) {
+    if (busy) return;
+    const h = chess.history({ verbose: true });
+    n = Math.max(0, Math.min(h.length, n));
+    if (n === h.length) { goLive(); return; }
+    const tmp = new Chess();
+    for (let i = 0; i < n; i++) tmp.move(h[i]);
+    viewPos = tmp; viewPly = n;
+    viewLast = n ? { from: h[n - 1].from, to: h[n - 1].to } : null;
+    selected = null; targets = [];
+    if (is2D) render2D(); else { setupBoard(tmp); drawMarks(); }
+    if (viewLast) showArrow(viewLast.from, viewLast.to); else hideArrows();
+    caption(n ? 'Revisando la jugada ' + n + ' de ' + h.length : 'Posición inicial');
+    updatePlayers(); updateHist();
+  }
+  function goLive(silent) {
+    if (!viewPos) return;
+    viewPos = null; viewLast = null;
+    if (is2D) { render2D(); dirty3d = true; } else { setupBoard(); drawMarks(); }
+    hideArrows();
+    if (!silent) updateStatus();
+    updatePlayers(); updateHist();
+  }
+  $('hFirst').addEventListener('click', () => viewAt(0));
+  $('hPrev').addEventListener('click', () => viewAt((viewPos ? viewPly : chess.history().length) - 1));
+  $('hNext').addEventListener('click', () => viewAt((viewPos ? viewPly : chess.history().length) + 1));
+  $('hLast').addEventListener('click', () => goLive());
+  window.addEventListener('keydown', e => {
+    if (!modal.hidden || e.target.closest('input, select, textarea')) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); $('hPrev').click(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('hNext').click(); }
+  });
+
+  /* ---------- Vista 2D tradicional ---------- */
+  let is2D = false, dirty3d = false;
+  const GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+  const board2d = $('board2d');
+  for (let i = 0; i < 64; i++) {
+    // el lado del jugador local queda abajo
+    const r = localColor === 'w' ? Math.floor(i / 8) : 7 - Math.floor(i / 8);
+    const c = localColor === 'w' ? i % 8 : 7 - i % 8;
+    const d = document.createElement('div');
+    const sq = FILES[c] + (8 - r);
+    d.className = 'sq2 ' + ((r + c) % 2 ? 'd' : 'l');
+    d.dataset.sq = sq;
+    d.setAttribute('role', 'button');
+    d.setAttribute('aria-label', sq);
+    board2d.appendChild(d);
+  }
+  board2d.addEventListener('click', e => {
+    const cell = e.target.closest('.sq2');
+    if (cell && viewPos) { caption('Estás viendo una jugada anterior: tocá » para volver a la partida'); return; }
+    if (!cell || busy || isOver() || (vsCpu && chess.turn() === 'b')) return;
+    const sq = cell.dataset.sq;
+    if (selected && targets.some(m => m.to === sq)) { play_move(selected, sq); return; }
+    const pc = chess.get(sq);
+    if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
+    else select(null);
+  });
+  function render2D() {
+    const P = shownPos(), L = shownLast();
+    const chk = P.in_check() ? kingSquare2d(P, P.turn()) : null;
+    board2d.querySelectorAll('.sq2').forEach(cell => {
+      const sq = cell.dataset.sq, p = P.get(sq);
+      cell.classList.toggle('last', !!L && (L.from === sq || L.to === sq));
+      cell.classList.toggle('sel', selected === sq);
+      cell.classList.toggle('chk', chk === sq);
+      const m = targets.find(t => t.to === sq);
+      let html = p ? '<span class="pc ' + p.color + '">' + GLYPH[p.type] + '\uFE0E</span>' : '';
+      if (m) html += m.captured ? '<span class="ring"></span>' : '<span class="dot"></span>';
+      const bottomRank = localColor === 'w' ? '1' : '8', leftFile = localColor === 'w' ? 'a' : 'h';
+      if (sq[1] === bottomRank) html += '<span class="co f">' + sq[0] + '</span>';
+      if (sq[0] === leftFile) html += '<span class="co r">' + sq[1] + '</span>';
+      cell.innerHTML = html;
+    });
+  }
+  function kingSquare2d(P, color) {
+    const b = P.board();
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const p = b[r][c]; if (p && p.type === 'k' && p.color === color) return FILES[c] + (8 - r); }
+    return null;
+  }
+  function move2d(from, to) {
+    if (viewPos) goLive();
+    const mv = chess.move({ from, to, promotion: 'q' });
+    if (!mv) return;
+    selected = null; targets = []; lastMove = { from, to }; dirty3d = true;
+    showArrow(from, to); updateHist();
+    updateStatus(); render2D(); checkEnd();
+    if (mv.captured) caption(nameOf(mv.piece, mv.color) + ' captura ' + lc(nameOf(mv.captured, mv.color === 'w' ? 'b' : 'w')));
+    if (vsCpu && chess.turn() === 'b' && !isOver()) {
+      busy = true;
+      setTimeout(() => { busy = false; const m = pickCpu(); if (m) play_move(m.from, m.to); }, 450);
+    }
+  }
+  $('view2d').addEventListener('click', () => {
+    if (busy) return;
+    if (viewPos) goLive(true);
+    is2D = !is2D;
+    document.body.classList.toggle('mode2d', is2D);
+    $('view2d').setAttribute('aria-pressed', String(is2D));
+    $('view2d').textContent = is2D ? 'Vista 3D' : 'Vista 2D';
+    board2d.hidden = !is2D;
+    stage.classList.toggle('off', is2D);
+    select(null);
+    if (!is2D && dirty3d) { setupBoard(); dirty3d = false; drawMarks(); }
+    updateStatus(); layout();
+  });
+  $('skip').addEventListener('click', () => { skipping = true; timeScale = 6; });
+
+  /* ---------- Arranque ---------- */
+  (async () => {
+    try {
+      for (const [k, b64] of Object.entries(ASSETS)) {
+        const g = await parse(b64);
+        if (k.startsWith('anim_')) g.animations.forEach(c => clips[c.name] = c);
+        else models[k] = g;
+      }
+      computeHitTimes();
+      setupBoard();
+      boardView(); cam.pos.copy(cam.wantPos); cam.look.copy(cam.wantLook);
+      updateStatus(); drawMarks(); layout(); updateHist();
+      $('loading').hidden = true;
+      document.fonts.ready.then(layout);
+      window.__game = { chess, units, play_move: (f, t) => play_move(f, t), get busy() { return busy; } };
+    } catch (e) {
+      $('loading').textContent = 'No se pudieron cargar los modelos';
+      console.error(e);
+    }
+  })();
+
+  /* ---------- Bucle ---------- */
+  const tmp = new THREE.Vector3();
+  function tick() {
+    requestAnimationFrame(tick);
+    const real = Math.min(clock.getDelta(), 0.05);
+    const dt = real * timeScale;
+    gameTime += dt;
+    for (let i = waits.length - 1; i >= 0; i--) if (gameTime >= waits[i].at) { waits[i].r(); waits.splice(i, 1); }
+
+    const all = new Set(Object.values(units));
+    extra.forEach(u => all.add(u));
+    all.forEach(u => {
+      u.mixer.update(dt);
+      if (u.target) {
+        tmp.copy(u.target.pos).sub(u.root.position).setY(0);
+        const d = tmp.length(), step = u.target.speed * dt;
+        if (d <= step) { u.root.position.copy(u.target.pos); const r = u.target.res; u.target = null; r(); }
+        else u.root.position.addScaledVector(tmp.normalize(), step);
+      }
+      if (u.vel.lengthSq() > 0.0001) {
+        u.root.position.addScaledVector(u.vel, dt);
+        u.vel.multiplyScalar(Math.max(0, 1 - 4 * dt));
+      }
+      // girar suave hacia donde mira
+      let diff = u.face - u.root.rotation.y;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      u.root.rotation.y += diff * Math.min(1, dt * 10);
+      if (u.flash > 0) {
+        u.flash = Math.max(0, u.flash - real * 2.5);
+        u.mats.forEach(m => m.emissive && m.emissive.setRGB(u.flash * 0.9, u.flash * 0.35, u.flash * 0.1));
+      }
+      if (u.sink && !u.removed) {
+        u.root.position.y -= dt * 1.6;
+        if (u.root.position.y < -2.6) {
+          u.removed = true; removeUnit(u);
+          extra.delete(u);
+          if (u.onRemoved) u.onRemoved();
+        }
+      }
+    });
+
+    for (let i = sparks.length - 1; i >= 0; i--) {
+      const s = sparks[i];
+      s.life -= dt; s.v.y -= 9 * dt;
+      s.m.position.addScaledVector(s.v, dt);
+      s.m.material.opacity = Math.max(0, s.life * 1.6);
+      if (s.life <= 0) { scene.remove(s.m); s.m.material.dispose(); sparks.splice(i, 1); }
+    }
+
+    if (arrow3d) {
+      arrow3d.t += real;
+      arrowMat.opacity = arrow3d.t < 1.5 ? 0.85 : Math.max(0, 0.85 * (1 - (arrow3d.t - 1.5) / 0.6));
+      if (arrow3d.t > 2.1) { scene.remove(arrow3d.group); arrow3d = null; }
+    }
+    const t = clock.elapsedTime;
+    torches.forEach((l, i) => l.intensity = 1.25 + Math.sin(t * 9 + i * 2) * 0.12 + Math.sin(t * 23 + i) * 0.06);
+    if (cam.mode === 'board') boardView();
+    const k = Math.min(1, real * 3);
+    cam.pos.lerp(cam.wantPos, k); cam.look.lerp(cam.wantLook, k);
+    camera.position.copy(cam.pos);
+    if (shake > 0) {
+      camera.position.x += (Math.random() - 0.5) * shake;
+      camera.position.y += (Math.random() - 0.5) * shake;
+      shake = Math.max(0, shake - real * 1.2);
+    }
+    camera.lookAt(cam.look);
+    if (!is2D) renderer.render(scene, camera);
+  }
+  tick();
+})();
+</script>
+
+</body>
+</html>
