@@ -91,6 +91,11 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Sonido en iPhone (v1.12, en dev):** Web Audio queda mudo con el interruptor de silencio. En iOS se reproduce en bucle
   un `<audio>` HTML con silencio (`iosAudioSession()`), que pasa la sesión a «reproducción». Se pausa al ocultar la página
   o al apagar el sonido. No se pudo probar en Safari real desde la nube (no hay WebKit).
+- **Confeti y «Reducir movimiento» (v1.12, en dev):** con la opción de accesibilidad activada sale una versión suave
+  (menos papelitos, sin giros, caen despacio desde arriba del cartel, 1,4 s). Daniel tiene la opción activada en su iPhone.
+- **Diagnóstico de sonido:** agregar `?diag` a la dirección muestra el estado del audio (iOS, AudioContext, sonidos cargados,
+  audio de silencio, cortes/intentos/recreado, reducir movimiento). En iPhone el juego suena solo mientras el `<audio>` de
+  silencio está sonando: si iOS lo pausa, `keepPlay()` lo retoma y, si rechaza el play() en un toque, lo recrea.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
