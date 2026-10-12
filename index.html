@@ -242,7 +242,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.12</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.13</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -270,6 +270,7 @@
     <select id="pset">
       <option value="cburnett">Cburnett</option><option value="merida">Merida</option><option value="chessnut">Chessnut</option>
       <option value="celtic">Celtic</option><option value="fantasy">Fantasy</option>
+      <option value="anarcandy">Anarcandy</option><option value="caliente">Caliente</option><option value="california">California</option><option value="cardinal">Cardinal</option><option value="cooke">Cooke</option><option value="dubrovny">Dubrovny</option><option value="fresca">Fresca</option><option value="gioco">Gioco</option><option value="horsey">Horsey</option><option value="icpieces">Icpieces</option><option value="kiwen-suwi">Kiwen-suwi</option><option value="maestro">Maestro</option><option value="mpchess">Mpchess</option><option value="papercut">Papercut</option><option value="pirouetti">Pirouetti</option><option value="pixel">Pixel</option><option value="spatial">Spatial</option><option value="staunty">Staunty</option><option value="totoy">Totoy</option><option value="xkcd">Xkcd</option>
     </select>
   </label>
   <button id="resetv">Vista inicial</button>
@@ -354,7 +355,8 @@ const ASSETS = {
   "anim_CombatRanged": "assets/anims/CombatRanged.glb",
   "anim_Simulation": "assets/anims/Simulation.glb"
 };
-// Juegos de piezas 2D (SVG). Cburnett y Merida: GPLv2+; Chessnut: Apache 2.0; Celtic y Fantasy (Maurizio Monge): MIT. Tomados de lichess.org.
+// Juegos de piezas 2D (SVG), tomados de lichess.org. Autores y licencias en assets/pieces/LICENCIAS.md
+// (GPL, Apache, MIT, CC0, CC BY y CC BY-NC-SA: uso no comercial con atribución).
 const PIECE_SETS = {
   "cburnett": {
     "wk": "assets/pieces/cburnett/wK.svg",
@@ -425,6 +427,286 @@ const PIECE_SETS = {
     "bb": "assets/pieces/fantasy/bB.svg",
     "bn": "assets/pieces/fantasy/bN.svg",
     "bp": "assets/pieces/fantasy/bP.svg"
+  },
+  "anarcandy": {
+    "wk": "assets/pieces/anarcandy/wK.svg",
+    "wq": "assets/pieces/anarcandy/wQ.svg",
+    "wr": "assets/pieces/anarcandy/wR.svg",
+    "wb": "assets/pieces/anarcandy/wB.svg",
+    "wn": "assets/pieces/anarcandy/wN.svg",
+    "wp": "assets/pieces/anarcandy/wP.svg",
+    "bk": "assets/pieces/anarcandy/bK.svg",
+    "bq": "assets/pieces/anarcandy/bQ.svg",
+    "br": "assets/pieces/anarcandy/bR.svg",
+    "bb": "assets/pieces/anarcandy/bB.svg",
+    "bn": "assets/pieces/anarcandy/bN.svg",
+    "bp": "assets/pieces/anarcandy/bP.svg"
+  },
+  "caliente": {
+    "wk": "assets/pieces/caliente/wK.svg",
+    "wq": "assets/pieces/caliente/wQ.svg",
+    "wr": "assets/pieces/caliente/wR.svg",
+    "wb": "assets/pieces/caliente/wB.svg",
+    "wn": "assets/pieces/caliente/wN.svg",
+    "wp": "assets/pieces/caliente/wP.svg",
+    "bk": "assets/pieces/caliente/bK.svg",
+    "bq": "assets/pieces/caliente/bQ.svg",
+    "br": "assets/pieces/caliente/bR.svg",
+    "bb": "assets/pieces/caliente/bB.svg",
+    "bn": "assets/pieces/caliente/bN.svg",
+    "bp": "assets/pieces/caliente/bP.svg"
+  },
+  "california": {
+    "wk": "assets/pieces/california/wK.svg",
+    "wq": "assets/pieces/california/wQ.svg",
+    "wr": "assets/pieces/california/wR.svg",
+    "wb": "assets/pieces/california/wB.svg",
+    "wn": "assets/pieces/california/wN.svg",
+    "wp": "assets/pieces/california/wP.svg",
+    "bk": "assets/pieces/california/bK.svg",
+    "bq": "assets/pieces/california/bQ.svg",
+    "br": "assets/pieces/california/bR.svg",
+    "bb": "assets/pieces/california/bB.svg",
+    "bn": "assets/pieces/california/bN.svg",
+    "bp": "assets/pieces/california/bP.svg"
+  },
+  "cardinal": {
+    "wk": "assets/pieces/cardinal/wK.svg",
+    "wq": "assets/pieces/cardinal/wQ.svg",
+    "wr": "assets/pieces/cardinal/wR.svg",
+    "wb": "assets/pieces/cardinal/wB.svg",
+    "wn": "assets/pieces/cardinal/wN.svg",
+    "wp": "assets/pieces/cardinal/wP.svg",
+    "bk": "assets/pieces/cardinal/bK.svg",
+    "bq": "assets/pieces/cardinal/bQ.svg",
+    "br": "assets/pieces/cardinal/bR.svg",
+    "bb": "assets/pieces/cardinal/bB.svg",
+    "bn": "assets/pieces/cardinal/bN.svg",
+    "bp": "assets/pieces/cardinal/bP.svg"
+  },
+  "cooke": {
+    "wk": "assets/pieces/cooke/wK.svg",
+    "wq": "assets/pieces/cooke/wQ.svg",
+    "wr": "assets/pieces/cooke/wR.svg",
+    "wb": "assets/pieces/cooke/wB.svg",
+    "wn": "assets/pieces/cooke/wN.svg",
+    "wp": "assets/pieces/cooke/wP.svg",
+    "bk": "assets/pieces/cooke/bK.svg",
+    "bq": "assets/pieces/cooke/bQ.svg",
+    "br": "assets/pieces/cooke/bR.svg",
+    "bb": "assets/pieces/cooke/bB.svg",
+    "bn": "assets/pieces/cooke/bN.svg",
+    "bp": "assets/pieces/cooke/bP.svg"
+  },
+  "dubrovny": {
+    "wk": "assets/pieces/dubrovny/wK.svg",
+    "wq": "assets/pieces/dubrovny/wQ.svg",
+    "wr": "assets/pieces/dubrovny/wR.svg",
+    "wb": "assets/pieces/dubrovny/wB.svg",
+    "wn": "assets/pieces/dubrovny/wN.svg",
+    "wp": "assets/pieces/dubrovny/wP.svg",
+    "bk": "assets/pieces/dubrovny/bK.svg",
+    "bq": "assets/pieces/dubrovny/bQ.svg",
+    "br": "assets/pieces/dubrovny/bR.svg",
+    "bb": "assets/pieces/dubrovny/bB.svg",
+    "bn": "assets/pieces/dubrovny/bN.svg",
+    "bp": "assets/pieces/dubrovny/bP.svg"
+  },
+  "fresca": {
+    "wk": "assets/pieces/fresca/wK.svg",
+    "wq": "assets/pieces/fresca/wQ.svg",
+    "wr": "assets/pieces/fresca/wR.svg",
+    "wb": "assets/pieces/fresca/wB.svg",
+    "wn": "assets/pieces/fresca/wN.svg",
+    "wp": "assets/pieces/fresca/wP.svg",
+    "bk": "assets/pieces/fresca/bK.svg",
+    "bq": "assets/pieces/fresca/bQ.svg",
+    "br": "assets/pieces/fresca/bR.svg",
+    "bb": "assets/pieces/fresca/bB.svg",
+    "bn": "assets/pieces/fresca/bN.svg",
+    "bp": "assets/pieces/fresca/bP.svg"
+  },
+  "gioco": {
+    "wk": "assets/pieces/gioco/wK.svg",
+    "wq": "assets/pieces/gioco/wQ.svg",
+    "wr": "assets/pieces/gioco/wR.svg",
+    "wb": "assets/pieces/gioco/wB.svg",
+    "wn": "assets/pieces/gioco/wN.svg",
+    "wp": "assets/pieces/gioco/wP.svg",
+    "bk": "assets/pieces/gioco/bK.svg",
+    "bq": "assets/pieces/gioco/bQ.svg",
+    "br": "assets/pieces/gioco/bR.svg",
+    "bb": "assets/pieces/gioco/bB.svg",
+    "bn": "assets/pieces/gioco/bN.svg",
+    "bp": "assets/pieces/gioco/bP.svg"
+  },
+  "horsey": {
+    "wk": "assets/pieces/horsey/wK.svg",
+    "wq": "assets/pieces/horsey/wQ.svg",
+    "wr": "assets/pieces/horsey/wR.svg",
+    "wb": "assets/pieces/horsey/wB.svg",
+    "wn": "assets/pieces/horsey/wN.svg",
+    "wp": "assets/pieces/horsey/wP.svg",
+    "bk": "assets/pieces/horsey/bK.svg",
+    "bq": "assets/pieces/horsey/bQ.svg",
+    "br": "assets/pieces/horsey/bR.svg",
+    "bb": "assets/pieces/horsey/bB.svg",
+    "bn": "assets/pieces/horsey/bN.svg",
+    "bp": "assets/pieces/horsey/bP.svg"
+  },
+  "icpieces": {
+    "wk": "assets/pieces/icpieces/wK.svg",
+    "wq": "assets/pieces/icpieces/wQ.svg",
+    "wr": "assets/pieces/icpieces/wR.svg",
+    "wb": "assets/pieces/icpieces/wB.svg",
+    "wn": "assets/pieces/icpieces/wN.svg",
+    "wp": "assets/pieces/icpieces/wP.svg",
+    "bk": "assets/pieces/icpieces/bK.svg",
+    "bq": "assets/pieces/icpieces/bQ.svg",
+    "br": "assets/pieces/icpieces/bR.svg",
+    "bb": "assets/pieces/icpieces/bB.svg",
+    "bn": "assets/pieces/icpieces/bN.svg",
+    "bp": "assets/pieces/icpieces/bP.svg"
+  },
+  "kiwen-suwi": {
+    "wk": "assets/pieces/kiwen-suwi/wK.svg",
+    "wq": "assets/pieces/kiwen-suwi/wQ.svg",
+    "wr": "assets/pieces/kiwen-suwi/wR.svg",
+    "wb": "assets/pieces/kiwen-suwi/wB.svg",
+    "wn": "assets/pieces/kiwen-suwi/wN.svg",
+    "wp": "assets/pieces/kiwen-suwi/wP.svg",
+    "bk": "assets/pieces/kiwen-suwi/bK.svg",
+    "bq": "assets/pieces/kiwen-suwi/bQ.svg",
+    "br": "assets/pieces/kiwen-suwi/bR.svg",
+    "bb": "assets/pieces/kiwen-suwi/bB.svg",
+    "bn": "assets/pieces/kiwen-suwi/bN.svg",
+    "bp": "assets/pieces/kiwen-suwi/bP.svg"
+  },
+  "maestro": {
+    "wk": "assets/pieces/maestro/wK.svg",
+    "wq": "assets/pieces/maestro/wQ.svg",
+    "wr": "assets/pieces/maestro/wR.svg",
+    "wb": "assets/pieces/maestro/wB.svg",
+    "wn": "assets/pieces/maestro/wN.svg",
+    "wp": "assets/pieces/maestro/wP.svg",
+    "bk": "assets/pieces/maestro/bK.svg",
+    "bq": "assets/pieces/maestro/bQ.svg",
+    "br": "assets/pieces/maestro/bR.svg",
+    "bb": "assets/pieces/maestro/bB.svg",
+    "bn": "assets/pieces/maestro/bN.svg",
+    "bp": "assets/pieces/maestro/bP.svg"
+  },
+  "mpchess": {
+    "wk": "assets/pieces/mpchess/wK.svg",
+    "wq": "assets/pieces/mpchess/wQ.svg",
+    "wr": "assets/pieces/mpchess/wR.svg",
+    "wb": "assets/pieces/mpchess/wB.svg",
+    "wn": "assets/pieces/mpchess/wN.svg",
+    "wp": "assets/pieces/mpchess/wP.svg",
+    "bk": "assets/pieces/mpchess/bK.svg",
+    "bq": "assets/pieces/mpchess/bQ.svg",
+    "br": "assets/pieces/mpchess/bR.svg",
+    "bb": "assets/pieces/mpchess/bB.svg",
+    "bn": "assets/pieces/mpchess/bN.svg",
+    "bp": "assets/pieces/mpchess/bP.svg"
+  },
+  "papercut": {
+    "wk": "assets/pieces/papercut/wK.svg",
+    "wq": "assets/pieces/papercut/wQ.svg",
+    "wr": "assets/pieces/papercut/wR.svg",
+    "wb": "assets/pieces/papercut/wB.svg",
+    "wn": "assets/pieces/papercut/wN.svg",
+    "wp": "assets/pieces/papercut/wP.svg",
+    "bk": "assets/pieces/papercut/bK.svg",
+    "bq": "assets/pieces/papercut/bQ.svg",
+    "br": "assets/pieces/papercut/bR.svg",
+    "bb": "assets/pieces/papercut/bB.svg",
+    "bn": "assets/pieces/papercut/bN.svg",
+    "bp": "assets/pieces/papercut/bP.svg"
+  },
+  "pirouetti": {
+    "wk": "assets/pieces/pirouetti/wK.svg",
+    "wq": "assets/pieces/pirouetti/wQ.svg",
+    "wr": "assets/pieces/pirouetti/wR.svg",
+    "wb": "assets/pieces/pirouetti/wB.svg",
+    "wn": "assets/pieces/pirouetti/wN.svg",
+    "wp": "assets/pieces/pirouetti/wP.svg",
+    "bk": "assets/pieces/pirouetti/bK.svg",
+    "bq": "assets/pieces/pirouetti/bQ.svg",
+    "br": "assets/pieces/pirouetti/bR.svg",
+    "bb": "assets/pieces/pirouetti/bB.svg",
+    "bn": "assets/pieces/pirouetti/bN.svg",
+    "bp": "assets/pieces/pirouetti/bP.svg"
+  },
+  "pixel": {
+    "wk": "assets/pieces/pixel/wK.svg",
+    "wq": "assets/pieces/pixel/wQ.svg",
+    "wr": "assets/pieces/pixel/wR.svg",
+    "wb": "assets/pieces/pixel/wB.svg",
+    "wn": "assets/pieces/pixel/wN.svg",
+    "wp": "assets/pieces/pixel/wP.svg",
+    "bk": "assets/pieces/pixel/bK.svg",
+    "bq": "assets/pieces/pixel/bQ.svg",
+    "br": "assets/pieces/pixel/bR.svg",
+    "bb": "assets/pieces/pixel/bB.svg",
+    "bn": "assets/pieces/pixel/bN.svg",
+    "bp": "assets/pieces/pixel/bP.svg"
+  },
+  "spatial": {
+    "wk": "assets/pieces/spatial/wK.svg",
+    "wq": "assets/pieces/spatial/wQ.svg",
+    "wr": "assets/pieces/spatial/wR.svg",
+    "wb": "assets/pieces/spatial/wB.svg",
+    "wn": "assets/pieces/spatial/wN.svg",
+    "wp": "assets/pieces/spatial/wP.svg",
+    "bk": "assets/pieces/spatial/bK.svg",
+    "bq": "assets/pieces/spatial/bQ.svg",
+    "br": "assets/pieces/spatial/bR.svg",
+    "bb": "assets/pieces/spatial/bB.svg",
+    "bn": "assets/pieces/spatial/bN.svg",
+    "bp": "assets/pieces/spatial/bP.svg"
+  },
+  "staunty": {
+    "wk": "assets/pieces/staunty/wK.svg",
+    "wq": "assets/pieces/staunty/wQ.svg",
+    "wr": "assets/pieces/staunty/wR.svg",
+    "wb": "assets/pieces/staunty/wB.svg",
+    "wn": "assets/pieces/staunty/wN.svg",
+    "wp": "assets/pieces/staunty/wP.svg",
+    "bk": "assets/pieces/staunty/bK.svg",
+    "bq": "assets/pieces/staunty/bQ.svg",
+    "br": "assets/pieces/staunty/bR.svg",
+    "bb": "assets/pieces/staunty/bB.svg",
+    "bn": "assets/pieces/staunty/bN.svg",
+    "bp": "assets/pieces/staunty/bP.svg"
+  },
+  "totoy": {
+    "wk": "assets/pieces/totoy/wK.svg",
+    "wq": "assets/pieces/totoy/wQ.svg",
+    "wr": "assets/pieces/totoy/wR.svg",
+    "wb": "assets/pieces/totoy/wB.svg",
+    "wn": "assets/pieces/totoy/wN.svg",
+    "wp": "assets/pieces/totoy/wP.svg",
+    "bk": "assets/pieces/totoy/bK.svg",
+    "bq": "assets/pieces/totoy/bQ.svg",
+    "br": "assets/pieces/totoy/bR.svg",
+    "bb": "assets/pieces/totoy/bB.svg",
+    "bn": "assets/pieces/totoy/bN.svg",
+    "bp": "assets/pieces/totoy/bP.svg"
+  },
+  "xkcd": {
+    "wk": "assets/pieces/xkcd/wK.svg",
+    "wq": "assets/pieces/xkcd/wQ.svg",
+    "wr": "assets/pieces/xkcd/wR.svg",
+    "wb": "assets/pieces/xkcd/wB.svg",
+    "wn": "assets/pieces/xkcd/wN.svg",
+    "wp": "assets/pieces/xkcd/wP.svg",
+    "bk": "assets/pieces/xkcd/bK.svg",
+    "bq": "assets/pieces/xkcd/bQ.svg",
+    "br": "assets/pieces/xkcd/bR.svg",
+    "bb": "assets/pieces/xkcd/bB.svg",
+    "bn": "assets/pieces/xkcd/bN.svg",
+    "bp": "assets/pieces/xkcd/bP.svg"
   }
 };
 // Efectos de sonido (clave -> archivo). Los de batalla suenan solo en las peleas 3D. Los que terminan en número tienen variantes que se eligen al azar.
@@ -1418,13 +1700,15 @@ const SOUNDS = {
     return fallbackMove(lvl.fb);
   }
 
+  // busy bloquea el tablero mientras la CPU piensa; cpuThinking hace que en ese rato su reloj sí corra
+  let cpuThinking = false;
   async function cpuPlay(delay) {
-    busy = true;
+    busy = true; cpuThinking = true;
     const serial = gameSerial;
     await new Promise(r => setTimeout(r, delay));
     let mv = null;
     try { mv = await chooseCpuMove(); } catch (e) { console.error(e); }
-    busy = false;
+    busy = false; cpuThinking = false;
     if (serial !== gameSerial || online || !vsCpu || isOver() || !cpuTurn() || !mv) return;
     play_move(mv.from, mv.to, { promo: mv.promo });
   }
@@ -1577,7 +1861,8 @@ const SOUNDS = {
   }
 
   /* Reloj acumulado de cada jugador (todavía sin límite de tiempo).
-     Corre para el bando que mueve; se detiene durante las animaciones, los carteles y al terminar. */
+     Corre para el bando que mueve; se detiene durante las animaciones, los carteles y al terminar.
+     Mientras la CPU piensa el tablero está bloqueado (busy) pero su reloj corre (cpuThinking). */
   const times = { w: 0, b: 0 };
   let clockLast = performance.now();
   const fmt = ms => { const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60, ss = String(s % 60).padStart(2, '0');
@@ -1585,7 +1870,7 @@ const SOUNDS = {
                       return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + ss; };
   setInterval(() => {
     const now = performance.now(), dt = now - clockLast; clockLast = now;
-    if (started && !busy && !isOver() && modal.hidden && $('loading').hidden) times[chess.turn()] += dt;
+    if (started && (!busy || cpuThinking) && !isOver() && modal.hidden && $('loading').hidden) times[chess.turn()] += dt;
     $('pBot').querySelector('.clock').textContent = fmt(times[localColor]);
     $('pTop').querySelector('.clock').textContent = fmt(times[opp(localColor)]);
   }, 200);
