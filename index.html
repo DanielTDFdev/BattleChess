@@ -163,8 +163,44 @@
     .taken img { width: 18px; height: 18px; }
     .taken .grp img + img { margin-left: -10px; }
   }
+  /* Chat (solo en partidas online) */
+  body:not(.online) .onlyonline { display: none !important; }
+  #chatBtn { position: relative; margin-left: auto; font-weight: 600; }
+  #chatBadge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font: 600 12px/18px var(--body); }
+  #chat { position: fixed; z-index: 15; right: 16px; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100% - 32px)); height: min(460px, 60vh);
+    display: flex; flex-direction: column; background: #221b28; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0,0,0,.5); }
+  #chat[hidden] { display: none; }
+  #chat header { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line); font-family: var(--display); }
+  #chat header b { flex: 1; font-weight: 600; color: var(--torch); }
+  #chat header button { padding: 2px 8px; }
+  #chatLog { flex: 1; overflow-y: auto; list-style: none; margin: 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+  #chatLog li { max-width: 85%; padding: 6px 9px; border-radius: 8px; background: #2e2536; overflow-wrap: anywhere; line-height: 1.3; }
+  #chatLog li.mine { align-self: flex-end; background: #4a3a24; }
+  #chatLog li.taunt { font-style: italic; border: 1px solid var(--torch); }
+  #chatLog li .n { display: block; font-size: 12px; color: var(--muted); }
+  #chatLog li.sys { align-self: center; background: none; color: var(--muted); font-size: 13px; }
+  .phr { border-top: 1px solid var(--line); padding: 6px 10px; }
+  #phrBtn { width: 100%; }
+  #phrList { list-style: none; margin: 6px 0 0; padding: 0; max-height: 170px; overflow-y: auto; display: grid; gap: 4px; }
+  #phrList[hidden] { display: none; }
+  #phrList button { width: 100%; text-align: left; font-size: 15px; padding: 6px 8px; }
+  #phrList button:disabled { opacity: .45; cursor: default; }
+  #chatForm { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--line); }
+  #chatIn { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: #18131c; border: 1px solid var(--line); border-radius: 3px; padding: 7px 9px; }
+  #chatSend { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
+  #taunt { position: fixed; z-index: 30; left: 50%; top: 45%; transform: translate(-50%, -50%) scale(.9); width: min(560px, calc(100% - 32px)); padding: 18px 22px; text-align: center; pointer-events: none;
+    background: #f0e3c4; color: #2a1d10; border: 3px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 3px; border-radius: 6px; box-shadow: 0 20px 50px rgba(0,0,0,.6);
+    opacity: 0; transition: opacity .2s, transform .2s; }
+  #taunt.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #taunt .who { display: block; font-family: var(--display); font-size: 14px; letter-spacing: .06em; color: #7a5c43; margin-bottom: 4px; }
+  #taunt .txt { font-size: clamp(20px, 3.4vw, 28px); font-weight: 600; line-height: 1.25; }
+  @media (max-width: 760px) {
+    #chat { left: 8px; right: 8px; width: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); height: 58vh; }
+    #chatBtn { margin-left: 0; }
+  }
   /* PC: columna lateral con logo, estado y consola; el tablero ocupa el resto de la pantalla */
   body.wide #stage { left: 330px; }
+  body.wide #taunt { left: calc(330px + (100% - 330px) / 2); }
   body.wide .top { right: auto; width: 330px; padding: 18px 16px 8px; gap: 6px; }
   body.wide .top h1 img { height: 190px; }
   body.wide .top .sub { font-size: 14px; }
@@ -182,7 +218,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.3</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.4</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -193,6 +229,7 @@
     <span id="hLabel">Sin jugadas</span>
     <button id="hNext" aria-label="Jugada siguiente">›</button>
     <button id="hLast" aria-label="Volver a la partida">»</button>
+    <button id="chatBtn" class="onlyonline" aria-expanded="false" aria-controls="chat">Chat<span id="chatBadge" hidden></span></button>
     <button id="menuBtn" aria-expanded="false" aria-controls="more">Menú</button>
   </div>
   <button id="skip" hidden>Saltear pelea</button>
@@ -251,6 +288,19 @@
     <div class="mBtns"><button id="lbClose">Cerrar</button></div>
   </div>
 </div>
+<section id="chat" hidden aria-label="Chat con tu rival">
+  <header><b id="chatTitle">Chat</b><button id="chatClose" aria-label="Cerrar el chat">✕</button></header>
+  <ol id="chatLog" aria-live="polite"></ol>
+  <div class="phr">
+    <button id="phrBtn" aria-expanded="false">Frases para el rival</button>
+    <ul id="phrList" hidden></ul>
+  </div>
+  <form id="chatForm" autocomplete="off">
+    <input id="chatIn" maxlength="200" placeholder="Escribí un mensaje…" aria-label="Mensaje">
+    <button id="chatSend" class="primary">Enviar</button>
+  </form>
+</section>
+<div id="taunt" hidden aria-live="assertive"><span class="who"></span><span class="txt"></span></div>
 <div id="loading">Preparando ChaskiBoom Battle Chess…</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js"></script>
@@ -875,25 +925,44 @@ const SOUNDS = {
   /* ---------- Sonido ---------- */
   let actx = null;
   const sbuf = {}, lastPick = {};
+  // decodeAudioData con callbacks: Safari viejo (iOS < 14.5) no devuelve una promesa
+  const decode = ab => new Promise((res, rej) => { const p = actx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+  let unlocked = false;
   function audioInit() {
-    if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
-    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { return; }
-    Object.entries(SOUNDS).forEach(async ([k, src]) => {
+    // iPhone: que el juego suene aunque el interruptor de silencio esté activado (Safari 16.4+)
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+    if (!actx) {
+      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { return; }
+      Object.entries(SOUNDS).forEach(async ([k, src]) => {
+        try {
+          const ab = src.startsWith('data:') ? toBuffer(src.split(',')[1]) : await (await fetch(src)).arrayBuffer();
+          sbuf[k] = await decode(ab);
+        } catch (e) { console.warn('No se pudo cargar el sonido', k, e); }
+      });
+    }
+    if (actx.state !== 'running') actx.resume().catch(() => {});
+    // iOS solo habilita el audio si se reproduce algo dentro del mismo toque: un instante de silencio
+    if (!unlocked) {
       try {
-        const ab = src.startsWith('data:') ? toBuffer(src.split(',')[1]) : await (await fetch(src)).arrayBuffer();
-        sbuf[k] = await actx.decodeAudioData(ab);
-      } catch (e) { console.warn('No se pudo cargar el sonido', k, e); }
-    });
+        const s = actx.createBufferSource();
+        s.buffer = actx.createBuffer(1, 1, 22050);
+        s.connect(actx.destination); s.start(0);
+        unlocked = actx.state === 'running';
+      } catch (_) {}
+    }
   }
-  // El navegador solo permite sonido después de un gesto del jugador
-  window.addEventListener('pointerdown', audioInit, { capture: true });
-  window.addEventListener('keydown', audioInit, { capture: true });
+  // El navegador solo permite sonido después de un gesto del jugador. En iPhone el gesto válido es
+  // el final del toque (touchend/click), no el comienzo, por eso se escuchan todos.
+  ['pointerdown', 'touchend', 'pointerup', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, audioInit, { capture: true, passive: true }));
+  // al volver a la pestaña (o tras una llamada en iPhone) el audio queda pausado: se reanuda con el próximo toque
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && actx && actx.state !== 'running') { unlocked = false; } });
   try { if (localStorage.getItem('chaskiboom.sound') === '0') $('sound').checked = false; } catch (_) {}
   $('sound').addEventListener('change', e => { try { localStorage.setItem('chaskiboom.sound', e.target.checked ? '1' : '0'); } catch (_) {} });
 
   // sfx('sword', 3) elige una de sword1..sword3 al azar, sin repetir la última
   function sfx(base, n, opt = {}) {
     if (!actx || !$('sound').checked) return;
+    if (actx.state !== 'running') { actx.resume().catch(() => {}); }
     let key = base;
     if (n) {
       let i;
@@ -1974,6 +2043,7 @@ const SOUNDS = {
 
   function leaveOnline() {
     if (!online) return;
+    resetChat();
     online.ref.off();
     online.pres.remove().catch(() => {});
     online.pres.onDisconnect().cancel();
@@ -1986,6 +2056,7 @@ const SOUNDS = {
 
   function startOnline(id, ref) {
     leaveOnline();
+    resetChat();
     closeModal(); lobby.hidden = true;
     history.replaceState(null, '', '#' + id);
     vsCpu = false;
@@ -2082,6 +2153,8 @@ const SOUNDS = {
       online.lastIdx = g.lastMoveAt;
       db.ref('users/' + me + '/games/' + online.id + '/updatedAt').set(g.lastMoveAt).catch(() => {});
     }
+    $('chatTitle').textContent = 'Chat con ' + online.oppName;
+    onChat(g.chat);
     updatePlayers();
     notifyTurn();
   }
@@ -2130,6 +2203,129 @@ const SOUNDS = {
     document.title = mine && document.hidden ? '¡Tu turno! · ChaskiBoom' : 'ChaskiBoom Battle Chess';
   }
   document.addEventListener('visibilitychange', notifyTurn);
+
+  /* ---------- Chat y frases para el rival (solo online) ----------
+     games/<código>/chat/<clave> = { uid, name, text, kind: 'free' | 'taunt', at } */
+  const PHRASES = [
+    'Apa, tengo cena gratis',
+    '¡Cerrame la doble!',
+    'Gracias por jugar así',
+    '¿Estás jugando al ajedrez o acomodando las piezas?',
+    'Dale, maestro, que el reloj no es decorativo.',
+    'Te veo complicado, eh. ¿Querés llamar a un amigo?',
+    'Tranqui, pensalo. Total, yo tampoco sé qué hacer.',
+    'Jugá tranquilo, no hay apuro… bueno, para vos sí.',
+    '¿Ese movimiento venía con explicación o es arte abstracto?',
+    'Mirá que las piezas no se mueven por lástima, eh.',
+    'Qué linda partida… lástima que la estés jugando vos.',
+    'No te quiero apurar, pero mi abuela ya habría movido.',
+    '¿Estás calculando o esperando una señal divina?',
+    'Te juro que intento respetar tu estrategia, pero no me ayudás.',
+    'Con vos es ELO gratis, eh.',
+    'FIDE, tenemos un pequeño problema.',
+    'Jugás muy bien… cuando no movés.',
+    'Después de esta partida seguimos siendo amigos. Vos fijate.',
+    'Poné huevo, que el tablero no muerde.',
+    'Dale, papá, mové que se enfría el mate.'
+  ];
+  const TAUNT_GAP = 15000;   // una frase cada 15 segundos
+  let chatSeen = new Set(), chatLoaded = false, unread = 0, lastTaunt = 0;
+  const chatEl = $('chat');
+
+  PHRASES.forEach(p => {
+    const li = document.createElement('li'), b = document.createElement('button');
+    b.type = 'button'; b.textContent = p;
+    b.addEventListener('click', () => sendChat(p, 'taunt'));
+    li.appendChild(b); $('phrList').appendChild(li);
+  });
+  $('phrBtn').addEventListener('click', () => {
+    const open = $('phrList').hidden;
+    $('phrList').hidden = !open; $('phrBtn').setAttribute('aria-expanded', String(open));
+  });
+  function setChatOpen(open) {
+    chatEl.hidden = !open;
+    $('chatBtn').setAttribute('aria-expanded', String(open));
+    if (open) { unread = 0; updateBadge(); const log = $('chatLog'); log.scrollTop = log.scrollHeight; }
+  }
+  $('chatBtn').addEventListener('click', e => { e.stopPropagation(); setChatOpen(chatEl.hidden); });
+  $('chatClose').addEventListener('click', () => setChatOpen(false));
+  function updateBadge() { const b = $('chatBadge'); b.hidden = !unread; b.textContent = unread > 9 ? '9+' : String(unread); }
+
+  // contador de espera de las frases
+  setInterval(() => {
+    const left = Math.ceil((TAUNT_GAP - (Date.now() - lastTaunt)) / 1000);
+    const wait = left > 0;
+    $('phrList').querySelectorAll('button').forEach(b => { b.disabled = wait; });
+    $('phrBtn').textContent = wait ? 'Frases para el rival (' + left + ' s)' : 'Frases para el rival';
+  }, 250);
+
+  $('chatForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const txt = $('chatIn').value.trim();
+    if (!txt) return;
+    $('chatIn').value = '';
+    sendChat(txt, 'free');
+  });
+
+  let lastFree = 0;
+  function sendChat(text, kind) {
+    if (!online) return;
+    const now = Date.now();
+    if (kind === 'taunt') {
+      if (now - lastTaunt < TAUNT_GAP) return;
+      lastTaunt = now;
+      $('phrList').hidden = true; $('phrBtn').setAttribute('aria-expanded', 'false');
+    } else {
+      if (now - lastFree < 800) return;   // evita mandar mensajes repetidos por doble toque
+      lastFree = now;
+    }
+    const key = (online.ref.child('chat').push ? online.ref.child('chat').push().key : null) || (now.toString(36) + Math.random().toString(36).slice(2, 6));
+    online.ref.child('chat/' + key).set({ uid: me, name: online.myName || getNick() || 'Vos', text: text.slice(0, 200), kind, at: NOW() })
+      .catch(err => { console.error(err); chatSys('No se pudo enviar el mensaje.'); });
+  }
+
+  function chatSys(text) {
+    const li = document.createElement('li'); li.className = 'sys'; li.textContent = text;
+    $('chatLog').appendChild(li); $('chatLog').scrollTop = $('chatLog').scrollHeight;
+  }
+
+  function addChatLine(m) {
+    const li = document.createElement('li');
+    li.className = (m.uid === me ? 'mine ' : '') + (m.kind === 'taunt' ? 'taunt' : '');
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = m.uid === me ? 'Vos' : (m.name || 'Rival');
+    li.appendChild(n); li.appendChild(document.createTextNode(m.text || ''));
+    $('chatLog').appendChild(li);
+    $('chatLog').scrollTop = $('chatLog').scrollHeight;
+  }
+
+  let tauntTimer = null;
+  function showTaunt(m) {
+    const el = $('taunt');
+    el.querySelector('.who').textContent = m.uid === me ? 'Vos' : (m.name || 'Tu rival');
+    el.querySelector('.txt').textContent = m.text;
+    clearTimeout(tauntTimer);
+    el.hidden = false; void el.offsetWidth; el.classList.add('show');
+    tauntTimer = setTimeout(() => { el.classList.remove('show'); tauntTimer = setTimeout(() => { el.hidden = true; }, 220); }, 1000);
+    sfx('check', 0, { exact: true, vol: 0.5 });
+  }
+
+  // se llama con cada actualización de la partida
+  function onChat(chat) {
+    const entries = Object.entries(chat || {}).sort((a, b) => (a[1].at || 0) - (b[1].at || 0) || (a[0] < b[0] ? -1 : 1));
+    entries.forEach(([k, m]) => {
+      if (chatSeen.has(k) || !m || typeof m.text !== 'string') return;
+      chatSeen.add(k);
+      addChatLine(m);
+      if (!chatLoaded) return;   // al entrar a la partida, el historial se muestra sin avisos
+      if (m.kind === 'taunt') showTaunt(m);
+      if (m.uid !== me && chatEl.hidden) { unread++; updateBadge(); }
+    });
+    chatLoaded = true;
+  }
+  function resetChat() {
+    chatSeen = new Set(); chatLoaded = false; unread = 0; updateBadge();
+    $('chatLog').innerHTML = ''; setChatOpen(false);
+  }
 
   /* ---------- Arranque ---------- */
   (async () => {
@@ -2220,6 +2416,9 @@ const SOUNDS = {
       shake = Math.max(0, shake - real * 1.2);
     }
     camera.lookAt(cam.look);
+    // la niebla acompaña a la cámara: con zoom lejano (sobre todo en el celular) no tiene que oscurecer el tablero
+    const camDist = camera.position.distanceTo(cam.look);
+    scene.fog.near = camDist + 8; scene.fog.far = camDist + 40;
     if (!is2D) renderer.render(scene, camera);
   }
   tick();
