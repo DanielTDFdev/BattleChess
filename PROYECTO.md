@@ -84,6 +84,13 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   `dev/index.html` (la de dev se instala aparte, como «ChaskiBoom dev»). El service worker es *red primero*: siempre baja
   lo último y usa la caché solo sin conexión; no toca Firebase ni pedidos de audio por rangos. El artifact no lleva nada
   de esto (marcador `__PWA__` vacío).
+- **Tablero 2D incremental (v1.12, en dev):** cada casilla tiene fijos su `<img class="pc">`, la marca `.mk` (dot/ring) y las
+  coordenadas; `render2D()` solo cambia el `src` o `hidden` de lo que difiere. La pieza que vuela es la misma imagen de la casilla
+  (se mueve el nodo). Las 12 piezas se precargan con `decode()`. Antes se recreaban las 64 casillas en cada jugada o selección
+  y en iPhone el tablero parpadeaba.
+- **Sonido en iPhone (v1.12, en dev):** Web Audio queda mudo con el interruptor de silencio. En iOS se reproduce en bucle
+  un `<audio>` HTML con silencio (`iosAudioSession()`), que pasa la sesión a «reproducción». Se pausa al ocultar la página
+  o al apagar el sonido. No se pudo probar en Safari real desde la nube (no hay WebKit).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 

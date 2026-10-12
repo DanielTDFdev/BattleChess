@@ -817,9 +817,26 @@ const SOUNDS = __SOUNDS__;
   // decodeAudioData con callbacks: Safari viejo (iOS < 14.5) no devuelve una promesa
   const decode = ab => new Promise((res, rej) => { const p = actx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
   let unlocked = false;
+  // iPhone/iPad: Web Audio queda mudo con el interruptor de silencio (y a veces en la app instalada) porque iOS lo trata
+  // como sonido «ambiente». Un <audio> HTML en bucle con silencio pasa la sesión de audio a «reproducción»,
+  // y con eso también suena el Web Audio del juego. Se pausa al salir de la página.
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  let iosKeep = null;
+  function iosAudioSession() {
+    if (!IOS || !$('sound').checked) return;
+    if (!iosKeep) {
+      iosKeep = document.createElement('audio');
+      iosKeep.src = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+      iosKeep.loop = true; iosKeep.preload = 'auto';
+      iosKeep.setAttribute('playsinline', ''); iosKeep.setAttribute('x-webkit-airplay', 'deny'); iosKeep.disableRemotePlayback = true;
+    }
+    if (iosKeep.paused && !document.hidden) iosKeep.play().catch(() => {});
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden && iosKeep) iosKeep.pause(); });
   function audioInit() {
     // iPhone: que el juego suene aunque el interruptor de silencio esté activado (Safari 16.4+)
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+    iosAudioSession();
     if (!actx) {
       try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { return; }
       Object.entries(SOUNDS).forEach(async ([k, src]) => {
@@ -837,6 +854,7 @@ const SOUNDS = __SOUNDS__;
         s.buffer = actx.createBuffer(1, 1, 22050);
         s.connect(actx.destination); s.start(0);
         unlocked = actx.state === 'running';
+        if (!unlocked && actx.resume) actx.resume().then(() => { unlocked = actx.state === 'running'; }).catch(() => {});
       } catch (_) {}
     }
   }
@@ -846,7 +864,10 @@ const SOUNDS = __SOUNDS__;
   // al volver a la pestaña (o tras una llamada en iPhone) el audio queda pausado: se reanuda con el próximo toque
   document.addEventListener('visibilitychange', () => { if (!document.hidden && actx && actx.state !== 'running') { unlocked = false; } });
   try { if (localStorage.getItem('chaskiboom.sound') === '0') $('sound').checked = false; } catch (_) {}
-  $('sound').addEventListener('change', e => { try { localStorage.setItem('chaskiboom.sound', e.target.checked ? '1' : '0'); } catch (_) {} });
+  $('sound').addEventListener('change', e => {
+    try { localStorage.setItem('chaskiboom.sound', e.target.checked ? '1' : '0'); } catch (_) {}
+    if (!e.target.checked && iosKeep) iosKeep.pause();
+  });
 
   // sfx('sword', 3) elige una de sword1..sword3 al azar, sin repetir la última
   function sfx(base, n, opt = {}) {
@@ -1270,7 +1291,8 @@ const SOUNDS = __SOUNDS__;
         const n = Math.max(0, full[t] - (count[o][t] || 0));
         if (n) html += '<span class="grp">' + ('<img src="' + pieceImg(o, t) + '" alt="">').repeat(n) + '</span>';
       });
-      el.querySelector('.taken').innerHTML = html;
+      const tk = el.querySelector('.taken');
+      if (tk.dataset.html !== html) { tk.dataset.html = html; tk.innerHTML = html; }   // reescribirlo siempre hacía parpadear en iPhone
       const adv = mat[c] - mat[o];
       el.querySelector('.adv').textContent = adv > 0 ? '+' + adv : '';
       el.querySelector('.chip').style.background = is2D ? (c === 'w' ? '#fbf7ee' : '#1e1a16') : (c === 'w' ? 'var(--blue)' : 'var(--red)');
@@ -1674,11 +1696,21 @@ const SOUNDS = __SOUNDS__;
   let pieceSet = 'cburnett';
   try { const s = localStorage.getItem('chaskiboom.pieces'); if (s && PIECE_SETS[s]) pieceSet = s; } catch (_) {}
   const pieceImg = (c, t) => PIECE_SETS[pieceSet][c + t];
+  // las 12 piezas del juego elegido quedan cargadas y decodificadas de antemano (se guardan para que no se descarten)
+  const preloaded = {};
+  function preloadPieces() {
+    Object.values(PIECE_SETS[pieceSet]).forEach(src => {
+      if (preloaded[src]) return;
+      const im = new Image(); im.src = src; preloaded[src] = im;
+      if (im.decode) im.decode().catch(() => {});
+    });
+  }
+  preloadPieces();
   $('pset').value = pieceSet;
   $('pset').addEventListener('change', e => {
     pieceSet = e.target.value;
     try { localStorage.setItem('chaskiboom.pieces', pieceSet); } catch (_) {}
-    render2D(); updatePlayers();
+    preloadPieces(); render2D(); updatePlayers();
   });
   const board2d = $('board2d');
   function build2D() {
@@ -1693,6 +1725,12 @@ const SOUNDS = __SOUNDS__;
     d.dataset.sq = sq;
     d.setAttribute('role', 'button');
     d.setAttribute('aria-label', sq);
+    // contenido fijo de cada casilla: la pieza, la marca de jugada posible y las coordenadas del borde.
+    // render2D solo cambia lo que difiere (recrear las imágenes en cada jugada hacía parpadear el tablero en iPhone)
+    const bottomRank = localColor === 'w' ? '1' : '8', leftFile = localColor === 'w' ? 'a' : 'h';
+    d.innerHTML = '<img class="pc" alt="" hidden><span class="mk" hidden></span>'
+      + (sq[1] === bottomRank ? '<span class="co f">' + sq[0] + '</span>' : '')
+      + (sq[0] === leftFile ? '<span class="co r">' + sq[1] + '</span>' : '');
     board2d.appendChild(d);
   }
   }
@@ -1717,12 +1755,14 @@ const SOUNDS = __SOUNDS__;
       cell.classList.toggle('sel', selected === sq);
       cell.classList.toggle('chk', chk === sq);
       const m = targets.find(t => t.to === sq);
-      let html = p ? '<img class="pc" src="' + pieceImg(p.color, p.type) + '" alt="">' : '';
-      if (m) html += m.captured ? '<span class="ring"></span>' : '<span class="dot"></span>';
-      const bottomRank = localColor === 'w' ? '1' : '8', leftFile = localColor === 'w' ? 'a' : 'h';
-      if (sq[1] === bottomRank) html += '<span class="co f">' + sq[0] + '</span>';
-      if (sq[0] === leftFile) html += '<span class="co r">' + sq[1] + '</span>';
-      cell.innerHTML = html;
+      let img = cell.querySelector('img.pc');
+      if (!img) { img = document.createElement('img'); img.className = 'pc'; img.alt = ''; cell.prepend(img); }   // se la llevó una pieza en vuelo
+      const src = p ? pieceImg(p.color, p.type) : '';
+      if (img.dataset.src !== src) { img.dataset.src = src; if (src) img.src = src; }
+      img.hidden = !src;
+      const mk = cell.querySelector('.mk'), cls = m ? (m.captured ? 'mk ring' : 'mk dot') : 'mk';
+      if (mk.className !== cls) mk.className = cls;
+      mk.hidden = !m;
     });
   }
   function kingSquare2d(P, color) {
@@ -1736,7 +1776,9 @@ const SOUNDS = __SOUNDS__;
     const el = document.createElement('div');
     el.className = 'fly';
     Object.assign(el.style, { left: a.offsetLeft + 'px', top: a.offsetTop + 'px', width: a.offsetWidth + 'px', height: a.offsetHeight + 'px' });
-    el.innerHTML = '<img class="pc" src="' + pieceImg(color, type) + '" alt="">';
+    const own = a.querySelector('img.pc');
+    if (own && !own.hidden && own.dataset.src === pieceImg(color, type)) el.appendChild(own);   // se mueve la imagen ya dibujada
+    else el.innerHTML = '<img class="pc" src="' + pieceImg(color, type) + '" alt="">';
     board2d.appendChild(el);
     void el.offsetWidth;
     el.style.transform = 'translate(' + (b.offsetLeft - a.offsetLeft) + 'px,' + (b.offsetTop - a.offsetTop) + 'px)';
@@ -1756,8 +1798,8 @@ const SOUNDS = __SOUNDS__;
       flights.push(mv.flags.includes('k') ? ['h' + rank, 'f' + rank, mv.color, 'r'] : ['a' + rank, 'd' + rank, mv.color, 'r']);
     }
     // se muestra la posición previa sin las piezas que viajan (la capturada sigue en su casilla hasta que llega el atacante)
-    render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
     flights.forEach(f => fly(...f));
+    render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
     castleSfx(mv);
     setTimeout(() => {
       board2d.querySelectorAll('.fly').forEach(el => el.remove());
