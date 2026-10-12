@@ -65,6 +65,15 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Realtime Database `games/<código>` y `users/<uid>/games`; desafío por link `#código`, sorteo de colores,
   las blancas tocan Comenzar, jugadas en cola reproducidas con animación, tablas, abandono, revancha,
   correspondencia («Mis partidas»), chat con 20 frases para el rival (cartel 3 s desde v1.5, una cada 15 s).
+- **Avisos online sin servidor (en dev, para v1.8):** no hay notificaciones push (se descartó por complejo).
+  - Partida abierta: si la novedad llega con la página oculta, cambia el título y suena. Si llega hasta 20 s después de volver
+    (en el celular llega al reconectarse Firebase), cartel de 5 s, sonido y vibración (`news()` / `showNews()`).
+  - Otras partidas: un vigía (`watchAll` / `syncWatch`) escucha las 15 más recientes de `users/<uid>/games`
+    que no están abiertas ni terminadas, y muestra un aviso arriba (`#other`) con «Ver partida».
+    Hay que usar `off('value', cb)` para no cortar la escucha de la partida abierta. Si el jugador ya tiene apodo,
+    Firebase se conecta al arrancar para vigilar aunque juegue contra la CPU. `fbInit()` es una sola promesa
+    compartida, para no crear dos usuarios anónimos.
+  - Para probar sin Firebase real: mock en memoria de la API compat servido con `page.route` (ver historial de la sesión de v1.8).
 - **Instalable como app (PWA, v1.7):** la build genera `manifest.webmanifest` y `sw.js` al lado de `index.html` y de
   `dev/index.html` (la de dev se instala aparte, como «ChaskiBoom dev»). El service worker es *red primero*: siempre baja
   lo último y usa la caché solo sin conexión; no toca Firebase ni pedidos de audio por rangos. El artifact no lleva nada
