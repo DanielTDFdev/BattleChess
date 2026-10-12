@@ -125,7 +125,7 @@
   .sq2.last::before { background: rgba(232, 207, 106, .38); }
   .sq2.sel::before { background: rgba(227, 162, 70, .6); }
   .sq2.chk::before { background: radial-gradient(circle, rgba(212, 85, 63, .85) 0 35%, rgba(212, 85, 63, .25) 70%); }
-  .fly { position: absolute; display: grid; place-items: center; z-index: 4; pointer-events: none; transition: transform .5s cubic-bezier(.45, 0, .2, 1); }
+  .fly { position: absolute; display: grid; place-items: center; z-index: 4; pointer-events: none; transition: transform .35s cubic-bezier(.45, 0, .2, 1); }
   .sq2 img.pc, .fly img.pc { position: relative; width: 92%; height: 92%; user-select: none; -webkit-user-drag: none; }
   .sq2 .pc, .fly .pc { position: relative; font-family: var(--glyph); font-size: calc(var(--sq) * .82); line-height: 1; }
   .sq2 .pc.w, .fly .pc.w, .taken .w { color: #fbf7ee; -webkit-text-stroke: 1.2px #1b1712; }
@@ -431,6 +431,7 @@ const SOUNDS = {
   "axe2": "../assets/sounds/axe2.mp3",
   "castle": "../assets/sounds/castle.mp3",
   "check": "../assets/sounds/check.mp3",
+  "come": "../assets/sounds/come.mp3",
   "grunt_m1": "../assets/sounds/grunt_m1.mp3",
   "grunt_m2": "../assets/sounds/grunt_m2.mp3",
   "grunt_m3": "../assets/sounds/grunt_m3.mp3",
@@ -1015,7 +1016,10 @@ const SOUNDS = {
     }
   }
   // el enroque tiene su propio sonido; el resto, según el color que movió
-  const moveSfx = (color, mv) => mv && /[kq]/.test(mv.flags) ? sfx('castle', 0, { exact: true }) : sfx(color === 'w' ? 'move_w' : 'move_b', 0, { exact: true });
+  // sonido al apoyar la pieza: «come» si capturó; el enroque suena al empezar (castleSfx), no al apoyar
+  const isCastle = mv => mv && /[kq]/.test(mv.flags);
+  const castleSfx = mv => { if (isCastle(mv)) sfx('castle', 0, { exact: true }); };
+  const moveSfx = (color, mv) => isCastle(mv) ? null : mv && mv.captured ? sfx('come', 0, { exact: true }) : sfx(color === 'w' ? 'move_w' : 'move_b', 0, { exact: true });
 
   /* ---------- La pelea, en el tablero ---------- */
   async function strike(u, clip) {
@@ -1162,6 +1166,7 @@ const SOUNDS = {
       const rank = from[1];
       const [rf, rt] = mv.flags.includes('k') ? ['h' + rank, 'f' + rank] : ['a' + rank, 'd' + rank];
       const R = units[rf]; delete units[rf];
+      castleSfx(mv);
       moves.push(walkHome(R, rt));
       units[rt] = R; R.sq = rt;
     }
@@ -1830,6 +1835,7 @@ const SOUNDS = {
     // se muestra la posición previa sin las piezas que viajan (la capturada sigue en su casilla hasta que llega el atacante)
     render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
     flights.forEach(f => fly(...f));
+    castleSfx(mv);
     setTimeout(() => {
       board2d.querySelectorAll('.fly').forEach(el => el.remove());
       busy = false;
@@ -1838,7 +1844,7 @@ const SOUNDS = {
       updateStatus(); render2D(); checkEnd();
       if (mv.captured) caption(nameOf(mv.piece, mv.color) + ' captura ' + lc(nameOf(mv.captured, opp(mv.color))));
       afterMove();
-    }, 520);
+    }, 370);
   }
   $('view2d').addEventListener('click', () => {
     if (busy) return;
