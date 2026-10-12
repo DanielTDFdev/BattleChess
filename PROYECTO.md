@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.20** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.21** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.20 → v1.21…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.21 → v1.22…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -130,7 +130,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Con un premove anotado, cualquier toque lo cancela. `tryPremove()` se llama en `afterMove()` (online, cuando la
   cola de jugadas recibidas queda vacía): si es legal se juega, si no se avisa y se descarta. Se limpia al empezar
   o terminar la partida. No hay premoves entre dos jugadores en el mismo dispositivo.
-- **Análisis de la partida (v1.21, en dev):** botón Analizar en el cartel de fin y en el Menú («Analizar partida» /
+- **Análisis de la partida (v1.21):** botón Analizar en el cartel de fin y en el Menú («Analizar partida» /
   «Ver análisis»). Stockfish a nivel 20 evalúa cada posición (`go depth 13 movetime 600`). Precisión por jugador con
   la fórmula de lichess; clasificación por probabilidad de ganar perdida (mejor/excelente <2/buena <5/imprecisión <10/
   error <20/metida de pata). Barra de evaluación (`#evalBar`, `body.analyzed`) al costado del tablero, que sigue a
@@ -152,6 +152,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.21:** análisis de la partida con Stockfish: precisión, clasificación con nombres propios, barra de evaluación,
+  flecha verde con la mejor jugada y gráfico de la partida.
 - **v1.20:** premoves contra la CPU y online (2D y 3D).
 - **v1.19:** sin el «pin» de aviso cuando el rival juega (suena solo el movimiento).
 - **v1.18:** el service worker nuevo ya no reemplaza al viejo a mitad de carga (en iPhone la carga quedaba trabada),
