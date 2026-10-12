@@ -1,0 +1,52 @@
+{
+  "rules": {
+    "games": {
+      "$g": {
+        ".read": "auth != null",
+        "host": {
+          ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid"
+        },
+        "createdAt": {
+          ".write": "auth != null && !data.exists()"
+        },
+        "guest": {
+          ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid && root.child('games/' + $g + '/host/uid').val() !== auth.uid"
+        },
+        "white": {
+          ".write": "auth != null && !data.exists() && newData.parent().child('guest/uid').val() === auth.uid"
+        },
+        "black": {
+          ".write": "auth != null && !data.exists() && newData.parent().child('guest/uid').val() === auth.uid"
+        },
+        "turn": {
+          ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid || (!data.exists() && newData.parent().child('guest/uid').val() === auth.uid))"
+        },
+        "ply": {
+          ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid || (!data.exists() && newData.parent().child('guest/uid').val() === auth.uid))"
+        },
+        "started": {
+          ".write": "auth != null && root.child('games/' + $g + '/white').val() === auth.uid"
+        },
+        "moves": {
+          "$n": {
+            ".write": "auth != null && !data.exists() && ((root.child('games/' + $g + '/turn').val() === 'w' && root.child('games/' + $g + '/white').val() === auth.uid) || (root.child('games/' + $g + '/turn').val() === 'b' && root.child('games/' + $g + '/black').val() === auth.uid))"
+          }
+        },
+        "online": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        },
+        "$other": {
+          ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid || root.child('games/' + $g + '/host/uid').val() === auth.uid)"
+        }
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}
