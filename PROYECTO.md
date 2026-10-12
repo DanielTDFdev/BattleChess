@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.18** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.19** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.18 → v1.19…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.19 → v1.20…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -120,7 +120,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Aviso de mensajes del chat (v1.18):** con el chat cerrado, un mensaje escrito del rival muestra 4 s abajo
   `#chatToast` («Pedro: …», tocarlo abre el chat) con un sonido suave; con la página oculta el título dice
   «💬 Pedro te escribió» (`chatAway` en `notifyTurn`). Las frases siguen con su cartel grande y el contador sigue igual.
-- **Sonido de aviso (v1.19, en dev):** el «pin» de los avisos es el sonido de jaque (`check`). Ya no suena cuando el rival
+- **Sonido de aviso (v1.19):** el «pin» de los avisos es el sonido de jaque (`check`). Ya no suena cuando el rival
   juega (`news(..., { quiet: true })`), porque la jugada tiene su propio sonido de movimiento: solo cambia el título
   y, al volver, se muestra el cartel sin sonido. En otras partidas la jugada del rival suena con la versión suave.
   Sigue sonando para desafío aceptado, partida comenzada, tablas, revancha y frases.
@@ -137,6 +137,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.19:** sin el «pin» de aviso cuando el rival juega (suena solo el movimiento).
 - **v1.18:** el service worker nuevo ya no reemplaza al viejo a mitad de carga (en iPhone la carga quedaba trabada),
   vigía de carga con Reintentar, y aviso de los mensajes del chat con el chat cerrado.
 - **v1.17:** Contra la CPU, Online y Nueva partida deshabilitados mientras hay una partida en curso.
