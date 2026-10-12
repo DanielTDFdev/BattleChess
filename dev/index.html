@@ -875,25 +875,44 @@ const SOUNDS = {
   /* ---------- Sonido ---------- */
   let actx = null;
   const sbuf = {}, lastPick = {};
+  // decodeAudioData con callbacks: Safari viejo (iOS < 14.5) no devuelve una promesa
+  const decode = ab => new Promise((res, rej) => { const p = actx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+  let unlocked = false;
   function audioInit() {
-    if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
-    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { return; }
-    Object.entries(SOUNDS).forEach(async ([k, src]) => {
+    // iPhone: que el juego suene aunque el interruptor de silencio esté activado (Safari 16.4+)
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+    if (!actx) {
+      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { return; }
+      Object.entries(SOUNDS).forEach(async ([k, src]) => {
+        try {
+          const ab = src.startsWith('data:') ? toBuffer(src.split(',')[1]) : await (await fetch(src)).arrayBuffer();
+          sbuf[k] = await decode(ab);
+        } catch (e) { console.warn('No se pudo cargar el sonido', k, e); }
+      });
+    }
+    if (actx.state !== 'running') actx.resume().catch(() => {});
+    // iOS solo habilita el audio si se reproduce algo dentro del mismo toque: un instante de silencio
+    if (!unlocked) {
       try {
-        const ab = src.startsWith('data:') ? toBuffer(src.split(',')[1]) : await (await fetch(src)).arrayBuffer();
-        sbuf[k] = await actx.decodeAudioData(ab);
-      } catch (e) { console.warn('No se pudo cargar el sonido', k, e); }
-    });
+        const s = actx.createBufferSource();
+        s.buffer = actx.createBuffer(1, 1, 22050);
+        s.connect(actx.destination); s.start(0);
+        unlocked = actx.state === 'running';
+      } catch (_) {}
+    }
   }
-  // El navegador solo permite sonido después de un gesto del jugador
-  window.addEventListener('pointerdown', audioInit, { capture: true });
-  window.addEventListener('keydown', audioInit, { capture: true });
+  // El navegador solo permite sonido después de un gesto del jugador. En iPhone el gesto válido es
+  // el final del toque (touchend/click), no el comienzo, por eso se escuchan todos.
+  ['pointerdown', 'touchend', 'pointerup', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, audioInit, { capture: true, passive: true }));
+  // al volver a la pestaña (o tras una llamada en iPhone) el audio queda pausado: se reanuda con el próximo toque
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && actx && actx.state !== 'running') { unlocked = false; } });
   try { if (localStorage.getItem('chaskiboom.sound') === '0') $('sound').checked = false; } catch (_) {}
   $('sound').addEventListener('change', e => { try { localStorage.setItem('chaskiboom.sound', e.target.checked ? '1' : '0'); } catch (_) {} });
 
   // sfx('sword', 3) elige una de sword1..sword3 al azar, sin repetir la última
   function sfx(base, n, opt = {}) {
     if (!actx || !$('sound').checked) return;
+    if (actx.state !== 'running') { actx.resume().catch(() => {}); }
     let key = base;
     if (n) {
       let i;
