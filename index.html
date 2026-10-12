@@ -164,7 +164,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1>ChaskiBoom Battle Chess</h1>
-  <p class="sub">© 2026 by Daniel Camargo</p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.0</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -1225,6 +1225,14 @@ const SOUNDS = {
     drawColors();
   });
 
+  // Pantalla inicial: elegir cómo jugar
+  function chooseMode() {
+    showModal('ChaskiBoom Battle Chess', '¿Cómo querés jugar?', [
+      { label: 'Contra la CPU', primary: true, onClick: () => { setMode(true); drawColors(); } },
+      { label: 'Online', onClick: openLobby }
+    ]);
+  }
+
   // Sorteo de colores al comenzar cada partida
   let started = false;
   function drawColors() {
@@ -1690,7 +1698,10 @@ const SOUNDS = {
     try { await fbInit(); acctUI(); listGames(); }
     catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.'; }
   }
-  $('lbClose').addEventListener('click', () => { lobby.hidden = true; });
+  $('lbClose').addEventListener('click', () => {
+    lobby.hidden = true;
+    if (!online && !started && !ended && modal.hidden) chooseMode();   // si todavía no hay partida, vuelve a la elección inicial
+  });
 
   async function listGames() {
     const ul = $('lbGames');
@@ -1968,7 +1979,7 @@ const SOUNDS = {
       updateStatus(); drawMarks(); layout(); updateHist();
       $('loading').hidden = true;
       const code = location.hash.replace('#', '');
-      if (code && HAS_FB) enterOnline(code); else drawColors();
+      if (code && HAS_FB) enterOnline(code); else chooseMode();
       document.fonts.ready.then(layout);
       window.__game = { chess, units, get online() { return online; }, play_move: (f, t) => play_move(f, t), get busy() { return busy; }, get sounds() { return Object.keys(sbuf).length; } };
     } catch (e) {
