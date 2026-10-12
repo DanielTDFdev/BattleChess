@@ -85,6 +85,7 @@
   .hist { display: flex; align-items: center; gap: 4px; width: 100%; }
   .hist button { min-width: 36px; padding: 4px 8px; font-size: 20px; line-height: 1; }
   .hist button:disabled { opacity: .35; cursor: default; }
+  #mcpu:disabled, #mon:disabled, #newg:disabled { opacity: .4; cursor: not-allowed; }
   #hLabel { min-width: 0; flex: 1; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body.reviewing #hLabel { color: var(--torch); }
   #modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(10, 7, 12, .62); z-index: 20; }
@@ -257,7 +258,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.16</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.17</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -1736,7 +1737,17 @@ const SOUNDS = {
   }
 
   const VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  // con una partida en curso no se puede cambiar de modo ni empezar otra: primero hay que terminarla o abandonarla
+  const inGame = () => started && !isOver();
+  function lockGameButtons() {
+    const lock = inGame();
+    ['mcpu', 'mon', 'newg'].forEach(id => {
+      $(id).disabled = lock;
+      $(id).title = lock ? 'Partida en curso: terminala o abandonala para empezar otra' : '';
+    });
+  }
   function updateStatus(moving) {
+    lockGameButtons();
     const st = $('status');
     const turn = chess.turn(), side = sidePl(turn), other = sidePl(turn === 'w' ? 'b' : 'w');
     st.className = turn === 'w' ? '' : 'b';
@@ -1833,14 +1844,14 @@ const SOUNDS = {
     updateStatus();
   }
   $('mcpu').addEventListener('click', () => {
-    if (busy || (!online && vsCpu)) return;
+    if (busy || inGame() || (!online && vsCpu)) return;
     leaveOnline();
     setMode(true);
     $('newg').click();
   });
-  $('mon').addEventListener('click', () => openLobby());
+  $('mon').addEventListener('click', () => { if (!inGame()) openLobby(); });
   $('newg').addEventListener('click', () => {
-    if (busy) return;
+    if (busy || inGame()) return;
     if (online) { openLobby(); return; }
     // con una partida en curso (o terminada), Cancelar vuelve a ella tal como estaba
     drawColors(started ? null : chooseMode);
@@ -2960,7 +2971,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página y cada 15 minutos: la app instalada en el
      celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261012205122';
+  const BUILD = '20261012211850';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
