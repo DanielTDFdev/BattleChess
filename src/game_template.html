@@ -1969,7 +1969,7 @@ const SOUNDS = __SOUNDS__;
     online.g = g;
     // ¿todavía no entró el rival?
     if (!g.white) {
-      if (g.host.uid === me) showWaiting(online.id);
+      if (g.host.uid === me) { showWaiting(online.id); online.waiting = true; }
       caption('Esperando que tu amigo entre a la partida');
       return;
     }
@@ -1980,6 +1980,7 @@ const SOUNDS = __SOUNDS__;
     online.oppName = host ? g.guest.name : g.host.name;
     online.oppUid = host ? g.guest.uid : g.host.uid;
     const moves = g.moves ? Object.keys(g.moves).map(Number).sort((a, b) => a - b).map(k => g.moves[k]) : [];
+    if (online.waiting) { online.waiting = false; news('¡' + online.oppName + ' aceptó el desafío!', { sound: true }); }
 
     // Primera vez: se arma la posición de golpe, sin animaciones (también al retomar una partida)
     if (!online.loaded) {
@@ -2004,15 +2005,20 @@ const SOUNDS = __SOUNDS__;
         [{ label: 'Comenzar', primary: true, onClick: () => { audioInit(); online.ref.update({ started: true }); } }]);
       if (color === 'b') caption('Te tocaron ' + art('b') + '. Esperando que ' + online.oppName + ' toque Comenzar');
     }
+    if (g.started && !started && online.loaded && color === 'b') news(online.oppName + ' comenzó la partida');
     if (g.started && !started) { started = true; clockLast = performance.now(); if (!modal.hidden && $('mTitle').textContent.startsWith('Partida contra')) closeModal(); updateStatus(); }
 
     // Jugadas nuevas del rival: a la cola, se reproducen con animación
-    for (let i = online.applied + queue.length; i < moves.length; i++) queue.push(moves[i]);
+    const before = online.applied + queue.length;
+    for (let i = before; i < moves.length; i++) queue.push(moves[i]);
+    // la última jugada es del rival (las jugadas pares son de las blancas)
+    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó');
     pumpQueue();
 
     // Ofertas de tablas
     if (g.drawOffer && g.drawOffer !== localColor && !online.offerShown && !ended) {
       online.offerShown = true;
+      news(online.oppName + ' ofrece tablas', { banner: false });
       showModal('Oferta de tablas', online.oppName + ' ofrece tablas. ¿Aceptás?', [
         { label: 'Aceptar tablas', primary: true, onClick: () => endGame('draw', 'agreed') },
         { label: 'Rechazar', onClick: () => online && online.ref.update({ drawOffer: null, drawDeclined: NOW() }) }
@@ -2028,6 +2034,7 @@ const SOUNDS = __SOUNDS__;
     // Revancha propuesta por el rival
     if (g.rematch && g.rematch.by !== me && !online.rematchShown) {
       online.rematchShown = true;
+      news(online.oppName + ' propone la revancha', { banner: false });
       showModal('Revancha', online.oppName + ' propone la revancha.', [
         { label: 'Aceptar', primary: true, onClick: () => enterOnline(g.rematch.id) },
         { label: 'No, gracias' }
@@ -2088,12 +2095,36 @@ const SOUNDS = __SOUNDS__;
     } catch (e) { console.error(e); caption('No se pudo crear la revancha'); }
   }
 
-  // Aviso en la pestaña cuando es tu turno y estás mirando otra cosa
+  // Aviso en la pestaña cuando es tu turno (o pasó algo) y estás mirando otra cosa
   function notifyTurn() {
     const mine = online && started && !ended && chess.turn() === localColor;
-    document.title = mine && document.hidden ? '¡Tu turno! · ChaskiBoom' : 'ChaskiBoom Battle Chess';
+    document.title = document.hidden && awayNews ? '⚔ ' + awayNews + ' · ChaskiBoom'
+      : mine && document.hidden ? '¡Tu turno! · ChaskiBoom' : 'ChaskiBoom Battle Chess';
   }
   document.addEventListener('visibilitychange', notifyTurn);
+
+  /* --- Novedades de la partida online mientras la página estaba minimizada, en otra pestaña o con el celular bloqueado ---
+     En PC llegan aunque la pestaña esté oculta: cambia el título y suena. En el celular la página se congela y las
+     novedades llegan recién al volver (cuando Firebase se reconecta), así que lo que llega hasta 20 s después de
+     volver también se avisa con un cartel, sonido y vibración. */
+  let hiddenAt = document.hidden ? performance.now() : 0, backAt = -1e9, awayNews = null, awayBanner = false;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = performance.now(); return; }
+    if (performance.now() - hiddenAt > 3000) backAt = performance.now();   // volvió después de un rato afuera
+    if (awayNews) { const t = awayNews, b = awayBanner; awayNews = null; showNews(t, b); }
+  });
+  // opt.banner: false = solo título, sonido y vibración (cuando ya hay un cartel con botones); opt.sound: suena aunque esté mirando
+  function news(text, opt = {}) {
+    const banner = opt.banner !== false;
+    if (document.hidden) { awayNews = text; awayBanner = banner; notifyTurn(); sfx('check', 0, { exact: true }); return; }
+    if (performance.now() - backAt < 20000) { backAt = -1e9; showNews(text, banner); }
+    else if (opt.sound) sfx('check', 0, { exact: true });
+  }
+  function showNews(text, banner) {
+    if (banner) showTaunt({ name: 'ChaskiBoom', text }, { ms: 5000, vol: 1 });
+    else sfx('check', 0, { exact: true });
+    try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (_) {}
+  }
 
   /* ---------- Chat y frases para el rival (solo online) ----------
      games/<código>/chat/<clave> = { uid, name, text, kind: 'free' | 'taunt', at } */
@@ -2190,14 +2221,14 @@ const SOUNDS = __SOUNDS__;
   }
 
   let tauntTimer = null;
-  function showTaunt(m) {
+  function showTaunt(m, opt = {}) {
     const el = $('taunt');
     el.querySelector('.who').textContent = m.uid === me ? 'Vos' : (m.name || 'Tu rival');
     el.querySelector('.txt').textContent = m.text;
     clearTimeout(tauntTimer);
     el.hidden = false; void el.offsetWidth; el.classList.add('show');
-    tauntTimer = setTimeout(() => { el.classList.remove('show'); tauntTimer = setTimeout(() => { el.hidden = true; }, 220); }, 3000);
-    sfx('check', 0, { exact: true, vol: 0.5 });
+    tauntTimer = setTimeout(() => { el.classList.remove('show'); tauntTimer = setTimeout(() => { el.hidden = true; }, 220); }, opt.ms || 3000);
+    sfx('check', 0, { exact: true, vol: opt.vol || 0.5 });
   }
 
   // se llama con cada actualización de la partida
