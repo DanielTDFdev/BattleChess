@@ -1698,7 +1698,11 @@ const SOUNDS = __SOUNDS__;
   $('view2d').addEventListener('click', () => {
     if (busy) return;
     if (viewPos) goLive(true);
-    is2D = !is2D;
+    setView(!is2D);
+  });
+  // Cambia entre la vista 2D clásica y la 3D (la 2D es la de arranque desde v1.7)
+  function setView(v) {
+    is2D = v;
     document.body.classList.toggle('mode2d', is2D);
     $('view2d').setAttribute('aria-pressed', String(is2D));
     $('view2d').textContent = is2D ? 'Vista 3D' : 'Vista 2D';
@@ -1707,7 +1711,7 @@ const SOUNDS = __SOUNDS__;
     select(null);
     if (!is2D && dirty3d) { setupBoard(); dirty3d = false; drawMarks(); }
     updateStatus(); layout();
-  });
+  }
   $('skip').addEventListener('click', () => { skipping = true; timeScale = 6; });
   // Menú plegable del celular: se cierra al tocar una acción o fuera de él
   const bar = document.querySelector('.bar');
@@ -2225,7 +2229,8 @@ const SOUNDS = __SOUNDS__;
       computeHitTimes();
       setupBoard();
       boardView(); cam.pos.copy(cam.wantPos); cam.look.copy(cam.wantLook);
-      updateStatus(); drawMarks(); layout(); updateHist();
+      setView(true);                       // arranca en 2D; el botón «Vista 3D» pasa a las peleas
+      drawMarks(); updateHist();
       $('loading').hidden = true;
       const code = location.hash.replace('#', '');
       if (code && HAS_FB) enterOnline(code); else chooseMode();
