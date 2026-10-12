@@ -15,7 +15,8 @@ os.chdir(ROOT)
 
 MODELS = ['Rogue', 'Knight', 'Mage', 'Barbarian', 'sword_1handed', 'shield_badge_color', 'dagger', 'staff', 'wand', 'axe_2handed']
 ANIMS = ['General', 'MovementBasic', 'MovementAdvanced', 'CombatMelee', 'CombatRanged', 'Simulation']
-PIECE_SETS = ['cburnett', 'merida', 'chessnut', 'celtic', 'fantasy']
+PIECE_SETS = ['cburnett', 'merida', 'chessnut', 'celtic', 'fantasy',
+              'anarcandy', 'caliente', 'california', 'cardinal', 'cooke', 'dubrovny', 'fresca', 'gioco', 'horsey', 'icpieces', 'kiwen-suwi', 'maestro', 'mpchess', 'papercut', 'pirouetti', 'pixel', 'spatial', 'staunty', 'totoy', 'xkcd']
 # Instalable como app (PWA): íconos, manifest y service worker. Rutas relativas a la carpeta de la página.
 PWA = '''<meta name="theme-color" content="#19141d">
 <meta name="description" content="Ajedrez con batallas en 3D entre las piezas.">

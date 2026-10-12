@@ -22,7 +22,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 | `index.html` | Página principal (generada, no editar a mano) |
 | `dev/index.html` | Copia de pruebas (generada) |
 | `assets/models`, `assets/anims` | Personajes, armas y animaciones KayKit (.glb) |
-| `assets/pieces/<juego>/` | Piezas 2D en SVG (cburnett, merida, chessnut, celtic, fantasy) |
+| `assets/pieces/<juego>/` | Piezas 2D en SVG: 25 juegos de lichess (desde v1.13 se sumaron 20 a cburnett, merida, chessnut, celtic y fantasy). Autores y licencias en `assets/pieces/LICENCIAS.md`. La lista está en `PIECE_SETS` de `tools/build.py` y en el `<select id="pset">` del template |
 | `assets/sounds/` | Sonidos convertidos a MP3 mono (los originales de Daniel están en `/sonidos`) |
 | `assets/engine/` | Stockfish 18 lite (Stockfish.js, GPLv3) + licencia |
 | `assets/logo.webp` | Logo con transparencia real (recortado de `logo_chaskiboom.jpg`) |
