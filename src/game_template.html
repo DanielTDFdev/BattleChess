@@ -845,7 +845,8 @@ const SOUNDS = __SOUNDS__;
         + '\nsonidos cargados: ' + Object.keys(sbuf).length + '/' + Object.keys(SOUNDS).length
         + '\naudio silencio: ' + (iosKeep ? (iosKeep.paused ? 'pausado' : 'sonando') + (iosKeep.error ? ' error ' + iosKeep.error.code : '') : '—')
         + ' · casilla Sonido: ' + $('sound').checked
-        + '\nSW: ' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'activo' : 'no') + ' · ' + $('ver').textContent;
+        + '\nSW: ' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'activo' : 'no') + ' · ' + $('ver').textContent
+        + '\nreducir movimiento: ' + matchMedia('(prefers-reduced-motion: reduce)').matches;
     }, 500);
   }
   function audioInit() {
