@@ -38,7 +38,7 @@
   #status.alert { color: #ffd0c4; }
   #caption { margin: 0; font-size: clamp(15px, 2.3vw, 19px); min-height: 1.3em; padding: 2px 12px; border-radius: 3px; background: rgba(20, 15, 24, .7); }
   #caption:empty { visibility: hidden; }
-  .bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(820px, calc(100% - 32px)); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; backdrop-filter: blur(6px); }
+  .bar { z-index: 10; position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(820px, calc(100% - 32px)); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; backdrop-filter: blur(6px); }
   .seg { display: flex; }
   .seg button { border-radius: 0; }
   .seg button:first-child { border-radius: 3px 0 0 3px; }
@@ -50,6 +50,8 @@
   label.chk { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
   input[type=checkbox] { accent-color: var(--torch); width: 17px; height: 17px; }
   #skip { margin-left: auto; }
+  .more { display: contents; }
+  #menuBtn { display: none; }
   #newg { border-color: var(--torch); color: var(--torch); font-weight: 600; }
   .caps { width: 100%; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--muted); }
   .caps b { font-weight: 600; }
@@ -117,7 +119,9 @@
   .pbar { position: fixed; box-sizing: border-box; height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; pointer-events: none; }
   .pbar.turn { border-color: var(--torch); box-shadow: 0 0 0 1px var(--torch); }
   .pbar .chip { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.5); }
-  .pbar .pname { font-family: var(--display); font-weight: 600; font-size: 15px; white-space: nowrap; }
+  .pbar .pname { font-family: var(--display); font-weight: 600; font-size: 15px; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
+  .pbar .clock, .pbar .chip, .pbar .net { flex: none; }
+  .taken { flex: 0 1 auto; }
   .taken { display: flex; align-items: center; min-width: 0; overflow: hidden; font-family: var(--glyph); font-size: 21px; line-height: 1; background: #d9c9a3; border-radius: 3px; padding: 2px 6px 1px; }
   .taken:empty { display: none; }
   .taken .grp { display: inline-flex; margin-right: 6px; }
@@ -128,6 +132,27 @@
   .pbar .adv { margin-left: auto; padding-left: 8px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
   body:not(.mode2d) .only2d { display: none; }
   body.mode2d .hint, body.mode2d #resetv, body.mode2d label[for-3d] { display: none; }
+  /* Celular: la consola se pliega a una fila (historial + Menú) y el resto se despliega hacia arriba */
+  @media (max-width: 760px) {
+    .bar { padding: 8px; gap: 8px; }
+    #menuBtn { display: inline-block; margin-left: 4px; font-weight: 600; }
+    .bar.open #menuBtn { background: var(--torch); color: #1d140c; border-color: var(--torch); }
+    #skip { width: 100%; margin: 0; }
+    .more { display: none; }
+    .bar.open .more { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; position: absolute; left: 0; right: 0; bottom: calc(100% + 8px);
+      background: #221b28; border: 1px solid var(--line); border-radius: 6px; padding: 12px; box-shadow: 0 -12px 30px rgba(0,0,0,.45); max-height: 60vh; overflow-y: auto; }
+    .more .caps .hint { margin-left: 0; }
+    .top { padding: 8px 12px; gap: 2px; }
+    .top h1 { font-size: 19px; }
+    .top .sub { font-size: 12px; margin: 0; }
+    #status { font-size: 14px; padding: 2px 10px; }
+    #caption { font-size: 14px; }
+    .pbar { height: 32px; gap: 7px; padding: 0 8px; }
+    .pbar .pname { font-size: 13px; }
+    .pbar .clock { font-size: 13px; min-width: 50px; padding: 1px 6px; }
+    .taken img { width: 18px; height: 18px; }
+    .taken .grp img + img { margin-left: -10px; }
+  }
 </style>
 
 </head>
@@ -147,7 +172,10 @@
     <span id="hLabel">Sin jugadas</span>
     <button id="hNext" aria-label="Jugada siguiente">›</button>
     <button id="hLast" aria-label="Volver a la partida">»</button>
+    <button id="menuBtn" aria-expanded="false" aria-controls="more">Menú</button>
   </div>
+  <button id="skip" hidden>Saltear pelea</button>
+  <div class="more" id="more">
   <div class="seg" role="group" aria-label="Modo de juego">
     <button id="mcpu" aria-pressed="true">Contra la CPU</button>
     <button id="mon" aria-pressed="false">Online</button>
@@ -155,7 +183,6 @@
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
   <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
-  <button id="skip" hidden>Saltear pelea</button>
   <button id="view2d" aria-pressed="false">Vista 2D</button>
   <label class="chk only2d" for="pset">Piezas
     <select id="pset">
@@ -169,6 +196,7 @@
   <button id="newg">Nueva partida</button>
   <div class="caps">
     <span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span>
+  </div>
   </div>
 </div>
 <div class="pbar" id="pTop"><span class="chip"></span><span class="pname"></span><span class="net" hidden title="Conexión del rival"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
@@ -1550,6 +1578,19 @@ const SOUNDS = {
     updateStatus(); layout();
   });
   $('skip').addEventListener('click', () => { skipping = true; timeScale = 6; });
+  // Menú plegable del celular: se cierra al tocar una acción o fuera de él
+  const bar = document.querySelector('.bar');
+  $('menuBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    const open = bar.classList.toggle('open');
+    $('menuBtn').setAttribute('aria-expanded', String(open));
+  });
+  $('more').addEventListener('click', e => {
+    if (e.target.closest('button')) { bar.classList.remove('open'); $('menuBtn').setAttribute('aria-expanded', 'false'); }
+  });
+  document.addEventListener('pointerdown', e => {
+    if (bar.classList.contains('open') && !bar.contains(e.target)) { bar.classList.remove('open'); $('menuBtn').setAttribute('aria-expanded', 'false'); }
+  });
 
   /* ---------- Online (Firebase) ----------
      Cada partida vive en games/<código>. Las jugadas se agregan en orden (moves/0, moves/1, …);
