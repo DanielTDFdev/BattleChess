@@ -117,6 +117,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   al actualizar a v1.17). Ahora el nuevo espera; `doUpdate()` lo activa con `postMessage('skipWaiting')` y recarga
   en `controllerchange` (tope 6 s). Vigía de carga: si no avanza en 20 s recarga sola una vez (sessionStorage
   `chaskiboom.stall`); si se repite, `loadFailed()` muestra «Reintentar».
+- **Aviso de mensajes del chat (v1.18, en dev):** con el chat cerrado, un mensaje escrito del rival muestra 4 s abajo
+  `#chatToast` («Pedro: …», tocarlo abre el chat) con un sonido suave; con la página oculta el título dice
+  «💬 Pedro te escribió» (`chatAway` en `notifyTurn`). Las frases siguen con su cartel grande y el contador sigue igual.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
