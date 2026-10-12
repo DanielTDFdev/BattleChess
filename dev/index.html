@@ -2239,6 +2239,9 @@ const SOUNDS = {
       shake = Math.max(0, shake - real * 1.2);
     }
     camera.lookAt(cam.look);
+    // la niebla acompaña a la cámara: con zoom lejano (sobre todo en el celular) no tiene que oscurecer el tablero
+    const camDist = camera.position.distanceTo(cam.look);
+    scene.fog.near = camDist + 8; scene.fog.far = camDist + 40;
     if (!is2D) renderer.render(scene, camera);
   }
   tick();
