@@ -88,6 +88,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   coordenadas; `render2D()` solo cambia el `src` o `hidden` de lo que difiere. La pieza que vuela es la misma imagen de la casilla
   (se mueve el nodo). Las 12 piezas se precargan con `decode()`. Antes se recreaban las 64 casillas en cada jugada o selección
   y en iPhone el tablero parpadeaba.
+  Desde v1.16 la imagen que vuela se queda en la casilla de destino (reemplaza la que había) en vez de cambiarle
+  el `src` a la de destino: Safari tardaba un cuadro en redibujar el SVG y la pieza desaparecía un instante al aterrizar o comer.
 - **Sonido en iPhone (v1.12):** Web Audio queda mudo con el interruptor de silencio. En iOS se reproduce en bucle
   un `<audio>` HTML con silencio (`iosAudioSession()`), que pasa la sesión a «reproducción». Se pausa al ocultar la página
   o al apagar el sonido. No se pudo probar en Safari real desde la nube (no hay WebKit).
