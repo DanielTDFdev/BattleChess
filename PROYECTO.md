@@ -24,6 +24,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 | `assets/sounds/` | Sonidos convertidos a MP3 mono (los originales de Daniel están en `/sonidos`) |
 | `assets/engine/` | Stockfish 18 lite (Stockfish.js, GPLv3) + licencia |
 | `assets/logo.webp` | Logo con transparencia real (recortado de `logo_chaskiboom.jpg`) |
+| `src/sw.js` | Service worker (la build lo copia como `sw.js` junto a cada página, con la versión en el nombre de la caché) |
+| `assets/icons/` | Íconos de la app generados desde `assets/icono_chaskiboom.png` (favicon, apple-touch-icon, 192/512 normales y maskable) |
 | `database.rules.json` | Reglas de seguridad de Firebase Realtime Database (se pegan en la consola) |
 
 ## Forma de trabajo
@@ -52,10 +54,17 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Realtime Database `games/<código>` y `users/<uid>/games`; desafío por link `#código`, sorteo de colores,
   las blancas tocan Comenzar, jugadas en cola reproducidas con animación, tablas, abandono, revancha,
   correspondencia («Mis partidas»), chat con 20 frases para el rival (cartel 1 s, una cada 15 s).
+- **Instalable como app (PWA):** la build genera `manifest.webmanifest` y `sw.js` al lado de `index.html` y de `dev/index.html`
+  (la de dev se instala aparte, como «ChaskiBoom dev»). El service worker es *red primero*: siempre baja lo último y usa la caché
+  solo sin conexión; no toca Firebase ni pedidos de audio por rangos. El artifact no lleva nada de esto (marcador `__PWA__` vacío).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Pendientes / ideas
+
+- **Probar la instalación como app en /dev/:** Android (Chrome → Instalar app) e iPhone (Safari → Compartir → Agregar a inicio).
+  Revisar ícono, pantalla completa, desafío por link y online. En iPhone la app instalada no comparte sesión con Safari:
+  el usuario anónimo es otro, así que «Mis partidas» solo se conserva vinculando Google. Luego publicar (genera manifest y sw en la raíz).
 
 - Partidas con tiempo límite (los relojes ya existen).
 - Calibrar los niveles de la CPU con partidas reales.
