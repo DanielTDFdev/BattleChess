@@ -1248,11 +1248,15 @@ const SOUNDS = {
 
   /* ---------- Motor de la CPU ----------
      Con Stockfish (versión publicada): 5 niveles combinando Skill Level y profundidad.
-     Sin Stockfish (vista previa o si no carga): búsqueda propia minimax con poda alfa-beta. */
+     Sin Stockfish (vista previa o si no carga): búsqueda propia minimax con poda alfa-beta.
+     Stockfish aun en Skill Level 0 juega como un aficionado de club (no regala piezas), así que los dos niveles
+     de abajo mezclan jugadas al azar (rnd = probabilidad de jugar cualquier jugada legal):
+       Muy fácil: mitad al azar, mitad con el criterio simple de pickCpu (come lo que ve y no deja piezas colgadas a 1 jugada), sin Stockfish.
+       Fácil: una de cada cinco al azar, el resto Stockfish nivel 0 a profundidad 1 (desde v1.12). */
   const ENGINE_URL = '../assets/engine/stockfish-18-lite-single.js';
   const LEVELS = [
-    { name: 'Muy fácil', skill: 0, depth: 1, fb: 0 },
-    { name: 'Fácil', skill: 3, depth: 2, fb: 1 },
+    { name: 'Muy fácil', own: true, rnd: 0.5, fb: 0 },
+    { name: 'Fácil', skill: 0, depth: 1, rnd: 0.2, fb: 1 },
     { name: 'Medio', skill: 8, depth: 6, fb: 2 },
     { name: 'Difícil', skill: 14, depth: 10, fb: 3 },
     { name: 'Experto', skill: 20, time: 1000, fb: 3 }
@@ -1337,7 +1341,12 @@ const SOUNDS = {
 
   async function chooseCpuMove() {
     const lvl = LEVELS[cpuLevel];
-    if (!sfFailed) {
+    if (lvl.rnd && Math.random() < lvl.rnd) {
+      await new Promise(r => setTimeout(r, 250));   // que no conteste instantáneamente
+      const ms = chess.moves({ verbose: true });
+      if (ms.length) { const m = ms[Math.floor(Math.random() * ms.length)]; return { from: m.from, to: m.to, promo: m.promotion }; }
+    }
+    if (!sfFailed && !lvl.own) {
       try {
         if (!sf) caption('Preparando a la CPU…');
         await sfInit();
