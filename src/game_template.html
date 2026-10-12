@@ -1370,9 +1370,20 @@ const SOUNDS = __SOUNDS__;
     const wide = wideMQ.matches;
     document.body.classList.toggle('wide', wide);
     const x0 = wide ? SIDE : 0, W = window.innerWidth - x0;
+    const pTop = $('pTop'), pBot = $('pBot'), BH = 36, GAP = 6;
+    // celular: el logo crece con el espacio que sobra entre el encabezado y la consola, sin achicar el tablero
+    // (hasta el 80 % del ancho de la pantalla)
+    const logo = $('logo');
+    logo.style.height = '';
+    if (!wide) {
+      const base = logo.getBoundingClientRect().height;
+      const t0 = document.querySelector('.top').getBoundingClientRect().bottom + 6;
+      const b0 = document.querySelector('.bar').getBoundingClientRect().top - 6;
+      const spare = (b0 - t0 - 2 * (BH + GAP)) - Math.min(W - 32, 680);
+      if (spare > 8) logo.style.height = Math.round(Math.min(base + spare * 0.85, W * 0.8 * 414 / 480)) + 'px';
+    }
     const topY = wide ? 12 : document.querySelector('.top').getBoundingClientRect().bottom + 6;
     const botY = wide ? window.innerHeight - 12 : document.querySelector('.bar').getBoundingClientRect().top - 6;
-    const pTop = $('pTop'), pBot = $('pBot'), BH = 36, GAP = 6;
     if (is2D) {
       const avail = botY - topY - 2 * (BH + GAP);
       const size = Math.max(160, Math.min(W - 32, avail, wide ? 1100 : 680));
