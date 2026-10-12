@@ -72,6 +72,10 @@
   #modal .card { width: min(420px, 100%); background: #221b28; border: 2px solid var(--torch); outline: 1px solid #5a4330; outline-offset: 4px; border-radius: 4px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
   #modal h2 { font-family: var(--display); font-weight: 700; color: var(--torch); margin: 0 0 10px; font-size: 26px; letter-spacing: .04em; text-wrap: balance; }
   #modal p { margin: 0 0 20px; font-size: 18px; line-height: 1.45; }
+  .lvlPick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: -6px 0 18px; }
+  .lvlPick .lbl { width: 100%; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .lvlPick button { padding: 6px 10px; font-size: 15px; }
+  .lvlPick button[aria-pressed="true"] { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   .mBtns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
   .mBtns .primary { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   #resign:hover { border-color: var(--red); }
@@ -159,6 +163,17 @@
     .taken img { width: 18px; height: 18px; }
     .taken .grp img + img { margin-left: -10px; }
   }
+  /* PC: columna lateral con logo, estado y consola; el tablero ocupa el resto de la pantalla */
+  body.wide #stage { left: 330px; }
+  body.wide .top { right: auto; width: 330px; padding: 18px 16px 8px; gap: 6px; }
+  body.wide .top h1 img { height: 190px; }
+  body.wide .top .sub { font-size: 14px; }
+  body.wide #status { font-size: 17px; }
+  body.wide #caption { font-size: 16px; text-align: center; max-width: 290px; }
+  body.wide .bar { left: 12px; transform: none; width: 306px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); padding: 12px; gap: 8px; }
+  body.wide .bar .seg { width: 100%; }
+  body.wide .bar .seg button { flex: 1; }
+  body.wide .caps .hint { margin-left: 0; font-size: 13px; }
 </style>
 
 </head>
@@ -167,7 +182,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.2</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.3</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -186,12 +201,6 @@
     <button id="mcpu" aria-pressed="true">Contra la CPU</button>
     <button id="mon" aria-pressed="false">Online</button>
   </div>
-  <label class="chk onlycpu" for="lvl">Nivel
-    <select id="lvl">
-      <option value="0">Muy fácil</option><option value="1">Fácil</option><option value="2">Medio</option>
-      <option value="3">Difícil</option><option value="4">Experto</option>
-    </select>
-  </label>
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
   <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
@@ -700,7 +709,7 @@ const SOUNDS = {
   const orbit = Object.assign({}, ORBIT0);
   function boardView() {
     const narrow = camera.aspect < 0.9;
-    const d = (narrow ? 37.7 : 27.4) * orbit.zoom;
+    const d = (narrow ? 37.7 : camera.aspect > 1.4 ? 24.5 : 27.4) * orbit.zoom;   // en pantallas anchas, más cerca
     cam.wantLook.set(0, 0, 0);
     const yaw = orbit.yaw + (localColor === 'b' ? Math.PI : 0);   // el jugador local mira desde su lado
     cam.wantPos.set(Math.sin(yaw) * Math.cos(orbit.pitch) * d, Math.sin(orbit.pitch) * d, Math.cos(yaw) * Math.cos(orbit.pitch) * d);
@@ -1303,23 +1312,32 @@ const SOUNDS = {
   }
 
   // Ubica las barras de jugador (y el tablero 2D) entre el encabezado y la consola
+  // Pantallas anchas (PC): encabezado y consola en una columna a la izquierda; el tablero usa todo el resto
+  const SIDE = 330;
+  const wideMQ = window.matchMedia('(min-width: 1000px) and (orientation: landscape)');
   function layout() {
-    const topY = document.querySelector('.top').getBoundingClientRect().bottom + 6;
-    const botY = document.querySelector('.bar').getBoundingClientRect().top - 6;
+    const wide = wideMQ.matches;
+    document.body.classList.toggle('wide', wide);
+    const x0 = wide ? SIDE : 0, W = window.innerWidth - x0;
+    const topY = wide ? 12 : document.querySelector('.top').getBoundingClientRect().bottom + 6;
+    const botY = wide ? window.innerHeight - 12 : document.querySelector('.bar').getBoundingClientRect().top - 6;
     const pTop = $('pTop'), pBot = $('pBot'), BH = 36, GAP = 6;
     if (is2D) {
       const avail = botY - topY - 2 * (BH + GAP);
-      const size = Math.max(160, Math.min(window.innerWidth - 32, avail, 680));
-      const left = (window.innerWidth - size) / 2, top = topY + BH + GAP + Math.max(0, (avail - size) / 2);
+      const size = Math.max(160, Math.min(W - 32, avail, wide ? 1100 : 680));
+      const left = x0 + (W - size) / 2, top = topY + BH + GAP + Math.max(0, (avail - size) / 2);
       Object.assign(board2d.style, { left: left + 'px', top: top + 'px', width: size + 'px', height: size + 'px' });
       board2d.style.setProperty('--sq', ((size - 12) / 8) + 'px');
-      [[pTop, top - BH - GAP], [pBot, top + size + GAP]].forEach(([el, y]) => Object.assign(el.style, { left: left + 'px', top: y + 'px', width: size + 'px' }));
+      [[pTop, top - BH - GAP], [pBot, top + size + GAP]].forEach(([el, y]) => Object.assign(el.style, { left: left + 'px', top: y + 'px', width: size + 'px', maxWidth: 'none' }));
     } else {
       // en 3D, barras compactas en la esquina para no tapar las filas de atrás
-      [[pTop, topY], [pBot, botY - BH]].forEach(([el, y]) => Object.assign(el.style, { left: '16px', top: y + 'px', width: 'auto', maxWidth: (window.innerWidth - 32) + 'px' }));
+      [[pTop, topY], [pBot, botY - BH]].forEach(([el, y]) => Object.assign(el.style, { left: (x0 + 16) + 'px', top: y + 'px', width: 'auto', maxWidth: (W - 32) + 'px' }));
     }
+    resize();
   }
+
   window.addEventListener('resize', layout);
+  wideMQ.addEventListener && wideMQ.addEventListener('change', layout);
 
 
   function setMode(cpu) {
@@ -1370,7 +1388,7 @@ const SOUNDS = {
     const msg = vsCpu ? (whiteIsCpu ? 'Te tocaron ' + art('b') + '. La CPU juega con ' + art('w') + ' y mueve primero.'
                                      : 'Te tocaron ' + art('w') + '. Movés primero.')
                       : 'Abajo juegan ' + art(localColor) + '. Que toquen Comenzar ' + art('w') + '.';
-    showModal('Nueva partida', msg + ' Los relojes arrancan al comenzar.', [{ label: 'Comenzar', primary: true, onClick: startGame }]);
+    showModal('Nueva partida', msg + ' Los relojes arrancan al comenzar.', [{ label: 'Comenzar', primary: true, onClick: startGame }], { levels: vsCpu });
   }
   function startGame() {
     audioInit();
@@ -1402,6 +1420,25 @@ const SOUNDS = {
       const img = document.createElement('img');
       img.className = 'mLogo'; img.src = $('logo').src; img.alt = '';
       modal.querySelector('.card').prepend(img);
+    }
+    const oldPick = modal.querySelector('.lvlPick'); if (oldPick) oldPick.remove();
+    if (opt.levels) {
+      // selector de nivel de la CPU, antes de empezar
+      const pick = document.createElement('div');
+      pick.className = 'lvlPick'; pick.setAttribute('role', 'group'); pick.setAttribute('aria-label', 'Nivel de la CPU');
+      pick.innerHTML = '<span class="lbl">Nivel de la CPU</span>';
+      LEVELS.forEach((l, i) => {
+        const b = document.createElement('button');
+        b.textContent = l.name; b.setAttribute('aria-pressed', String(i === cpuLevel));
+        b.addEventListener('click', () => {
+          cpuLevel = i;
+          try { localStorage.setItem('chaskiboom.level', String(i)); } catch (_) {}
+          pick.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i)));
+          updatePlayers();
+        });
+        pick.appendChild(b);
+      });
+      modal.querySelector('.card').insertBefore(pick, $('mBtns'));
     }
     $('mTitle').hidden = !!opt.logo;
     $('mTitle').textContent = title;
@@ -2093,14 +2130,6 @@ const SOUNDS = {
     document.title = mine && document.hidden ? '¡Tu turno! · ChaskiBoom' : 'ChaskiBoom Battle Chess';
   }
   document.addEventListener('visibilitychange', notifyTurn);
-
-  $('lvl').value = String(cpuLevel);
-  $('lvl').addEventListener('change', e => {
-    cpuLevel = Number(e.target.value);
-    try { localStorage.setItem('chaskiboom.level', String(cpuLevel)); } catch (_) {}
-    updatePlayers();
-    if (vsCpu && started && !isOver()) caption('Nivel de la CPU: ' + LEVELS[cpuLevel].name);
-  });
 
   /* ---------- Arranque ---------- */
   (async () => {
