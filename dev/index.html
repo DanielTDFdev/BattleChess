@@ -81,6 +81,7 @@
   @media (prefers-reduced-motion: reduce) { #loading .ldBar i::after { animation: none; } }
   @media (max-width: 500px) { #loading { font-size: 18px; } }
   #loading .ldPct { font-family: var(--body); font-size: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  #best2d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; opacity: .8; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
   #arrow2d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; opacity: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
   .hist { display: flex; align-items: center; gap: 4px; width: 100%; }
   .hist button { min-width: 36px; padding: 4px 8px; font-size: 20px; line-height: 1; }
@@ -102,6 +103,9 @@
   .pbar .acc { font-size: 13px; font-weight: 700; color: var(--torch); white-space: nowrap; }
   #modal .anaProg { width: 100%; height: 10px; margin: 0 0 18px; border: 1px solid #5a4330; border-radius: 5px; background: #241c2a; overflow: hidden; }
   #modal .anaProg i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #b8742a, var(--torch), #f6d365); }
+  #modal .anaGraph { position: relative; width: 100%; height: 90px; margin: 0 0 14px; border: 1px solid #5a4330; border-radius: 4px; background: #1e1a16; overflow: hidden; cursor: pointer; }
+  #modal .anaGraph svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #modal .anaGraph b.cls { position: absolute; width: 9px; height: 9px; min-width: 0; margin: -5px 0 0 -5px; padding: 0; border-radius: 50%; border: 1px solid #1e1a16; font-size: 0; }
   #modal .anaSum { width: 100%; margin: 0 0 18px; border-collapse: collapse; font-size: 16px; }
   #modal .anaSum th { font-family: var(--display); font-weight: 600; color: var(--muted); padding: 2px 6px; }
   #modal .anaSum td { padding: 3px 6px; text-align: center; border-top: 1px solid var(--line); }
@@ -282,7 +286,7 @@
 </head>
 <body>
 <div id="stage"></div>
-<div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
+<div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg><svg id="best2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="../assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
   <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.20</span></p>
@@ -2204,51 +2208,71 @@ const SOUNDS = {
     if (arrow3d) { scene.remove(arrow3d.group); arrow3d = null; }
     const svg = $('arrow2d'); svg.innerHTML = ''; clearTimeout(arrowTimer);
   }
-  function showArrow(from, to) {
-    hideArrows();
-    const pts = arrowPoints(from, to);
-    const HEAD = 0.42;   // en casillas
-    // tramos, con el último acortado para dejar lugar a la punta
+  // geometría de una flecha en coordenadas de casilla (archivo, fila), con el último tramo acortado para la punta
+  function arrowGeom(from, to) {
+    const pts = arrowPoints(from, to), HEAD = 0.42;
     const seg = pts.map(p => p.slice());
     const a = seg[seg.length - 2], b = seg[seg.length - 1];
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const tail = [b[0] - (b[0] - a[0]) / len * HEAD, b[1] - (b[1] - a[1]) / len * HEAD];
-    const body = seg.slice(0, -1).concat([tail]);
-    const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
-
-    // 2D (SVG sobre el tablero)
+    return { HEAD, a, b, tail, body: seg.slice(0, -1).concat([tail]), ang: Math.atan2(b[1] - a[1], b[0] - a[0]) };
+  }
+  // 2D: el SVG de la flecha (viewBox 8×8, con el tablero dado vuelta si jugás con negras)
+  function svgArrow(g, color) {
     const X = p => (localColor === 'w' ? p[0] : 7 - p[0]) + 0.5, Y = p => (localColor === 'w' ? 7 - p[1] : p[1]) + 0.5;
     const s2 = localColor === 'w' ? 1 : -1;
-    const hx = X(b), hy = Y(b), dx = Math.cos(ang) * s2, dy = -Math.sin(ang) * s2;
-    const bx = hx - dx * HEAD, by = hy - dy * HEAD;
-    const svg = $('arrow2d');
-    svg.innerHTML = '<polyline points="' + body.map(p => X(p) + ',' + Y(p)).join(' ') + '" fill="none" stroke="#e3a246" stroke-width="0.17" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '<polygon points="' + hx + ',' + hy + ' ' + (bx - dy * 0.24) + ',' + (by + dx * 0.24) + ' ' + (bx + dy * 0.24) + ',' + (by - dx * 0.24) + '" fill="#e3a246"/>';
-    svg.style.transition = 'none'; svg.style.opacity = '0.88';
-    void svg.getBoundingClientRect();
-    arrowTimer = setTimeout(() => { svg.style.transition = 'opacity .6s'; svg.style.opacity = '0'; }, 1500);
-
-    // 3D (cinta plana sobre el tablero)
-    const W = (p) => new THREE.Vector3((p[0] - 3.5) * TS, 0.045, (3.5 - p[1]) * TS);
+    const hx = X(g.b), hy = Y(g.b), dx = Math.cos(g.ang) * s2, dy = -Math.sin(g.ang) * s2;
+    const bx = hx - dx * g.HEAD, by = hy - dy * g.HEAD;
+    return '<polyline points="' + g.body.map(p => X(p) + ',' + Y(p)).join(' ') + '" fill="none" stroke="' + color + '" stroke-width="0.17" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<polygon points="' + hx + ',' + hy + ' ' + (bx - dy * 0.24) + ',' + (by + dx * 0.24) + ' ' + (bx + dy * 0.24) + ',' + (by - dx * 0.24) + '" fill="' + color + '"/>';
+  }
+  // 3D: la flecha como cinta plana sobre el tablero
+  function meshArrow(g, mat, y) {
+    const W = (p) => new THREE.Vector3((p[0] - 3.5) * TS, y, (3.5 - p[1]) * TS);
     const group = new THREE.Group();
     const piece = (geo, pos, yaw) => {
       const holder = new THREE.Object3D(); holder.position.copy(pos); holder.rotation.y = yaw;
-      const m = new THREE.Mesh(geo, arrowMat); m.rotation.x = -Math.PI / 2; m.renderOrder = 5;
+      const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.renderOrder = 5;
       holder.add(m); group.add(holder);
     };
     const width = 0.34;
-    for (let i = 0; i < body.length - 1; i++) {
-      const p = W(body[i]), q = W(body[i + 1]), d = q.clone().sub(p);
+    for (let i = 0; i < g.body.length - 1; i++) {
+      const p = W(g.body[i]), q = W(g.body[i + 1]), d = q.clone().sub(p);
       piece(new THREE.PlaneGeometry(d.length(), width), p.clone().add(q).multiplyScalar(0.5), -Math.atan2(d.z, d.x));
       if (i > 0) piece(new THREE.CircleGeometry(width / 2, 16), p, 0);
     }
     const shape = new THREE.Shape();
-    const hl = HEAD * TS, hw = 0.48 * TS * 0.5;
+    const hl = g.HEAD * TS, hw = 0.48 * TS * 0.5;
     shape.moveTo(0, -hw); shape.lineTo(hl, 0); shape.lineTo(0, hw); shape.lineTo(0, -hw);
-    const tip = W(tail), dir = W(b).sub(W(a));
+    const tip = W(g.tail), dir = W(g.b).sub(W(g.a));
     piece(new THREE.ShapeGeometry(shape), tip, -Math.atan2(dir.z, dir.x));
+    return group;
+  }
+  function showArrow(from, to) {
+    hideArrows();
+    const g = arrowGeom(from, to);
+    const svg = $('arrow2d');
+    svg.innerHTML = svgArrow(g, '#e3a246');
+    svg.style.transition = 'none'; svg.style.opacity = '0.88';
+    void svg.getBoundingClientRect();
+    arrowTimer = setTimeout(() => { svg.style.transition = 'opacity .6s'; svg.style.opacity = '0'; }, 1500);
+    const group = meshArrow(g, arrowMat, 0.045);
     scene.add(group);
     arrow3d = { group, t: 0 };
+  }
+  // flecha verde y fija con la mejor jugada (al revisar una partida analizada)
+  const bestMat = new THREE.MeshBasicMaterial({ color: 0x5fae3c, transparent: true, opacity: 0.8, depthWrite: false, toneMapped: false });
+  let best3d = null;
+  function hideBest() {
+    if (best3d) { scene.remove(best3d); best3d = null; }
+    $('best2d').innerHTML = '';
+  }
+  function showBest(from, to) {
+    hideBest();
+    const g = arrowGeom(from, to);
+    $('best2d').innerHTML = svgArrow(g, '#5fae3c');
+    best3d = meshArrow(g, bestMat, 0.05);
+    scene.add(best3d);
   }
 
   /* ---------- Historial: revisar jugadas hacia atrás y adelante ---------- */
@@ -2282,6 +2306,8 @@ const SOUNDS = {
     selected = null; targets = [];
     if (is2D) render2D(); else { setupBoard(tmp); drawMarks(); }
     if (viewLast) showArrow(viewLast.from, viewLast.to); else hideArrows();
+    const bm = analysis && analysis.done && n > 0 && analysis.cls[n - 1] !== 'best' && analysis.best[n - 1];
+    if (bm) showBest(bm.slice(0, 2), bm.slice(2, 4)); else hideBest();
     caption(n ? (analysis && analysis.done ? moveComment(n) : 'Revisando la jugada ' + n + ' de ' + h.length) : 'Posición inicial');
     updatePlayers(); updateHist();
   }
@@ -2289,7 +2315,7 @@ const SOUNDS = {
     if (!viewPos) return;
     viewPos = null; viewLast = null;
     if (is2D) { render2D(); dirty3d = true; } else { setupBoard(); drawMarks(); }
-    hideArrows();
+    hideArrows(); hideBest();
     if (!silent) updateStatus();
     updatePlayers(); updateHist();
   }
@@ -3105,8 +3131,8 @@ const SOUNDS = {
      - Barra de evaluación al costado del tablero, que sigue a « ‹ › ».
      No hay análisis durante la partida (online sería trampa) ni sin Stockfish (artifact). */
   const CLS = {
-    best: { icon: '★', name: 'Mejor jugada' }, excellent: { icon: '!', name: 'Excelente' }, good: { icon: '✓', name: 'Buena' },
-    inaccuracy: { icon: '?!', name: 'Imprecisión' }, mistake: { icon: '?', name: 'Error' }, blunder: { icon: '??', name: 'Metida de pata' }
+    best: { icon: '★', name: 'Tremendo!!' }, excellent: { icon: '!', name: 'Muy bueno!!' }, good: { icon: '✓', name: 'Bien ahí' },
+    inaccuracy: { icon: '?!', name: 'Y esto?' }, mistake: { icon: '?', name: 'Ah bue' }, blunder: { icon: '??', name: 'Calambres' }
   };
   const CLS_ORDER = ['best', 'excellent', 'good', 'inaccuracy', 'mistake', 'blunder'];
   let analysis = null;   // { done, evals: [cp desde las blancas por posición], best: [uci], cls: [por jugada], acc: { w, b } }
@@ -3116,6 +3142,7 @@ const SOUNDS = {
     analysis = null;
     document.body.classList.remove('analyzed');
     $('anaBtn').hidden = true;
+    hideBest();
   }
   const winPct = cp => 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * Math.max(-1000, Math.min(1000, cp)))) - 1);
   // una posición: devuelve { cp (desde las blancas), best (uci) }
@@ -3198,8 +3225,33 @@ const SOUNDS = {
     html += '<tr class="accRow"><td>Precisión</td><td>' + analysis.acc[first] + ' %</td><td>' + analysis.acc[second] + ' %</td></tr>';
     CLS_ORDER.forEach(k => { html += '<tr><td><span class="cls ' + k + '">' + CLS[k].icon + '</span> ' + CLS[k].name + '</td><td>' + (A[k] || 0) + '</td><td>' + (B[k] || 0) + '</td></tr>'; });
     t.innerHTML = html;
-    showModal('Análisis de la partida', 'Recorré las jugadas con « ‹ › » para ver cada una y la barra de evaluación.',
-      [{ label: 'Revisar jugadas', primary: true, onClick: () => viewAt(1) }, { label: 'Cerrar' }], { node: t });
+    const box = document.createElement('div');
+    box.appendChild(evalGraph()); box.appendChild(t);
+    showModal('Análisis de la partida', 'Tocá el gráfico para ir a esa jugada, o recorrelas con « ‹ › ».',
+      [{ label: 'Revisar jugadas', primary: true, onClick: () => viewAt(1) }, { label: 'Cerrar' }], { node: box });
+  }
+  // gráfico de la ventaja a lo largo de la partida (blanco = ventaja de las blancas); puntos en los errores
+  function evalGraph() {
+    const N = analysis.evals.length - 1, W = Math.max(1, N);
+    const w = analysis.evals.map(winPct);
+    const g = document.createElement('div'); g.className = 'anaGraph';
+    const pts = w.map((v, i) => (i / W * 100).toFixed(2) + ',' + (100 - v).toFixed(2)).join(' ');
+    g.innerHTML = '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+      '<polygon points="0,100 ' + pts + ' 100,100" fill="#fbf7ee"/>' +
+      '<line x1="0" y1="50" x2="100" y2="50" stroke="#7a5c43" stroke-width="0.6" vector-effect="non-scaling-stroke" stroke-dasharray="3 3"/></svg>' +
+      '<i class="cur"></i>';
+    analysis.cls.forEach((c, i) => {
+      if (c !== 'mistake' && c !== 'blunder' && c !== 'inaccuracy') return;
+      const d = document.createElement('b'); d.className = 'cls ' + c;
+      d.style.left = ((i + 1) / W * 100) + '%'; d.style.top = (100 - w[i + 1]) + '%';
+      d.title = Math.ceil((i + 1) / 2) + ((i + 1) % 2 ? '. ' : '… ') + CLS[c].name;
+      g.appendChild(d);
+    });
+    g.addEventListener('click', e => {
+      const r = g.getBoundingClientRect(), ply = Math.round((e.clientX - r.left) / r.width * W);
+      closeModal(); viewAt(Math.max(1, Math.min(N, ply)));
+    });
+    return g;
   }
   $('anaBtn').addEventListener('click', () => startAnalysis());
   // la barra de evaluación en la posición n (0 = inicial)
@@ -3223,7 +3275,7 @@ const SOUNDS = {
     if (b && c !== 'best') {
       const t = new Chess(); for (let i = 0; i < n - 1; i++) t.move(h[i]);
       const bm = t.move({ from: b.slice(0, 2), to: b.slice(2, 4), promotion: b[4] || 'q' });
-      if (bm) s += '. Lo mejor era ' + sanEs(bm.san);
+      if (bm) s += ' · Lo mejor era ' + sanEs(bm.san) + ' (flecha verde)';
     }
     return s;
   }
@@ -3233,7 +3285,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página y cada 15 minutos: la app instalada en el
      celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261012224507';
+  const BUILD = '20261012225251';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json

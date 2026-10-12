@@ -135,7 +135,10 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   la fórmula de lichess; clasificación por probabilidad de ganar perdida (mejor/excelente <2/buena <5/imprecisión <10/
   error <20/metida de pata). Barra de evaluación (`#evalBar`, `body.analyzed`) al costado del tablero, que sigue a
   « ‹ › »; la clasificación aparece en el historial y en el renglón de abajo, con la mejor jugada. Precisión también
-  en las barras de jugador. Pendiente (segunda entrega): flecha de la mejor jugada y gráfico de la partida.
+  en las barras de jugador. Nombres propios de la clasificación: Tremendo!! (★), Muy bueno!! (!), Bien ahí (✓),
+  Y esto? (?!), Ah bue (?), Calambres (??). Al revisar, flecha verde fija con la mejor jugada (`showBest`, `#best2d`
+  en 2D y `bestMat` en 3D; `arrowGeom/svgArrow/meshArrow` compartidas con la flecha de la última jugada). El resumen
+  tiene un gráfico de la ventaja con puntos en Y esto?/Ah bue/Calambres; tocarlo lleva a esa jugada.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
