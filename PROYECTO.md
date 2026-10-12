@@ -62,9 +62,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Pendientes / ideas
 
-- **Probar la instalación como app en /dev/:** Android (Chrome → Instalar app) e iPhone (Safari → Compartir → Agregar a inicio).
+- **Probar la instalación como app (v1.7, ya en producción):** Android (Chrome → Instalar app) e iPhone (Safari → Compartir → Agregar a inicio).
   Revisar ícono, pantalla completa, desafío por link y online. En iPhone la app instalada no comparte sesión con Safari:
-  el usuario anónimo es otro, así que «Mis partidas» solo se conserva vinculando Google. Luego publicar (genera manifest y sw en la raíz).
+  el usuario anónimo es otro, así que «Mis partidas» solo se conserva vinculando Google.
 
 - Partidas con tiempo límite (los relojes ya existen).
 - Calibrar los niveles de la CPU con partidas reales.

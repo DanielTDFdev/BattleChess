@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ChaskiBoom Battle Chess</title>
+<meta name="theme-color" content="#19141d">
+<meta name="description" content="Ajedrez con batallas en 3D entre las piezas.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ChaskiBoom">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:wght@400;500;600&display=swap">
@@ -218,7 +229,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.6</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.7</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -1823,7 +1834,11 @@ const SOUNDS = {
   $('view2d').addEventListener('click', () => {
     if (busy) return;
     if (viewPos) goLive(true);
-    is2D = !is2D;
+    setView(!is2D);
+  });
+  // Cambia entre la vista 2D clásica y la 3D (la 2D es la de arranque desde v1.7)
+  function setView(v) {
+    is2D = v;
     document.body.classList.toggle('mode2d', is2D);
     $('view2d').setAttribute('aria-pressed', String(is2D));
     $('view2d').textContent = is2D ? 'Vista 3D' : 'Vista 2D';
@@ -1832,7 +1847,7 @@ const SOUNDS = {
     select(null);
     if (!is2D && dirty3d) { setupBoard(); dirty3d = false; drawMarks(); }
     updateStatus(); layout();
-  });
+  }
   $('skip').addEventListener('click', () => { skipping = true; timeScale = 6; });
   // Menú plegable del celular: se cierra al tocar una acción o fuera de él
   const bar = document.querySelector('.bar');
@@ -2350,7 +2365,8 @@ const SOUNDS = {
       computeHitTimes();
       setupBoard();
       boardView(); cam.pos.copy(cam.wantPos); cam.look.copy(cam.wantLook);
-      updateStatus(); drawMarks(); layout(); updateHist();
+      setView(true);                       // arranca en 2D; el botón «Vista 3D» pasa a las peleas
+      drawMarks(); updateHist();
       $('loading').hidden = true;
       const code = location.hash.replace('#', '');
       if (code && HAS_FB) enterOnline(code); else chooseMode();
