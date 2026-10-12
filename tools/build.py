@@ -58,6 +58,9 @@ def assets_map():
     m.update({'anim_' + n: 'assets/anims/%s.glb' % n for n in ANIMS})
     return m
 
+def asset_sizes():
+    return {k: os.path.getsize(v) for k, v in assets_map().items()}
+
 def pieces_map():
     return {s: {c + t.lower(): 'assets/pieces/%s/%s%s.svg' % (s, c, t) for c in 'wb' for t in 'KQRBNP'} for s in PIECE_SETS}
 
@@ -77,14 +80,15 @@ def build_site(dev):
     t = (t.replace('__LOGO__', 'assets/logo.webp')
           .replace('__WINNER__', 'assets/winner.webp').replace('__LOSER__', 'assets/loser.webp')
           .replace('__ASSETS__', json.dumps(assets_map(), indent=2))
+          .replace('__ASSET_SIZES__', json.dumps(asset_sizes()))
           .replace('__PIECES__', json.dumps(pieces_map(), indent=2))
           .replace('__SOUNDS__', json.dumps(sounds_map(), indent=2))
           .replace('__ENGINE__', 'assets/engine/stockfish-18-lite-single.js')
           .replace('__FIREBASE__', FIREBASE)
           .replace('__PWA__', PWA))
-    old = "  const parse = b64 => new Promise((res, rej) => loader.parse(toBuffer(b64), '', res, rej));"
+    old = "  const parse = (b64, onProg) => new Promise((res, rej) => loader.parse(toBuffer(b64), '', res, rej));"
     assert old in t
-    t = t.replace(old, "  const parse = url => new Promise((res, rej) => loader.load(url, res, undefined, rej));   // cada modelo es un archivo .glb del repo")
+    t = t.replace(old, "  const parse = (url, onProg) => new Promise((res, rej) => loader.load(url, res, onProg, rej));   // cada modelo es un archivo .glb del repo")
     t = page(t)
     if dev:
         t = t.replace('"assets/', '"../assets/').replace("'assets/engine/", "'../assets/engine/")
@@ -109,7 +113,7 @@ def build_artifact():
           .replace('__LOGO__', 'data:image/webp;base64,' + b64('assets/logo.webp'))
           .replace('__WINNER__', 'data:image/webp;base64,' + b64('assets/winner.webp'))
           .replace('__LOSER__', 'data:image/webp;base64,' + b64('assets/loser.webp'))
-          .replace('__ASSETS__', json.dumps(assets)).replace('__PIECES__', json.dumps(pieces)).replace('__SOUNDS__', json.dumps(sounds)))
+          .replace('__ASSETS__', json.dumps(assets)).replace('__ASSET_SIZES__', json.dumps(asset_sizes())).replace('__PIECES__', json.dumps(pieces)).replace('__SOUNDS__', json.dumps(sounds)))
     os.makedirs('build', exist_ok=True)
     open('build/artifact.html', 'w', encoding='utf-8').write(t)
     print('generado build/artifact.html')
