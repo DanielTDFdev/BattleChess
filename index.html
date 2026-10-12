@@ -205,6 +205,14 @@
   #taunt.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   #taunt .who { display: block; font-family: var(--display); font-size: 14px; letter-spacing: .06em; color: #7a5c43; margin-bottom: 4px; }
   #taunt .txt { font-size: clamp(20px, 3.4vw, 28px); font-weight: 600; line-height: 1.25; }
+  /* Aviso de otra partida online (con botón para pasar a ella) */
+  #other { position: fixed; z-index: 40; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translate(-50%, -12px); width: min(520px, calc(100% - 24px));
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 2px;
+    border-radius: 6px; box-shadow: 0 14px 36px rgba(0,0,0,.55); opacity: 0; transition: opacity .2s, transform .2s; }
+  #other.show { opacity: 1; transform: translate(-50%, 0); }
+  #other .txt { flex: 1; min-width: 0; font-weight: 600; line-height: 1.25; }
+  #other button { background: #2a1d10; color: #f0e3c4; border-color: #7a5c43; white-space: nowrap; }
+  #other button.x { background: none; color: #7a5c43; border: none; font-size: 22px; line-height: 1; padding: 2px 6px; }
   @media (max-width: 760px) {
     #chat { left: 8px; right: 8px; width: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); height: 58vh; }
     #chatBtn { margin-left: 0; }
@@ -229,7 +237,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.7</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.8</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -311,6 +319,7 @@
     <button id="chatSend" class="primary">Enviar</button>
   </form>
 </section>
+<div id="other" hidden role="status" aria-live="polite"><span class="txt"></span><button class="go">Ver partida</button><button class="x" aria-label="Cerrar">×</button></div>
 <div id="taunt" hidden aria-live="assertive"><span class="who"></span><span class="txt"></span></div>
 <div id="loading">Preparando ChaskiBoom Battle Chess…</div>
 
@@ -1882,7 +1891,13 @@ const SOUNDS = {
   const getNick = () => { try { return localStorage.getItem('chaskiboom.nick') || ''; } catch (_) { return ''; } };
   const setNick = n => { try { localStorage.setItem('chaskiboom.nick', n); } catch (_) {} };
 
-  async function fbInit() {
+  let fbP = null;
+  // una sola conexión aunque se llame varias veces a la vez (si no, podían crearse dos usuarios anónimos)
+  function fbInit() {
+    if (!fbP) fbP = fbConnect().then(watchAll).catch(e => { fbP = null; throw e; });
+    return fbP;
+  }
+  async function fbConnect() {
     if (db) return;
     if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
     const auth = firebase.auth();
@@ -1931,7 +1946,7 @@ const SOUNDS = {
         await auth.signInAnonymously();
       }
       me = auth.currentUser.uid;
-      acctUI(); listGames();
+      acctUI(); listGames(); watchAll();
     } catch (e) {
       console.error(e);
       if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
@@ -2079,6 +2094,7 @@ const SOUNDS = {
     history.replaceState(null, '', location.pathname + location.search);
     $('pTop').querySelector('.net').hidden = true;
     document.title = 'ChaskiBoom Battle Chess';
+    syncWatch();
   }
 
   function startOnline(id, ref) {
@@ -2098,6 +2114,7 @@ const SOUNDS = {
     times.w = times.b = 0; queue.length = 0;
     hideArrows();
     ref.on('value', s => onGame(s.val()));
+    syncWatch();   // la partida abierta deja de vigilarse aparte; la anterior pasa a vigilarse
   }
 
   function onGame(g) {
@@ -2105,7 +2122,7 @@ const SOUNDS = {
     online.g = g;
     // ¿todavía no entró el rival?
     if (!g.white) {
-      if (g.host.uid === me) showWaiting(online.id);
+      if (g.host.uid === me) { showWaiting(online.id); online.waiting = true; }
       caption('Esperando que tu amigo entre a la partida');
       return;
     }
@@ -2116,6 +2133,7 @@ const SOUNDS = {
     online.oppName = host ? g.guest.name : g.host.name;
     online.oppUid = host ? g.guest.uid : g.host.uid;
     const moves = g.moves ? Object.keys(g.moves).map(Number).sort((a, b) => a - b).map(k => g.moves[k]) : [];
+    if (online.waiting) { online.waiting = false; news('¡' + online.oppName + ' aceptó el desafío!', { sound: true }); }
 
     // Primera vez: se arma la posición de golpe, sin animaciones (también al retomar una partida)
     if (!online.loaded) {
@@ -2140,15 +2158,20 @@ const SOUNDS = {
         [{ label: 'Comenzar', primary: true, onClick: () => { audioInit(); online.ref.update({ started: true }); } }]);
       if (color === 'b') caption('Te tocaron ' + art('b') + '. Esperando que ' + online.oppName + ' toque Comenzar');
     }
+    if (g.started && !started && online.loaded && color === 'b') news(online.oppName + ' comenzó la partida');
     if (g.started && !started) { started = true; clockLast = performance.now(); if (!modal.hidden && $('mTitle').textContent.startsWith('Partida contra')) closeModal(); updateStatus(); }
 
     // Jugadas nuevas del rival: a la cola, se reproducen con animación
-    for (let i = online.applied + queue.length; i < moves.length; i++) queue.push(moves[i]);
+    const before = online.applied + queue.length;
+    for (let i = before; i < moves.length; i++) queue.push(moves[i]);
+    // la última jugada es del rival (las jugadas pares son de las blancas)
+    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó');
     pumpQueue();
 
     // Ofertas de tablas
     if (g.drawOffer && g.drawOffer !== localColor && !online.offerShown && !ended) {
       online.offerShown = true;
+      news(online.oppName + ' ofrece tablas', { banner: false });
       showModal('Oferta de tablas', online.oppName + ' ofrece tablas. ¿Aceptás?', [
         { label: 'Aceptar tablas', primary: true, onClick: () => endGame('draw', 'agreed') },
         { label: 'Rechazar', onClick: () => online && online.ref.update({ drawOffer: null, drawDeclined: NOW() }) }
@@ -2164,6 +2187,7 @@ const SOUNDS = {
     // Revancha propuesta por el rival
     if (g.rematch && g.rematch.by !== me && !online.rematchShown) {
       online.rematchShown = true;
+      news(online.oppName + ' propone la revancha', { banner: false });
       showModal('Revancha', online.oppName + ' propone la revancha.', [
         { label: 'Aceptar', primary: true, onClick: () => enterOnline(g.rematch.id) },
         { label: 'No, gracias' }
@@ -2224,12 +2248,109 @@ const SOUNDS = {
     } catch (e) { console.error(e); caption('No se pudo crear la revancha'); }
   }
 
-  // Aviso en la pestaña cuando es tu turno y estás mirando otra cosa
+  // Aviso en la pestaña cuando es tu turno (o pasó algo) y estás mirando otra cosa
   function notifyTurn() {
     const mine = online && started && !ended && chess.turn() === localColor;
-    document.title = mine && document.hidden ? '¡Tu turno! · ChaskiBoom' : 'ChaskiBoom Battle Chess';
+    document.title = document.hidden && awayNews ? '⚔ ' + awayNews + ' · ChaskiBoom'
+      : mine && document.hidden ? '¡Tu turno! · ChaskiBoom' : 'ChaskiBoom Battle Chess';
   }
   document.addEventListener('visibilitychange', notifyTurn);
+
+  /* --- Novedades de la partida online mientras la página estaba minimizada, en otra pestaña o con el celular bloqueado ---
+     En PC llegan aunque la pestaña esté oculta: cambia el título y suena. En el celular la página se congela y las
+     novedades llegan recién al volver (cuando Firebase se reconecta), así que lo que llega hasta 20 s después de
+     volver también se avisa con un cartel, sonido y vibración. */
+  let hiddenAt = document.hidden ? performance.now() : 0, backAt = -1e9, awayNews = null, awayBanner = false;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = performance.now(); return; }
+    if (performance.now() - hiddenAt > 3000) backAt = performance.now();   // volvió después de un rato afuera
+    if (awayNews) { const t = awayNews, b = awayBanner; awayNews = null; showNews(t, b); }
+  });
+  // opt.banner: false = solo título, sonido y vibración (cuando ya hay un cartel con botones); opt.sound: suena aunque esté mirando
+  function news(text, opt = {}) {
+    const banner = opt.banner !== false;
+    if (document.hidden) { awayNews = text; awayBanner = banner; notifyTurn(); sfx('check', 0, { exact: true }); return; }
+    if (performance.now() - backAt < 20000) { backAt = -1e9; showNews(text, banner); }
+    else if (opt.sound) sfx('check', 0, { exact: true });
+  }
+  function showNews(text, banner) {
+    if (banner) showTaunt({ name: 'ChaskiBoom', text }, { ms: 5000, vol: 1 });
+    else sfx('check', 0, { exact: true });
+    try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (_) {}
+  }
+
+  /* --- Vigía de las otras partidas online ---
+     Escucha tus partidas en curso que no están abiertas (las 15 más recientes de users/<uid>/games) y avisa cuando
+     en alguna aceptan el desafío, comienzan, juegan, ofrecen tablas, proponen revancha o termina.
+     El aviso queda arriba con un botón para pasar a esa partida. Las terminadas se dejan de escuchar. */
+  const watch = { uid: null, idx: null, list: null, games: {}, done: new Set() };   // games[id] = { ref, cb, prev }
+  function watchAll() {
+    if (!db || !me || watch.uid === me) return;
+    if (watch.idx) watch.idx.off();
+    Object.keys(watch.games).forEach(unwatchGame);
+    watch.done.clear(); watch.list = null;
+    watch.uid = me;
+    watch.idx = db.ref('users/' + me + '/games');
+    watch.idx.on('value', s => { watch.list = s.val() || {}; syncWatch(); });
+  }
+  function syncWatch() {
+    if (!watch.list) return;
+    const L = watch.list;
+    const ids = Object.keys(L).sort((a, b) => (L[b].updatedAt || 0) - (L[a].updatedAt || 0)).slice(0, 15)
+      .filter(id => !watch.done.has(id) && !(online && online.id === id));
+    Object.keys(watch.games).forEach(id => { if (!ids.includes(id)) unwatchGame(id); });
+    ids.forEach(id => { if (!watch.games[id]) watchGame(id); });
+  }
+  function watchGame(id) {
+    const w = { ref: db.ref('games/' + id), prev: null };
+    w.cb = s => {
+      const g = s.val();
+      if (!g || !g.host) return;
+      const prev = w.prev; w.prev = g;
+      if (prev) otherNews(id, prev, g);            // la primera lectura es la referencia, no avisa
+      if (g.result) { watch.done.add(id); unwatchGame(id); }
+    };
+    w.ref.on('value', w.cb);
+    watch.games[id] = w;
+  }
+  // off con el callback: la partida abierta escucha la misma ruta y no hay que cortarle su escucha
+  function unwatchGame(id) { const w = watch.games[id]; if (!w) return; w.ref.off('value', w.cb); delete watch.games[id]; }
+  function otherNews(id, p, g) {
+    if (online && online.id === id) return;
+    const host = g.host.uid === me, myColor = g.white === me ? 'w' : g.black === me ? 'b' : null;
+    const opp = (host ? g.guest && g.guest.name : g.host.name) || 'Tu rival';
+    let t = null;
+    if (!p.white && g.white && host) t = '¡' + opp + ' aceptó el desafío!';
+    else if (g.result && !p.result) t = g.result.winner === 'draw' ? 'Tablas con ' + opp : g.result.winner === myColor ? '¡Le ganaste a ' + opp + '!' : 'Perdiste contra ' + opp;
+    else if (g.rematch && !p.rematch && g.rematch.by !== me) t = opp + ' propone la revancha';
+    else if (g.drawOffer && !p.drawOffer && g.drawOffer !== myColor) t = opp + ' ofrece tablas';
+    else if (g.started && !p.started && myColor === 'b') t = opp + ' comenzó la partida';
+    else if ((g.ply || 0) > (p.ply || 0) && g.turn === myColor) t = opp + ' jugó: te toca';
+    if (t) showOther(id, t);
+  }
+  let otherTimer = null, otherId = null;
+  function showOther(id, text) {
+    const el = $('other');
+    otherId = id;
+    el.querySelector('.txt').textContent = text + ' (en otra partida)';
+    el.hidden = false; void el.offsetWidth; el.classList.add('show');
+    clearTimeout(otherTimer); otherTimer = null;
+    sfx('check', 0, { exact: true });
+    if (document.hidden) { awayNews = text; awayBanner = false; notifyTurn(); }
+    else { otherTimer = setTimeout(hideOther, 15000); try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (_) {} }
+  }
+  function hideOther() {
+    clearTimeout(otherTimer); otherTimer = null;
+    const el = $('other'); el.classList.remove('show');
+    setTimeout(() => { if (!el.classList.contains('show')) el.hidden = true; }, 220);
+  }
+  // si el aviso llegó con la página oculta, sus 15 s cuentan recién al volver
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('other').hidden && !otherTimer) otherTimer = setTimeout(hideOther, 15000); });
+  $('other').querySelector('.x').addEventListener('click', hideOther);
+  $('other').querySelector('.go').addEventListener('click', () => {
+    hideOther();
+    if (otherId && !(online && online.id === otherId)) { closeModal(); lobby.hidden = true; enterOnline(otherId); }
+  });
 
   /* ---------- Chat y frases para el rival (solo online) ----------
      games/<código>/chat/<clave> = { uid, name, text, kind: 'free' | 'taunt', at } */
@@ -2326,14 +2447,14 @@ const SOUNDS = {
   }
 
   let tauntTimer = null;
-  function showTaunt(m) {
+  function showTaunt(m, opt = {}) {
     const el = $('taunt');
     el.querySelector('.who').textContent = m.uid === me ? 'Vos' : (m.name || 'Tu rival');
     el.querySelector('.txt').textContent = m.text;
     clearTimeout(tauntTimer);
     el.hidden = false; void el.offsetWidth; el.classList.add('show');
-    tauntTimer = setTimeout(() => { el.classList.remove('show'); tauntTimer = setTimeout(() => { el.hidden = true; }, 220); }, 3000);
-    sfx('check', 0, { exact: true, vol: 0.5 });
+    tauntTimer = setTimeout(() => { el.classList.remove('show'); tauntTimer = setTimeout(() => { el.hidden = true; }, 220); }, opt.ms || 3000);
+    sfx('check', 0, { exact: true, vol: opt.vol || 0.5 });
   }
 
   // se llama con cada actualización de la partida
@@ -2370,6 +2491,7 @@ const SOUNDS = {
       $('loading').hidden = true;
       const code = location.hash.replace('#', '');
       if (code && HAS_FB) enterOnline(code); else chooseMode();
+      if (HAS_FB && getNick()) fbInit().catch(() => {});   // ya jugó online: se vigilan sus partidas aunque juegue contra la CPU
       document.fonts.ready.then(layout);
       window.__game = { chess, units, get online() { return online; }, play_move: (f, t) => play_move(f, t), get busy() { return busy; }, get sounds() { return Object.keys(sbuf).length; } };
     } catch (e) {

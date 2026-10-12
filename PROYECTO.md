@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.7** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.8** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -35,7 +35,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.7 → v1.8…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.8 → v1.9…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -65,7 +65,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Realtime Database `games/<código>` y `users/<uid>/games`; desafío por link `#código`, sorteo de colores,
   las blancas tocan Comenzar, jugadas en cola reproducidas con animación, tablas, abandono, revancha,
   correspondencia («Mis partidas»), chat con 20 frases para el rival (cartel 3 s desde v1.5, una cada 15 s).
-- **Avisos online sin servidor (en dev, para v1.8):** no hay notificaciones push (se descartó por complejo).
+- **Avisos online sin servidor (v1.8):** no hay notificaciones push (se descartó por complejo).
   - Partida abierta: si la novedad llega con la página oculta, cambia el título y suena. Si llega hasta 20 s después de volver
     (en el celular llega al reconectarse Firebase), cartel de 5 s, sonido y vibración (`news()` / `showNews()`).
   - Otras partidas: un vigía (`watchAll` / `syncWatch`) escucha las 15 más recientes de `users/<uid>/games`
@@ -73,7 +73,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     Hay que usar `off('value', cb)` para no cortar la escucha de la partida abierta. Si el jugador ya tiene apodo,
     Firebase se conecta al arrancar para vigilar aunque juegue contra la CPU. `fbInit()` es una sola promesa
     compartida, para no crear dos usuarios anónimos.
-  - Para probar sin Firebase real: mock en memoria de la API compat servido con `page.route` (ver historial de la sesión de v1.8).
+  - Para probar sin Firebase real: mock en memoria de la API compat servido con `page.route` (`window.firebase` falso con `ref/on/off/once/set/update/transaction`).
 - **Instalable como app (PWA, v1.7):** la build genera `manifest.webmanifest` y `sw.js` al lado de `index.html` y de
   `dev/index.html` (la de dev se instala aparte, como «ChaskiBoom dev»). El service worker es *red primero*: siempre baja
   lo último y usa la caché solo sin conexión; no toca Firebase ni pedidos de audio por rangos. El artifact no lleva nada
@@ -86,8 +86,13 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.5:** el cartel de las frases para el rival dura 3 s (antes 1 s).
 - **v1.6:** botón Cancelar en el cartel de Nueva partida contra la CPU.
 - **v1.7:** instalable como app en el celular (PWA, íconos de `icono_chaskiboom.png`) y arranque en vista 2D.
+- **v1.8:** avisos online sin servidor: novedades de la partida abierta al volver a la página y aviso con «Ver partida»
+  para las otras partidas en curso.
 
 ## Pendientes / ideas
+
+- **Probar los avisos de v1.8 con dos dispositivos reales:** desafío aceptado y jugada con la página minimizada
+  o el celular bloqueado, y dos partidas en paralelo (aviso de la otra partida y «Ver partida»). Solo se probó con Firebase simulado.
 
 - **Probar la instalación como app (v1.7):** Android (Chrome → Instalar app) e iPhone (Safari → Compartir → Agregar a inicio).
   Revisar ícono, pantalla completa, desafío por link y online. En iPhone la app instalada no comparte sesión con Safari:
