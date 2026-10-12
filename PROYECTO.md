@@ -99,6 +99,14 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Pantalla de carga (v1.14):** logo, barra y porcentaje. Los .glb se bajan todos a la vez (antes de a uno)
   y la barra avanza por bytes recibidos (`ASSET_SIZES`, marcador `__ASSET_SIZES__` que llena la build).
   `#loading` tiene z-index 60 para tapar la consola, que antes se veía encima.
+- **Actualización automática (v1.15, en dev):** la build escribe `version.json` ({version, build}) al lado de cada página
+  y mete el mismo código de build (`__BUILD__`, fecha y hora UTC) en la página. `checkUpdate()` lo consulta al abrir,
+  al volver a la página y cada 15 min. Si cambió y no hay partida en curso, recarga sola; si la hay, muestra un cartel
+  (`#upd`) con Actualizar / Después. Para no recargar en bucle si la página llega vieja, se intenta una vez cada 10 min
+  por versión (sessionStorage `chaskiboom.upd`). El service worker pide lo propio con `cache: 'no-cache'`
+  (GitHub Pages deja cachear 10 min). En /dev/ también funciona: cada build nueva cuenta como versión nueva.
+- **Logo en celular (v1.15, en dev):** `layout()` agranda `#logo` con el espacio que sobra sobre el tablero 2D
+  (hasta el 80 % del ancho), sin achicar el tablero.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 

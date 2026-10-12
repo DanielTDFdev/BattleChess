@@ -202,6 +202,12 @@ __PWA__
   #taunt .who { display: block; font-family: var(--display); font-size: 14px; letter-spacing: .06em; color: #7a5c43; margin-bottom: 4px; }
   #taunt .txt { font-size: clamp(20px, 3.4vw, 28px); font-weight: 600; line-height: 1.25; }
   /* Aviso de otra partida online (con botón para pasar a ella) */
+  #upd { position: fixed; z-index: 41; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(520px, calc(100% - 24px));
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px; background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 2px;
+    border-radius: 6px; box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+  #upd .txt { flex: 1 1 200px; min-width: 0; font-weight: 600; line-height: 1.25; }
+  #upd button { background: #2a1d10; color: #f0e3c4; border-color: #7a5c43; white-space: nowrap; }
+  #upd button.later { background: none; color: #7a5c43; }
   #other { position: fixed; z-index: 40; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translate(-50%, -12px); width: min(520px, calc(100% - 24px));
     display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 2px;
     border-radius: 6px; box-shadow: 0 14px 36px rgba(0,0,0,.55); opacity: 0; transition: opacity .2s, transform .2s; }
@@ -314,6 +320,7 @@ __PWA__
     <button id="chatSend" class="primary">Enviar</button>
   </form>
 </section>
+<div id="upd" hidden role="status" aria-live="polite"><span class="txt"></span><button class="go">Actualizar</button><button class="later">Después</button></div>
 <div id="other" hidden role="status" aria-live="polite"><span class="txt"></span><button class="go">Ver partida</button><button class="x" aria-label="Cerrar">×</button></div>
 <div id="taunt" hidden aria-live="assertive"><span class="who"></span><span class="txt"></span></div>
 <div id="loading" role="status" aria-live="polite"><div class="ld">
@@ -2521,6 +2528,46 @@ const SOUNDS = __SOUNDS__;
     $('chatLog').innerHTML = ''; setChatOpen(false);
   }
 
+  /* ---------- Versión nueva ----------
+     La build escribe version.json al lado de la página con un código de build distinto en cada publicación
+     (también en /dev/). Se consulta al abrir, al volver a la página y cada 15 minutos: la app instalada en el
+     celular puede quedar días abierta en segundo plano sin recargarse.
+     Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
+  const BUILD = '__BUILD__';
+  let updLater = null;   // build que el jugador dejó para «después»
+  async function checkUpdate() {
+    if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
+    try {
+      const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return;
+      const v = await r.json();
+      if (v && v.build && v.build !== BUILD && v.build !== updLater) newVersion(v);
+    } catch (_) {}
+  }
+  // para no recargar en bucle si version.json ya cambió pero la página todavía llega vieja (caché del servidor):
+  // se intenta una sola vez cada 10 minutos por versión
+  const triedRecently = b => { try { const t = JSON.parse(sessionStorage.getItem('chaskiboom.upd') || 'null'); return t && t.b === b && Date.now() - t.at < 600000; } catch (_) { return false; } };
+  function doUpdate() {
+    $('upd').hidden = true;
+    try { sessionStorage.setItem('chaskiboom.upd', JSON.stringify({ b: $('upd').dataset.build, at: Date.now() })); } catch (_) {}
+    const go = () => location.reload();
+    if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {}).finally(go);
+    else go();
+  }
+  function newVersion(v) {
+    if (triedRecently(v.build)) return;
+    $('upd').dataset.build = v.build;
+    const playing = started && !isOver();
+    if (!playing && !busy && lobby.hidden) { doUpdate(); return; }   // nada que perder: se actualiza sola
+    $('upd').querySelector('.txt').textContent = 'Hay una versión nueva del juego' + (v.version ? ' (' + v.version + ')' : '') + '.'
+      + (online ? ' La partida online sigue al actualizar.' : ' Si actualizás ahora se pierde la partida en curso.');
+    $('upd').hidden = false;
+  }
+  $('upd').querySelector('.go').addEventListener('click', doUpdate);
+  $('upd').querySelector('.later').addEventListener('click', () => { updLater = $('upd').dataset.build; $('upd').hidden = true; });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
+  setInterval(checkUpdate, 15 * 60 * 1000);
+
   /* ---------- Arranque ---------- */
   (async () => {
     try {
@@ -2548,6 +2595,7 @@ const SOUNDS = __SOUNDS__;
       $('loading').hidden = true;
       const code = location.hash.replace('#', '');
       if (code && HAS_FB) enterOnline(code); else chooseMode();
+      checkUpdate();
       if (HAS_FB && getNick()) fbInit().catch(() => {});   // ya jugó online: se vigilan sus partidas aunque juegue contra la CPU
       document.fonts.ready.then(layout);
       window.__game = { chess, units, get online() { return online; }, play_move: (f, t) => play_move(f, t), get busy() { return busy; }, get sounds() { return Object.keys(sbuf).length; } };

@@ -19,7 +19,11 @@ self.addEventListener('fetch', e => {
   if (!propio && !CDN.includes(url.hostname)) return;                    // Firebase (base de datos, auth), etc.: sin tocar
   e.respondWith((async () => {
     try {
-      const res = await fetch(req);
+      // lo propio se pide con no-cache: el navegador revalida con el servidor en vez de usar su caché HTTP
+      // (GitHub Pages permite guardar 10 min; sin esto una versión nueva podía tardar en verse)
+      const res = await (!propio ? fetch(req)
+        : req.mode === 'navigate' ? fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' })
+        : fetch(new Request(req, { cache: 'no-cache' })));
       if (res.ok || res.type === 'opaque') {
         const copia = res.clone();
         caches.open(CACHE).then(c => c.put(req, copia)).catch(() => {});
