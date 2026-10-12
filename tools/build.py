@@ -74,6 +74,7 @@ def page(t):
 def build_site(dev):
     t = open('src/game_template.html', encoding='utf-8').read()
     t = (t.replace('__LOGO__', 'assets/logo.webp')
+          .replace('__WINNER__', 'assets/winner.webp').replace('__LOSER__', 'assets/loser.webp')
           .replace('__ASSETS__', json.dumps(assets_map(), indent=2))
           .replace('__PIECES__', json.dumps(pieces_map(), indent=2))
           .replace('__SOUNDS__', json.dumps(sounds_map(), indent=2))
@@ -105,6 +106,8 @@ def build_artifact():
     sounds = {k: 'data:audio/mpeg;base64,' + b64(v) for k, v in sounds_map().items()}
     t = (t.replace('__ENGINE__', '').replace('__FIREBASE__', '').replace('__PWA__', '')
           .replace('__LOGO__', 'data:image/webp;base64,' + b64('assets/logo.webp'))
+          .replace('__WINNER__', 'data:image/webp;base64,' + b64('assets/winner.webp'))
+          .replace('__LOSER__', 'data:image/webp;base64,' + b64('assets/loser.webp'))
           .replace('__ASSETS__', json.dumps(assets)).replace('__PIECES__', json.dumps(pieces)).replace('__SOUNDS__', json.dumps(sounds)))
     os.makedirs('build', exist_ok=True)
     open('build/artifact.html', 'w', encoding='utf-8').write(t)

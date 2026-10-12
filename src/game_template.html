@@ -65,6 +65,11 @@ __PWA__
   #modal .card { width: min(420px, 100%); background: #221b28; border: 2px solid var(--torch); outline: 1px solid #5a4330; outline-offset: 4px; border-radius: 4px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
   #modal h2 { font-family: var(--display); font-weight: 700; color: var(--torch); margin: 0 0 10px; font-size: 26px; letter-spacing: .04em; text-wrap: balance; }
   #modal p { margin: 0 0 20px; font-size: 18px; line-height: 1.45; }
+  /* Cartel de fin de partida con retrato a la izquierda (winner / loser) */
+  #modal .card.withImg { width: min(560px, 100%); display: grid; grid-template-columns: auto 1fr; column-gap: clamp(12px, 3vw, 22px); align-items: center; }
+  #modal .card.withImg > :not(.mSide) { grid-column: 2; }
+  #modal .mSide { grid-column: 1; grid-row: 1 / span 3; width: clamp(88px, 27vw, 180px); height: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.6)); }
+  @media (max-width: 380px) { #modal .card.withImg { padding: 20px 14px 16px; } #modal .card.withImg h2 { font-size: 22px; } #modal .card.withImg p { font-size: 16px; } }
   .lvlPick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: -6px 0 18px; }
   .lvlPick .lbl { width: 100%; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
   .lvlPick button { padding: 6px 10px; font-size: 15px; }
@@ -1385,8 +1390,17 @@ const SOUNDS = __SOUNDS__;
     try { localStorage.setItem('chaskiboom.level', String(i)); } catch (_) {}
     updatePlayers();
   }
+  const RESULT_IMG = { win: "__WINNER__", lose: "__LOSER__" };   // retratos de los carteles de fin de partida
   function showModal(title, text, buttons, opt = {}) {
     const old = modal.querySelector('.mLogo'); if (old) old.remove();
+    const oldSide = modal.querySelector('.mSide'); if (oldSide) oldSide.remove();
+    modal.querySelector('.card').classList.toggle('withImg', !!opt.img);
+    if (opt.img) {
+      // retrato del ganador o del perdedor, a la izquierda del texto
+      const img = document.createElement('img');
+      img.className = 'mSide'; img.src = RESULT_IMG[opt.img]; img.alt = '';
+      modal.querySelector('.card').prepend(img);
+    }
     if (opt.logo) {
       const img = document.createElement('img');
       img.className = 'mLogo'; img.src = $('logo').src; img.alt = '';
@@ -1456,11 +1470,11 @@ const SOUNDS = __SOUNDS__;
       showModal('Tablas', why + ' La partida duró ' + mv + '.', again);
     } else if (vsCpu || online) {
       // Cada jugador ve su propio cartel (en el modo online, cada dispositivo mostrará el suyo)
-      if (result === localColor) showModal('¡Felicitaciones!', 'Ganaste ' + how + ' en ' + mv + '.', again);
-      else showModal('Derrota', 'Perdés esta partida en ' + mv + ' (' + how + ').', again);
+      if (result === localColor) showModal('¡Felicitaciones!', 'Ganaste ' + how + ' en ' + mv + '.', again, { img: 'win' });
+      else showModal('Derrota', 'Perdés esta partida en ' + mv + ' (' + how + ').', again, { img: 'lose' });
     } else {
       const W = sidePl(result), L = sidePl(opp(result));
-      showModal('¡Felicitaciones, ' + W + '!', 'Ganan ' + how + ' en ' + mv + '. ' + Art(opp(result)) + ' pierden esta partida en ' + mv + '.', again);
+      showModal('¡Felicitaciones, ' + W + '!', 'Ganan ' + how + ' en ' + mv + '. ' + Art(opp(result)) + ' pierden esta partida en ' + mv + '.', again, { img: 'win' });
     }
   }
 
