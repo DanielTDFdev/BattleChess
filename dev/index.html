@@ -218,7 +218,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="../assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.5</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.6</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -1425,39 +1425,48 @@ const SOUNDS = {
   $('newg').addEventListener('click', () => {
     if (busy) return;
     if (online) { openLobby(); return; }
-    closeModal();
-    chess.reset(); selected = null; targets = []; lastMove = null; ended = null; viewPos = null; viewLast = null;
-    hideArrows(); updateHist();
-    setupBoard(); dirty3d = false;
-    drawColors();
+    // con una partida en curso (o terminada), Cancelar vuelve a ella tal como estaba
+    drawColors(started ? null : chooseMode);
   });
 
   // Pantalla inicial: elegir cómo jugar
   function chooseMode() {
     showModal('ChaskiBoom Battle Chess', '¿Cómo querés jugar?', [
-      { label: 'Contra la CPU', primary: true, onClick: () => { setMode(true); drawColors(); } },
+      { label: 'Contra la CPU', primary: true, onClick: () => { setMode(true); drawColors(chooseMode); } },
       { label: 'Online', onClick: openLobby }
     ], { logo: true });
   }
 
-  // Sorteo de colores al comenzar cada partida
+  /* Sorteo de colores al comenzar cada partida.
+     El tablero no se toca hasta que se aprieta Comenzar: con Cancelar queda la partida anterior como estaba
+     (onCancel null) o se vuelve a la elección inicial (onCancel = chooseMode). */
   let started = false;
-  function drawColors() {
+  function drawColors(onCancel) {
+    const col = Math.random() < 0.5 ? 'w' : 'b';
+    const prevLevel = cpuLevel;
+    // Cartel de inicio: lo toca quien juega con blancas (contra la CPU, siempre el jugador local)
+    const whiteIsCpu = vsCpu && col === 'b';
+    const msg = vsCpu ? (whiteIsCpu ? 'Te tocaron ' + art('b') + '. La CPU juega con ' + art('w') + ' y mueve primero.'
+                                     : 'Te tocaron ' + art('w') + '. Movés primero.')
+                      : 'Abajo juegan ' + art(col) + '. Que toquen Comenzar ' + art('w') + '.';
+    showModal('Nueva partida', msg + ' Los relojes arrancan al comenzar.', [
+      { label: 'Comenzar', primary: true, onClick: () => { resetGame(col); startGame(); } },
+      { label: 'Cancelar', onClick: () => { if (cpuLevel !== prevLevel) setLevel(prevLevel); if (onCancel) onCancel(); } }
+    ], { levels: vsCpu });
+  }
+  function resetGame(col) {
+    chess.reset(); selected = null; targets = []; lastMove = null; ended = null; viewPos = null; viewLast = null;
+    hideArrows(); updateHist();
+    setupBoard(); dirty3d = false;
     started = false;
     gameSerial++;
     if (ENGINE_URL && !sfFailed) sfInit().then(() => sf.postMessage('ucinewgame')).catch(() => {});
-    localColor = Math.random() < 0.5 ? 'w' : 'b';
+    localColor = col;
     times.w = times.b = 0;
     build2D(); render2D(); drawMarks(); updateStatus(); layout();
     const mine = sidePl(localColor);
     caption(vsCpu ? 'Sorteo: jugás con las ' + mine + (localColor === 'b' ? '. Empieza la CPU' : '. Te toca empezar')
                   : 'Sorteo: abajo juegan las ' + mine);
-    // Cartel de inicio: lo toca quien juega con blancas (contra la CPU, siempre el jugador local)
-    const whiteIsCpu = vsCpu && localColor === 'b';
-    const msg = vsCpu ? (whiteIsCpu ? 'Te tocaron ' + art('b') + '. La CPU juega con ' + art('w') + ' y mueve primero.'
-                                     : 'Te tocaron ' + art('w') + '. Movés primero.')
-                      : 'Abajo juegan ' + art(localColor) + '. Que toquen Comenzar ' + art('w') + '.';
-    showModal('Nueva partida', msg + ' Los relojes arrancan al comenzar.', [{ label: 'Comenzar', primary: true, onClick: startGame }], { levels: vsCpu });
   }
   function startGame() {
     audioInit();
@@ -1483,6 +1492,11 @@ const SOUNDS = {
 
   /* ---------- Fin de partida: mate, tablas y abandono ---------- */
   const modal = $('modal');
+  function setLevel(i) {
+    cpuLevel = i;
+    try { localStorage.setItem('chaskiboom.level', String(i)); } catch (_) {}
+    updatePlayers();
+  }
   function showModal(title, text, buttons, opt = {}) {
     const old = modal.querySelector('.mLogo'); if (old) old.remove();
     if (opt.logo) {
@@ -1500,10 +1514,8 @@ const SOUNDS = {
         const b = document.createElement('button');
         b.textContent = l.name; b.setAttribute('aria-pressed', String(i === cpuLevel));
         b.addEventListener('click', () => {
-          cpuLevel = i;
-          try { localStorage.setItem('chaskiboom.level', String(i)); } catch (_) {}
+          setLevel(i);
           pick.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i)));
-          updatePlayers();
         });
         pick.appendChild(b);
       });
