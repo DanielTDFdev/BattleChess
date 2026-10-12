@@ -1,7 +1,7 @@
 // Service worker de ChaskiBoom Battle Chess (generado por tools/build.py; editar src/sw.js).
 // Estrategia "red primero": siempre se baja la última versión del juego y la copia en caché
 // solo se usa si no hay conexión. Así una publicación nueva se ve en la próxima apertura.
-const CACHE = 'chaskiboom-v1.14';
+const CACHE = 'chaskiboom-v1.15';
 const CDN = ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com', 'www.gstatic.com'];
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -19,7 +19,11 @@ self.addEventListener('fetch', e => {
   if (!propio && !CDN.includes(url.hostname)) return;                    // Firebase (base de datos, auth), etc.: sin tocar
   e.respondWith((async () => {
     try {
-      const res = await fetch(req);
+      // lo propio se pide con no-cache: el navegador revalida con el servidor en vez de usar su caché HTTP
+      // (GitHub Pages permite guardar 10 min; sin esto una versión nueva podía tardar en verse)
+      const res = await (!propio ? fetch(req)
+        : req.mode === 'navigate' ? fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' })
+        : fetch(new Request(req, { cache: 'no-cache' })));
       if (res.ok || res.type === 'opaque') {
         const copia = res.clone();
         caches.open(CACHE).then(c => c.put(req, copia)).catch(() => {});

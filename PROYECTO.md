@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.14** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.15** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.14 → v1.15…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.15 → v1.16…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -99,13 +99,13 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Pantalla de carga (v1.14):** logo, barra y porcentaje. Los .glb se bajan todos a la vez (antes de a uno)
   y la barra avanza por bytes recibidos (`ASSET_SIZES`, marcador `__ASSET_SIZES__` que llena la build).
   `#loading` tiene z-index 60 para tapar la consola, que antes se veía encima.
-- **Actualización automática (v1.15, en dev):** la build escribe `version.json` ({version, build}) al lado de cada página
+- **Actualización automática (v1.15):** la build escribe `version.json` ({version, build}) al lado de cada página
   y mete el mismo código de build (`__BUILD__`, fecha y hora UTC) en la página. `checkUpdate()` lo consulta al abrir,
   al volver a la página y cada 15 min. Si cambió y no hay partida en curso, recarga sola; si la hay, muestra un cartel
   (`#upd`) con Actualizar / Después. Para no recargar en bucle si la página llega vieja, se intenta una vez cada 10 min
   por versión (sessionStorage `chaskiboom.upd`). El service worker pide lo propio con `cache: 'no-cache'`
   (GitHub Pages deja cachear 10 min). En /dev/ también funciona: cada build nueva cuenta como versión nueva.
-- **Logo en celular (v1.15, en dev):** `layout()` agranda `#logo` con el espacio que sobra sobre el tablero 2D
+- **Logo en celular (v1.15):** `layout()` agranda `#logo` con el espacio que sobra sobre el tablero 2D
   (hasta el 80 % del ancho), sin achicar el tablero.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
@@ -120,6 +120,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.15:** actualización automática de versión (`version.json`) y logo más grande en el celular.
+  Quien tenía v1.14 o anterior tiene que cerrar y abrir la app una vez; desde ahí se actualiza sola.
 - **v1.14:** pantalla de carga con logo, barra y porcentaje; los modelos se bajan en paralelo.
 - **v1.13:** 20 juegos de piezas 2D nuevos de lichess (25 en total, licencias en `assets/pieces/LICENCIAS.md`)
   y el reloj de la CPU corre mientras piensa (`cpuThinking`; antes `busy` lo dejaba siempre en 0:00).
