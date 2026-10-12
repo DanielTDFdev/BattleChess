@@ -2247,7 +2247,7 @@ const SOUNDS = __SOUNDS__;
     const before = online.applied + queue.length;
     for (let i = before; i < moves.length; i++) queue.push(moves[i]);
     // la última jugada es del rival (las jugadas pares son de las blancas)
-    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó');
+    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó', { quiet: true });
     pumpQueue();
 
     // Ofertas de tablas
@@ -2347,18 +2347,20 @@ const SOUNDS = __SOUNDS__;
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { hiddenAt = performance.now(); return; }
     if (performance.now() - hiddenAt > 3000) backAt = performance.now();   // volvió después de un rato afuera
-    if (awayNews) { const t = awayNews, b = awayBanner; awayNews = null; showNews(t, b); }
+    if (awayNews) { const t = awayNews, b = awayBanner, q = awayQuiet; awayNews = null; showNews(t, b, q); }
   });
-  // opt.banner: false = solo título, sonido y vibración (cuando ya hay un cartel con botones); opt.sound: suena aunque esté mirando
+  // opt.banner: false = solo título, sonido y vibración (cuando ya hay un cartel con botones); opt.sound: suena aunque esté mirando;
+  // opt.quiet: sin el «pin» (las jugadas del rival ya tienen su propio sonido de movimiento)
+  let awayQuiet = false;
   function news(text, opt = {}) {
-    const banner = opt.banner !== false;
-    if (document.hidden) { awayNews = text; awayBanner = banner; notifyTurn(); sfx('check', 0, { exact: true }); return; }
-    if (performance.now() - backAt < 20000) { backAt = -1e9; showNews(text, banner); }
+    const banner = opt.banner !== false, quiet = !!opt.quiet;
+    if (document.hidden) { awayNews = text; awayBanner = banner; awayQuiet = quiet; notifyTurn(); if (!quiet) sfx('check', 0, { exact: true }); return; }
+    if (performance.now() - backAt < 20000) { backAt = -1e9; showNews(text, banner, quiet); }
     else if (opt.sound) sfx('check', 0, { exact: true });
   }
-  function showNews(text, banner) {
-    if (banner) showTaunt({ name: 'ChaskiBoom', text }, { ms: 5000, vol: 1 });
-    else sfx('check', 0, { exact: true });
+  function showNews(text, banner, quiet) {
+    if (banner) showTaunt({ name: 'ChaskiBoom', text }, { ms: 5000, vol: 1, silent: quiet });
+    else if (!quiet) sfx('check', 0, { exact: true });
     try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (_) {}
   }
 
@@ -2409,16 +2411,16 @@ const SOUNDS = __SOUNDS__;
     else if (g.drawOffer && !p.drawOffer && g.drawOffer !== myColor) t = opp + ' ofrece tablas';
     else if (g.started && !p.started && myColor === 'b') t = opp + ' comenzó la partida';
     else if ((g.ply || 0) > (p.ply || 0) && g.turn === myColor) t = opp + ' jugó: te toca';
-    if (t) showOther(id, t);
+    if (t) showOther(id, t, /jugó: te toca$/.test(t));
   }
   let otherTimer = null, otherId = null;
-  function showOther(id, text) {
+  function showOther(id, text, soft) {
     const el = $('other');
     otherId = id;
     el.querySelector('.txt').textContent = text + ' (en otra partida)';
     el.hidden = false; void el.offsetWidth; el.classList.add('show');
     clearTimeout(otherTimer); otherTimer = null;
-    sfx('check', 0, { exact: true });
+    sfx('check', 0, soft ? { exact: true, vol: 0.35, rate: 1.4 } : { exact: true });   // jugada en otra partida: el sonido suave
     if (document.hidden) { awayNews = text; awayBanner = false; notifyTurn(); }
     else { otherTimer = setTimeout(hideOther, 15000); try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (_) {} }
   }
@@ -2562,7 +2564,7 @@ const SOUNDS = __SOUNDS__;
     clearTimeout(tauntTimer);
     el.hidden = false; void el.offsetWidth; el.classList.add('show');
     tauntTimer = setTimeout(() => { el.classList.remove('show'); tauntTimer = setTimeout(() => { el.hidden = true; }, 220); }, opt.ms || 3000);
-    sfx('check', 0, { exact: true, vol: opt.vol || 0.5 });
+    if (!opt.silent) sfx('check', 0, { exact: true, vol: opt.vol || 0.5 });
   }
 
   // se llama con cada actualización de la partida

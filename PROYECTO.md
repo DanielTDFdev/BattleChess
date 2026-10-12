@@ -120,6 +120,10 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Aviso de mensajes del chat (v1.18):** con el chat cerrado, un mensaje escrito del rival muestra 4 s abajo
   `#chatToast` («Pedro: …», tocarlo abre el chat) con un sonido suave; con la página oculta el título dice
   «💬 Pedro te escribió» (`chatAway` en `notifyTurn`). Las frases siguen con su cartel grande y el contador sigue igual.
+- **Sonido de aviso (v1.19, en dev):** el «pin» de los avisos es el sonido de jaque (`check`). Ya no suena cuando el rival
+  juega (`news(..., { quiet: true })`), porque la jugada tiene su propio sonido de movimiento: solo cambia el título
+  y, al volver, se muestra el cartel sin sonido. En otras partidas la jugada del rival suena con la versión suave.
+  Sigue sonando para desafío aceptado, partida comenzada, tablas, revancha y frases.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
