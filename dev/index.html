@@ -72,6 +72,10 @@
   #modal .card { width: min(420px, 100%); background: #221b28; border: 2px solid var(--torch); outline: 1px solid #5a4330; outline-offset: 4px; border-radius: 4px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
   #modal h2 { font-family: var(--display); font-weight: 700; color: var(--torch); margin: 0 0 10px; font-size: 26px; letter-spacing: .04em; text-wrap: balance; }
   #modal p { margin: 0 0 20px; font-size: 18px; line-height: 1.45; }
+  .lvlPick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: -6px 0 18px; }
+  .lvlPick .lbl { width: 100%; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .lvlPick button { padding: 6px 10px; font-size: 15px; }
+  .lvlPick button[aria-pressed="true"] { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   .mBtns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
   .mBtns .primary { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   #resign:hover { border-color: var(--red); }
@@ -197,12 +201,6 @@
     <button id="mcpu" aria-pressed="true">Contra la CPU</button>
     <button id="mon" aria-pressed="false">Online</button>
   </div>
-  <label class="chk onlycpu" for="lvl">Nivel
-    <select id="lvl">
-      <option value="0">Muy fácil</option><option value="1">Fácil</option><option value="2">Medio</option>
-      <option value="3">Difícil</option><option value="4">Experto</option>
-    </select>
-  </label>
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
   <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
@@ -1390,7 +1388,7 @@ const SOUNDS = {
     const msg = vsCpu ? (whiteIsCpu ? 'Te tocaron ' + art('b') + '. La CPU juega con ' + art('w') + ' y mueve primero.'
                                      : 'Te tocaron ' + art('w') + '. Movés primero.')
                       : 'Abajo juegan ' + art(localColor) + '. Que toquen Comenzar ' + art('w') + '.';
-    showModal('Nueva partida', msg + ' Los relojes arrancan al comenzar.', [{ label: 'Comenzar', primary: true, onClick: startGame }]);
+    showModal('Nueva partida', msg + ' Los relojes arrancan al comenzar.', [{ label: 'Comenzar', primary: true, onClick: startGame }], { levels: vsCpu });
   }
   function startGame() {
     audioInit();
@@ -1422,6 +1420,25 @@ const SOUNDS = {
       const img = document.createElement('img');
       img.className = 'mLogo'; img.src = $('logo').src; img.alt = '';
       modal.querySelector('.card').prepend(img);
+    }
+    const oldPick = modal.querySelector('.lvlPick'); if (oldPick) oldPick.remove();
+    if (opt.levels) {
+      // selector de nivel de la CPU, antes de empezar
+      const pick = document.createElement('div');
+      pick.className = 'lvlPick'; pick.setAttribute('role', 'group'); pick.setAttribute('aria-label', 'Nivel de la CPU');
+      pick.innerHTML = '<span class="lbl">Nivel de la CPU</span>';
+      LEVELS.forEach((l, i) => {
+        const b = document.createElement('button');
+        b.textContent = l.name; b.setAttribute('aria-pressed', String(i === cpuLevel));
+        b.addEventListener('click', () => {
+          cpuLevel = i;
+          try { localStorage.setItem('chaskiboom.level', String(i)); } catch (_) {}
+          pick.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i)));
+          updatePlayers();
+        });
+        pick.appendChild(b);
+      });
+      modal.querySelector('.card').insertBefore(pick, $('mBtns'));
     }
     $('mTitle').hidden = !!opt.logo;
     $('mTitle').textContent = title;
@@ -2113,14 +2130,6 @@ const SOUNDS = {
     document.title = mine && document.hidden ? '¡Tu turno! · ChaskiBoom' : 'ChaskiBoom Battle Chess';
   }
   document.addEventListener('visibilitychange', notifyTurn);
-
-  $('lvl').value = String(cpuLevel);
-  $('lvl').addEventListener('change', e => {
-    cpuLevel = Number(e.target.value);
-    try { localStorage.setItem('chaskiboom.level', String(cpuLevel)); } catch (_) {}
-    updatePlayers();
-    if (vsCpu && started && !isOver()) caption('Nivel de la CPU: ' + LEVELS[cpuLevel].name);
-  });
 
   /* ---------- Arranque ---------- */
   (async () => {
