@@ -124,6 +124,12 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   juega (`news(..., { quiet: true })`), porque la jugada tiene su propio sonido de movimiento: solo cambia el título
   y, al volver, se muestra el cartel sin sonido. En otras partidas la jugada del rival suena con la versión suave.
   Sigue sonando para desafío aceptado, partida comenzada, tablas, revancha y frases.
+- **Premoves (v1.20, en dev):** contra la CPU u online, durante el turno del rival (incluso mientras se anima tu
+  jugada) se toca una pieza propia y su destino; quedan en azul (`.sq2.pre` en 2D, `M.pre` en 3D). `tapSquare()`
+  unifica los toques de 2D y 3D. Las jugadas posibles salen de `premovePos()` (la posición con tu color a mover).
+  Con un premove anotado, cualquier toque lo cancela. `tryPremove()` se llama en `afterMove()` (online, cuando la
+  cola de jugadas recibidas queda vacía): si es legal se juega, si no se avisa y se descarta. Se limpia al empezar
+  o terminar la partida. No hay premoves entre dos jugadores en el mismo dispositivo.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 

@@ -136,7 +136,8 @@
   #board2d[hidden] { display: none; }
   .sq2 { position: relative; display: grid; place-items: center; cursor: pointer; min-width: 0; min-height: 0; overflow: hidden; }
   .sq2.l { background: #cdb98f; } .sq2.d { background: #7a5c43; }
-  .sq2.last::before, .sq2.sel::before, .sq2.chk::before { content: ""; position: absolute; inset: 0; }
+  .sq2.last::before, .sq2.sel::before, .sq2.chk::before, .sq2.pre::before { content: ""; position: absolute; inset: 0; }
+  .sq2.pre::before { background: rgba(74, 132, 222, .5); }
   .sq2.last::before { background: rgba(232, 207, 106, .38); }
   .sq2.sel::before { background: rgba(227, 162, 70, .6); }
   .sq2.chk::before { background: radial-gradient(circle, rgba(212, 85, 63, .85) 0 35%, rgba(212, 85, 63, .25) 70%); }
@@ -1128,6 +1129,8 @@ const SOUNDS = {
   /* ---------- Juego ---------- */
   const chess = new Chess();
   let busy = false, vsCpu = true, selected = null, targets = [], lastMove = null, skipping = false;
+  // premove: jugada anotada durante el turno del rival (CPU u online) que se hace sola apenas te toca
+  let premove = null, preSel = null, preTargets = [];
   let ended = null;   // { result: 'w' | 'b' | 'draw', reason }
   const isOver = () => !!ended || chess.game_over();
   const opp = c => c === 'w' ? 'b' : 'w';
@@ -1157,7 +1160,8 @@ const SOUNDS = {
     last: new THREE.MeshBasicMaterial({ color: 0xe8cf6a, transparent: true, opacity: 0.35 }),
     check: new THREE.MeshBasicMaterial({ color: 0xd4553f, transparent: true, opacity: 0.55 }),
     dot: new THREE.MeshBasicMaterial({ color: 0x1d140c, transparent: true, opacity: 0.45 }),
-    ring: new THREE.MeshBasicMaterial({ color: 0xd4553f, transparent: true, opacity: 0.8 })
+    ring: new THREE.MeshBasicMaterial({ color: 0xd4553f, transparent: true, opacity: 0.8 }),
+    pre: new THREE.MeshBasicMaterial({ color: 0x4a84de, transparent: true, opacity: 0.55 })
   };
   function mark(geo, mat, sq, y) {
     const m = new THREE.Mesh(geo, mat);
@@ -1172,12 +1176,68 @@ const SOUNDS = {
   function drawMarks() {
     if (is2D) render2D();
     marks.clear();
-    if (busy) return;
+    const preMarks = () => {
+      if (premove) { mark(markGeo, M.pre, premove.from, 0.014); mark(markGeo, M.pre, premove.to, 0.014); }
+      if (preSel) mark(markGeo, M.pre, preSel, 0.014);
+      preTargets.forEach(m => mark(dotGeo, M.pre, m.to, 0.02));
+    };
+    if (busy) { if (cam.mode === 'board') preMarks(); return; }
+    preMarks();
     const L = shownLast(), P = shownPos();
     if (L) { mark(markGeo, M.last, L.from, 0.011); mark(markGeo, M.last, L.to, 0.011); }
     if (P.in_check()) { const k = kingSquare(P.turn()); if (k) mark(markGeo, M.check, k, 0.012); }
     if (selected) mark(markGeo, M.sel, selected, 0.013);
     targets.forEach(m => m.captured ? mark(ringGeo, M.ring, m.to, 0.02) : mark(dotGeo, M.dot, m.to, 0.02));
+  }
+
+  /* ---------- Premoves ----------
+     Durante el turno del rival (CPU u online) se puede anotar una jugada: tocar una pieza propia y su destino.
+     Las casillas quedan en azul y la jugada se hace sola apenas te toca, si sigue siendo legal.
+     Con un premove anotado, cualquier toque (otra casilla o la misma) lo cancela. */
+  const canPremove = () => started && !isOver() && (vsCpu || !!online) && chess.turn() !== localColor;
+  // la posición actual como si movieras vos (para saber a dónde puede ir cada pieza)
+  function premovePos() {
+    const f = chess.fen().split(' ');
+    f[1] = localColor; f[3] = '-';
+    const c = new Chess();
+    return c.load(f.join(' ')) ? c : null;
+  }
+  function clearPremove(msg) {
+    const had = premove || preSel;
+    premove = null; preSel = null; preTargets = [];
+    if (had) { if (msg) caption(msg); drawMarks(); }
+  }
+  function tapSquare(sq) {
+    if (premove) { clearPremove('Premove cancelado'); return; }
+    if (canPremove()) {
+      const P = premovePos();
+      if (P && sq && preSel && preTargets.some(m => m.to === sq)) {
+        premove = { from: preSel, to: sq };
+        preSel = null; preTargets = [];
+        caption('Premove: ' + premove.from + ' → ' + premove.to + ' (tocá cualquier casilla para cancelarlo)');
+        drawMarks(); return;
+      }
+      const pc = P && sq ? P.get(sq) : null;
+      if (pc && pc.color === localColor && sq !== preSel) { preSel = sq; preTargets = P.moves({ square: sq, verbose: true }); }
+      else { preSel = null; preTargets = []; }
+      drawMarks(); return;
+    }
+    if (busy || isOver() || notMyTurn()) return;
+    if (sq && selected && targets.some(m => m.to === sq)) { play_move(selected, sq); return; }
+    const pc = sq ? chess.get(sq) : null;
+    if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
+    else select(null);
+  }
+  // se llama cuando termina una jugada: si te toca y hay un premove, se juega (o se descarta si ya no es legal)
+  function tryPremove() {
+    if (busy || viewPos || isOver() || notMyTurn()) return false;
+    if (preSel && !premove) { const s = preSel; preSel = null; preTargets = []; select(s); }   // estabas eligiendo: queda seleccionada
+    if (!premove) return false;
+    const pm = premove; premove = null;
+    const ok = chess.moves({ verbose: true }).some(m => m.from === pm.from && m.to === pm.to);
+    if (!ok) { caption('El premove ' + pm.from + ' → ' + pm.to + ' ya no es válido: se canceló'); drawMarks(); return false; }
+    setTimeout(() => { if (!busy && !notMyTurn() && !isOver()) play_move(pm.from, pm.to, { promo: 'q' }); }, 80);
+    return true;
   }
 
   function select(sq) {
@@ -1234,7 +1294,7 @@ const SOUNDS = {
   function pick(e) {
     if (!started) return;
     if (viewPos) { caption('Estás viendo una jugada anterior: tocá » para volver a la partida'); return; }
-    if (busy || isOver() || notMyTurn() || cam.mode !== 'board') return;
+    if (cam.mode !== 'board' || (!canPremove() && !premove && (busy || isOver() || notMyTurn()))) return;
     const r = el.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
@@ -1251,13 +1311,10 @@ const SOUNDS = {
       const p = new THREE.Vector3();
       if (!ray.ray.intersectPlane(ground, p)) return;
       const c = Math.floor(p.x / TS + 4), rr = Math.floor(p.z / TS + 4);
-      if (c < 0 || c > 7 || rr < 0 || rr > 7) { select(null); return; }
+      if (c < 0 || c > 7 || rr < 0 || rr > 7) { tapSquare(null); return; }
       sq = FILES[c] + (8 - rr);
     }
-    if (selected && targets.some(m => m.to === sq)) { play_move(selected, sq); return; }
-    const pc = chess.get(sq);
-    if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
-    else select(null);
+    tapSquare(sq);
   }
   $('resetv').addEventListener('click', () => Object.assign(orbit, ORBIT0));
 
@@ -1572,8 +1629,9 @@ const SOUNDS = {
 
   // Después de cada jugada: si llegaron jugadas del rival se reproducen; si le toca a la CPU, mueve
   function afterMove() {
-    if (online) { pumpQueue(); return; }
-    if (cpuTurn() && !isOver()) cpuPlay(450);
+    if (online) { pumpQueue(); if (!busy && !queue.length) tryPremove(); return; }
+    if (cpuTurn() && !isOver()) { cpuPlay(450); return; }
+    tryPremove();
   }
 
   function waitSink(u) { return new Promise(res => { u.onRemoved = res; }); }
@@ -1892,6 +1950,7 @@ const SOUNDS = {
   }
   function resetGame(col) {
     chess.reset(); selected = null; targets = []; lastMove = null; ended = null; viewPos = null; viewLast = null;
+    premove = null; preSel = null; preTargets = [];
     hideArrows(); updateHist();
     setupBoard(); dirty3d = false;
     started = false;
@@ -2036,6 +2095,7 @@ const SOUNDS = {
     if (ended) return;
     ended = { result, reason };
     if (online && !opt.remote) online.ref.child('result').transaction(cur => cur || { winner: result, reason });
+    premove = null; preSel = null; preTargets = [];
     select(null);
     updateStatus();
     caption('');
@@ -2256,12 +2316,8 @@ const SOUNDS = {
   board2d.addEventListener('click', e => {
     const cell = e.target.closest('.sq2');
     if (cell && viewPos) { caption('Estás viendo una jugada anterior: tocá » para volver a la partida'); return; }
-    if (!cell || !started || busy || isOver() || notMyTurn()) return;
-    const sq = cell.dataset.sq;
-    if (selected && targets.some(m => m.to === sq)) { play_move(selected, sq); return; }
-    const pc = chess.get(sq);
-    if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
-    else select(null);
+    if (!cell || !started) return;
+    tapSquare(cell.dataset.sq);
   });
   function render2D(opt) {
     opt = opt || {};
@@ -2271,8 +2327,9 @@ const SOUNDS = {
       const sq = cell.dataset.sq, p = opt.hide && opt.hide.has(sq) ? null : P.get(sq);
       cell.classList.toggle('last', !!L && (L.from === sq || L.to === sq));
       cell.classList.toggle('sel', selected === sq);
+      cell.classList.toggle('pre', preSel === sq || (!!premove && (premove.from === sq || premove.to === sq)));
       cell.classList.toggle('chk', chk === sq);
-      const m = targets.find(t => t.to === sq);
+      const m = targets.find(t => t.to === sq) || preTargets.find(t => t.to === sq);
       let img = cell.querySelector('img.pc');
       if (!img) { img = document.createElement('img'); img.className = 'pc'; img.alt = ''; img.decoding = 'sync'; cell.prepend(img); }   // se la llevó una pieza en vuelo
       const src = p ? pieceImg(p.color, p.type) : '';
@@ -2610,6 +2667,7 @@ const SOUNDS = {
     online = { id, ref, pres, applied: 0, loaded: false, color: null, myName: getNick(), oppName: '', offerShown: false, rematchShown: false, lastDecline: undefined, lastIdx: null };
     // estado inicial vacío hasta que llegue la partida
     chess.reset(); ended = null; started = false; selected = null; targets = []; lastMove = null; viewPos = null; viewLast = null;
+    premove = null; preSel = null; preTargets = [];
     times.w = times.b = 0; queue.length = 0;
     hideArrows();
     ref.on('value', s => onGame(s.val()));
@@ -3007,7 +3065,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página y cada 15 minutos: la app instalada en el
      celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261012222213';
+  const BUILD = '20261012222601';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
