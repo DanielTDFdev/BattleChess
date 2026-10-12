@@ -833,6 +833,21 @@ const SOUNDS = __SOUNDS__;
     if (iosKeep.paused && !document.hidden) iosKeep.play().catch(() => {});
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden && iosKeep) iosKeep.pause(); });
+  // Diagnóstico de sonido: agregar ?diag a la dirección muestra el estado del audio en una esquina
+  if (/[?&]diag\b/.test(location.search)) {
+    const box = document.createElement('pre');
+    box.style.cssText = 'position:fixed;left:6px;bottom:6px;z-index:99;margin:0;padding:6px 8px;font:11px/1.35 monospace;background:rgba(0,0,0,.8);color:#7f7;border-radius:4px;pointer-events:none;white-space:pre-wrap;max-width:94vw';
+    document.body.appendChild(box);
+    setInterval(() => {
+      box.textContent = 'iOS: ' + IOS + ' · app instalada: ' + (matchMedia('(display-mode: standalone)').matches || !!navigator.standalone)
+        + '\naudioSession: ' + (navigator.audioSession ? navigator.audioSession.type : 'no existe')
+        + '\nAudioContext: ' + (actx ? actx.state : 'sin crear (tocá la pantalla)') + ' · unlocked: ' + unlocked
+        + '\nsonidos cargados: ' + Object.keys(sbuf).length + '/' + Object.keys(SOUNDS).length
+        + '\naudio silencio: ' + (iosKeep ? (iosKeep.paused ? 'pausado' : 'sonando') + (iosKeep.error ? ' error ' + iosKeep.error.code : '') : '—')
+        + ' · casilla Sonido: ' + $('sound').checked
+        + '\nSW: ' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'activo' : 'no') + ' · ' + $('ver').textContent;
+    }, 500);
+  }
   function audioInit() {
     // iPhone: que el juego suene aunque el interruptor de silencio esté activado (Safari 16.4+)
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
