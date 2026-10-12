@@ -112,6 +112,11 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Botones bloqueados en partida (v1.17):** con una partida en curso (`inGame()` = empezada y sin terminar)
   Contra la CPU, Online y Nueva partida quedan deshabilitados (`lockGameButtons()` en `updateStatus`). Para empezar otra
   hay que terminarla o abandonarla. Para pasar a otra partida online sigue funcionando el aviso «Ver partida».
+- **Service worker sin reemplazo a mitad de carga (v1.18, en dev):** antes el SW nuevo hacía `skipWaiting()` al instalarse.
+  En iPhone eso mataba al viejo con las descargas de los .glb en curso y la carga quedaba trabada (pasó en el 45 %
+  al actualizar a v1.17). Ahora el nuevo espera; `doUpdate()` lo activa con `postMessage('skipWaiting')` y recarga
+  en `controllerchange` (tope 6 s). Vigía de carga: si no avanza en 20 s recarga sola una vez (sessionStorage
+  `chaskiboom.stall`); si se repite, `loadFailed()` muestra «Reintentar».
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 

@@ -2571,9 +2571,20 @@ const SOUNDS = __SOUNDS__;
   function doUpdate() {
     $('upd').hidden = true;
     try { sessionStorage.setItem('chaskiboom.upd', JSON.stringify({ b: $('upd').dataset.build, at: Date.now() })); } catch (_) {}
-    const go = () => location.reload();
-    if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {}).finally(go);
-    else go();
+    // se baja el service worker nuevo, se lo activa y recién entonces se recarga (con tope de 6 s)
+    let gone = false;
+    const go = () => { if (!gone) { gone = true; location.reload(); } };
+    setTimeout(go, 6000);
+    if (!navigator.serviceWorker) return go();
+    navigator.serviceWorker.addEventListener('controllerchange', go);
+    navigator.serviceWorker.getRegistration().then(async r => {
+      if (!r) return go();
+      await r.update().catch(() => {});
+      const sw = r.waiting || r.installing;
+      if (!sw) return go();
+      const ready = () => { if (sw.state === 'installed') sw.postMessage('skipWaiting'); else if (sw.state === 'activated' || sw.state === 'redundant') go(); };
+      sw.addEventListener('statechange', ready); ready();
+    }).catch(go);
   }
   function newVersion(v) {
     if (triedRecently(v.build)) return;
@@ -2589,6 +2600,15 @@ const SOUNDS = __SOUNDS__;
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
   setInterval(checkUpdate, 15 * 60 * 1000);
 
+  // la carga falló o se trabó: mensaje y botón para volver a intentar
+  function loadFailed(msg) {
+    const l = $('loading');
+    l.innerHTML = '<div class="ld"><div class="ldTxt"></div><button class="primary">Reintentar</button></div>';
+    l.querySelector('.ldTxt').textContent = msg + ' Revisá tu conexión.';
+    l.querySelector('button').addEventListener('click', () => location.reload());
+    l.hidden = false;
+  }
+
   /* ---------- Arranque ---------- */
   (async () => {
     try {
@@ -2601,9 +2621,19 @@ const SOUNDS = __SOUNDS__;
         $('loading').querySelector('.ldBar').setAttribute('aria-valuenow', String(pct));
         $('loading').querySelector('.ldPct').textContent = pct + ' %';
       };
+      // vigía: si la carga no avanza en 20 s (descarga colgada), se recarga sola una vez; si vuelve a pasar, botón Reintentar
+      let lastProg = Date.now(), done = false;
+      const watch = setInterval(() => {
+        if (done || Date.now() - lastProg < 20000) return;
+        clearInterval(watch);
+        let tried = false;
+        try { tried = Date.now() - Number(sessionStorage.getItem('chaskiboom.stall') || 0) < 120000; sessionStorage.setItem('chaskiboom.stall', String(Date.now())); } catch (_) {}
+        if (!tried) location.reload(); else loadFailed('La carga se trabó.');
+      }, 2000);
       const loaded = await Promise.all(keys.map(k => parse(ASSETS[k], e => {
-        if (e && e.loaded) { got[k] = Math.min(e.loaded, ASSET_SIZES[k] || e.loaded); showPct(); }
-      }).then(g => { got[k] = ASSET_SIZES[k] || 1; showPct(); return [k, g]; })));
+        if (e && e.loaded) { got[k] = Math.min(e.loaded, ASSET_SIZES[k] || e.loaded); lastProg = Date.now(); showPct(); }
+      }).then(g => { got[k] = ASSET_SIZES[k] || 1; lastProg = Date.now(); showPct(); return [k, g]; })));
+      done = true; clearInterval(watch);
       loaded.forEach(([k, g]) => {   // en el mismo orden que antes (importa si dos archivos traen una animación con el mismo nombre)
         if (k.startsWith('anim_')) g.animations.forEach(c => clips[c.name] = c);
         else models[k] = g;
@@ -2621,7 +2651,7 @@ const SOUNDS = __SOUNDS__;
       document.fonts.ready.then(layout);
       window.__game = { chess, units, get online() { return online; }, play_move: (f, t) => play_move(f, t), get busy() { return busy; }, get sounds() { return Object.keys(sbuf).length; } };
     } catch (e) {
-      $('loading').textContent = 'No se pudieron cargar los modelos';
+      loadFailed('No se pudieron cargar los modelos.');
       console.error(e);
     }
   })();

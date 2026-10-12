@@ -4,7 +4,11 @@
 const CACHE = 'chaskiboom-__VERSION__';
 const CDN = ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com', 'www.gstatic.com'];
 
-self.addEventListener('install', () => self.skipWaiting());
+// El service worker nuevo NO reemplaza al viejo apenas se instala: en iPhone eso cortaba las descargas
+// que la página tenía en curso (los modelos) y la carga quedaba trabada. Espera a que la página se lo pida
+// justo antes de recargar (o a que se cierre la app).
+self.addEventListener('install', () => {});
+self.addEventListener('message', e => { if (e.data === 'skipWaiting') self.skipWaiting(); });
 
 self.addEventListener('activate', e => e.waitUntil((async () => {
   for (const k of await caches.keys()) if (k.startsWith('chaskiboom-') && k !== CACHE) await caches.delete(k);
