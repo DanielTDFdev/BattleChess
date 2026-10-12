@@ -822,7 +822,7 @@ const SOUNDS = __SOUNDS__;
   // y con eso también suena el Web Audio del juego. Se pausa al salir de la página.
   const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   let iosKeep = null;
-  const audioDiag = { keepCuts: 0, states: [] };
+  const audioDiag = { keepCuts: 0, states: [], tries: 0, lastErr: '', recreated: 0 };
   function iosAudioSession() {
     if (!IOS || !$('sound').checked) return;
     if (!iosKeep) {
@@ -832,8 +832,20 @@ const SOUNDS = __SOUNDS__;
       iosKeep.setAttribute('playsinline', ''); iosKeep.setAttribute('x-webkit-airplay', 'deny'); iosKeep.disableRemotePlayback = true;
       // si iOS lo corta con la página a la vista (otra app de audio, fin de una pelea, etc.), se cuenta para el diagnóstico
       iosKeep.addEventListener('pause', () => { if (!document.hidden && $('sound').checked) audioDiag.keepCuts++; });
+      iosKeep.addEventListener('ended', () => { audioDiag.keepCuts++; });
     }
-    if (iosKeep.paused && !document.hidden) iosKeep.play().catch(() => {});
+    keepPlay(true);
+  }
+  // retoma el audio de silencio; si iOS rechaza el play() durante un toque, el elemento se descarta y el
+  // próximo toque crea uno nuevo (un <audio> que iOS dejó «trabado» no vuelve a arrancar)
+  function keepPlay(gesture) {
+    if (!iosKeep || !iosKeep.paused || document.hidden || !$('sound').checked) return;
+    const el = iosKeep;
+    audioDiag.tries++;
+    el.play().then(() => { audioDiag.lastErr = ''; }).catch(e => {
+      audioDiag.lastErr = (e && e.name) || 'error';
+      if (gesture && iosKeep === el) { try { el.removeAttribute('src'); el.load(); } catch (_) {} iosKeep = null; audioDiag.recreated++; }
+    });
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden && iosKeep) iosKeep.pause(); });
   // Diagnóstico de sonido: agregar ?diag a la dirección muestra el estado del audio en una esquina
@@ -850,7 +862,9 @@ const SOUNDS = __SOUNDS__;
         + ' · casilla Sonido: ' + $('sound').checked
         + '\nSW: ' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'activo' : 'no') + ' · ' + $('ver').textContent
         + '\nreducir movimiento: ' + matchMedia('(prefers-reduced-motion: reduce)').matches
-        + '\ncortes del silencio: ' + audioDiag.keepCuts + ' · estados: ' + audioDiag.states.join(' → ');
+        + '\ncortes del silencio: ' + audioDiag.keepCuts + ' · intentos: ' + audioDiag.tries + ' · recreado: ' + audioDiag.recreated
+        + (audioDiag.lastErr ? ' · último error: ' + audioDiag.lastErr : '')
+        + '\nestados del audio: ' + audioDiag.states.join(' → ');
     }, 500);
   }
   function audioInit() {
@@ -897,7 +911,7 @@ const SOUNDS = __SOUNDS__;
   function sfx(base, n, opt = {}) {
     if (!actx || !$('sound').checked) return;
     if (actx.state !== 'running') { actx.resume().catch(() => {}); }
-    if (iosKeep && iosKeep.paused && !document.hidden) iosKeep.play().catch(() => {});
+    keepPlay(false);
     let key = base;
     if (n) {
       let i;
