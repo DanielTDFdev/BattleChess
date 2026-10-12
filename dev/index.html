@@ -1623,7 +1623,10 @@ const SOUNDS = {
   const lobby = $('lobby');
   async function openLobby() {
     if (!HAS_FB) {
-      showModal('Modo online', 'El juego online funciona en la versión publicada en GitHub Pages; esta vista previa no puede conectarse a internet.', [{ label: 'Entendido', primary: true }]);
+      if (/github\.io$/.test(location.hostname))
+        showModal('Modo online en pruebas', 'El juego online todavía está en desarrollo. Podés probarlo en la versión de pruebas: ' + location.origin + location.pathname.replace(/[^/]*$/, '') + 'dev/', [{ label: 'Entendido', primary: true }]);
+      else
+        showModal('Modo online', 'El juego online funciona en la versión publicada en GitHub Pages; esta vista previa no puede conectarse a internet.', [{ label: 'Entendido', primary: true }]);
       return;
     }
     $('nick').value = getNick();

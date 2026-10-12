@@ -38,7 +38,7 @@
   #status.alert { color: #ffd0c4; }
   #caption { margin: 0; font-size: clamp(15px, 2.3vw, 19px); min-height: 1.3em; padding: 2px 12px; border-radius: 3px; background: rgba(20, 15, 24, .7); }
   #caption:empty { visibility: hidden; }
-  .bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(820px, calc(100% - 32px)); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; backdrop-filter: blur(6px); }
+  .bar { z-index: 10; position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(820px, calc(100% - 32px)); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; backdrop-filter: blur(6px); }
   .seg { display: flex; }
   .seg button { border-radius: 0; }
   .seg button:first-child { border-radius: 3px 0 0 3px; }
@@ -50,6 +50,8 @@
   label.chk { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
   input[type=checkbox] { accent-color: var(--torch); width: 17px; height: 17px; }
   #skip { margin-left: auto; }
+  .more { display: contents; }
+  #menuBtn { display: none; }
   #newg { border-color: var(--torch); color: var(--torch); font-weight: 600; }
   .caps { width: 100%; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--muted); }
   .caps b { font-weight: 600; }
@@ -71,6 +73,29 @@
   .mBtns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
   .mBtns .primary { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   #resign:hover { border-color: var(--red); }
+  #lobby { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(10, 7, 12, .62); z-index: 19; }
+  #lobby[hidden] { display: none; }
+  #lobby .card { width: min(460px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; background: #221b28; border: 2px solid var(--torch); outline: 1px solid #5a4330; outline-offset: 4px; border-radius: 4px; padding: 22px 22px 18px; display: grid; gap: 12px; }
+  #lobby h2 { font-family: var(--display); color: var(--torch); margin: 0; font-size: 24px; text-align: center; letter-spacing: .04em; }
+  #lobby h3 { font-family: var(--display); font-size: 15px; margin: 6px 0 0; color: var(--muted); letter-spacing: .06em; }
+  #lobby p { margin: 0; line-height: 1.4; }
+  #lobby .muted { color: var(--muted); font-size: 15px; }
+  #lobby .fld { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+  #lobby input { font: inherit; color: var(--ink); background: #18131c; border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; min-width: 0; }
+  #lobby .wide { width: 100%; }
+  #lobby .primary { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
+  #lobby .link { display: flex; gap: 6px; }
+  #lobby .link input { flex: 1; }
+  #lbGames { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  #lbGames li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
+  #lbGames li.empty { color: var(--muted); justify-content: center; }
+  #lbGames .who { flex: 1; min-width: 0; }
+  #lbGames .who b { display: block; font-weight: 600; }
+  #lbGames .who span { font-size: 14px; color: var(--muted); }
+  #lbGames .who span.mine { color: var(--torch); }
+  .pbar .net { width: 8px; height: 8px; border-radius: 50%; background: #6b6375; flex: none; }
+  .pbar .net.on { background: #5fcf7a; box-shadow: 0 0 6px #5fcf7a; }
+  .pbar .net[hidden] { display: none; }
   #stage.off { visibility: hidden; }
   #board2d { position: fixed; --sq: 60px; box-sizing: border-box; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); border: 6px solid #3a2a1e; box-shadow: 0 0 0 2px #5a4330, 0 18px 40px rgba(0,0,0,.5); user-select: none; }
   #board2d[hidden] { display: none; }
@@ -94,7 +119,9 @@
   .pbar { position: fixed; box-sizing: border-box; height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; pointer-events: none; }
   .pbar.turn { border-color: var(--torch); box-shadow: 0 0 0 1px var(--torch); }
   .pbar .chip { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.5); }
-  .pbar .pname { font-family: var(--display); font-weight: 600; font-size: 15px; white-space: nowrap; }
+  .pbar .pname { font-family: var(--display); font-weight: 600; font-size: 15px; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
+  .pbar .clock, .pbar .chip, .pbar .net { flex: none; }
+  .taken { flex: 0 1 auto; }
   .taken { display: flex; align-items: center; min-width: 0; overflow: hidden; font-family: var(--glyph); font-size: 21px; line-height: 1; background: #d9c9a3; border-radius: 3px; padding: 2px 6px 1px; }
   .taken:empty { display: none; }
   .taken .grp { display: inline-flex; margin-right: 6px; }
@@ -105,6 +132,27 @@
   .pbar .adv { margin-left: auto; padding-left: 8px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
   body:not(.mode2d) .only2d { display: none; }
   body.mode2d .hint, body.mode2d #resetv, body.mode2d label[for-3d] { display: none; }
+  /* Celular: la consola se pliega a una fila (historial + Menú) y el resto se despliega hacia arriba */
+  @media (max-width: 760px) {
+    .bar { padding: 8px; gap: 8px; }
+    #menuBtn { display: inline-block; margin-left: 4px; font-weight: 600; }
+    .bar.open #menuBtn { background: var(--torch); color: #1d140c; border-color: var(--torch); }
+    #skip { width: 100%; margin: 0; }
+    .more { display: none; }
+    .bar.open .more { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; position: absolute; left: 0; right: 0; bottom: calc(100% + 8px);
+      background: #221b28; border: 1px solid var(--line); border-radius: 6px; padding: 12px; box-shadow: 0 -12px 30px rgba(0,0,0,.45); max-height: 60vh; overflow-y: auto; }
+    .more .caps .hint { margin-left: 0; }
+    .top { padding: 8px 12px; gap: 2px; }
+    .top h1 { font-size: 19px; }
+    .top .sub { font-size: 12px; margin: 0; }
+    #status { font-size: 14px; padding: 2px 10px; }
+    #caption { font-size: 14px; }
+    .pbar { height: 32px; gap: 7px; padding: 0 8px; }
+    .pbar .pname { font-size: 13px; }
+    .pbar .clock { font-size: 13px; min-width: 50px; padding: 1px 6px; }
+    .taken img { width: 18px; height: 18px; }
+    .taken .grp img + img { margin-left: -10px; }
+  }
 </style>
 
 </head>
@@ -124,15 +172,17 @@
     <span id="hLabel">Sin jugadas</span>
     <button id="hNext" aria-label="Jugada siguiente">›</button>
     <button id="hLast" aria-label="Volver a la partida">»</button>
+    <button id="menuBtn" aria-expanded="false" aria-controls="more">Menú</button>
   </div>
+  <button id="skip" hidden>Saltear pelea</button>
+  <div class="more" id="more">
   <div class="seg" role="group" aria-label="Modo de juego">
-    <button id="m2" aria-pressed="true">2 jugadores</button>
-    <button id="mcpu" aria-pressed="false">Contra la CPU</button>
+    <button id="mcpu" aria-pressed="true">Contra la CPU</button>
+    <button id="mon" aria-pressed="false">Online</button>
   </div>
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
   <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
-  <button id="skip" hidden>Saltear pelea</button>
   <button id="view2d" aria-pressed="false">Vista 2D</button>
   <label class="chk only2d" for="pset">Piezas
     <select id="pset">
@@ -147,8 +197,9 @@
   <div class="caps">
     <span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span>
   </div>
+  </div>
 </div>
-<div class="pbar" id="pTop"><span class="chip"></span><span class="pname"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
+<div class="pbar" id="pTop"><span class="chip"></span><span class="pname"></span><span class="net" hidden title="Conexión del rival"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
 <div class="pbar" id="pBot"><span class="chip"></span><span class="pname"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
 <div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="card">
@@ -157,9 +208,31 @@
     <div class="mBtns" id="mBtns"></div>
   </div>
 </div>
+<div id="lobby" hidden role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+  <div class="card">
+    <h2 id="lbTitle">Jugar online</h2>
+    <div id="lbMain">
+      <label class="fld" for="nick">Tu apodo
+        <input id="nick" maxlength="20" autocomplete="nickname" placeholder="Por ejemplo, Daniel">
+      </label>
+      <button id="lbCreate" class="primary wide">Desafiar a un amigo</button>
+      <h3>Mis partidas</h3>
+      <ul id="lbGames"><li class="empty">Cargando…</li></ul>
+    </div>
+    <div id="lbWait" hidden>
+      <p>Mandale este link a tu amigo. Cuando entre, se sortean los colores y empieza la partida.</p>
+      <div class="link"><input id="lbLink" readonly aria-label="Link de la partida"><button id="lbCopy">Copiar</button></div>
+      <button id="lbShare" class="primary wide">Compartir</button>
+      <p class="muted">Podés cerrar esta ventana: la partida queda en «Mis partidas» y te avisa cuando tu amigo entre.</p>
+    </div>
+    <p id="lbMsg" class="muted" aria-live="polite"></p>
+    <div class="mBtns"><button id="lbClose">Cerrar</button></div>
+  </div>
+</div>
 <div id="loading">Preparando ChaskiBoom Battle Chess…</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
@@ -262,6 +335,7 @@ const SOUNDS = {
   "armor3": "assets/sounds/armor3.mp3",
   "axe1": "assets/sounds/axe1.mp3",
   "axe2": "assets/sounds/axe2.mp3",
+  "castle": "assets/sounds/castle.mp3",
   "check": "assets/sounds/check.mp3",
   "grunt_m1": "assets/sounds/grunt_m1.mp3",
   "grunt_m2": "assets/sounds/grunt_m2.mp3",
@@ -640,7 +714,7 @@ const SOUNDS = {
 
   /* ---------- Juego ---------- */
   const chess = new Chess();
-  let busy = false, vsCpu = false, selected = null, targets = [], lastMove = null, skipping = false;
+  let busy = false, vsCpu = true, selected = null, targets = [], lastMove = null, skipping = false;
   let ended = null;   // { result: 'w' | 'b' | 'draw', reason }
   const isOver = () => !!ended || chess.game_over();
   const opp = c => c === 'w' ? 'b' : 'w';
@@ -747,7 +821,7 @@ const SOUNDS = {
   function pick(e) {
     if (!started) return;
     if (viewPos) { caption('Estás viendo una jugada anterior: tocá » para volver a la partida'); return; }
-    if (busy || isOver() || (cpuTurn()) || cam.mode !== 'board') return;
+    if (busy || isOver() || notMyTurn() || cam.mode !== 'board') return;
     const r = el.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
@@ -827,7 +901,8 @@ const SOUNDS = {
       else sfx('grunt_q', 6, { delay: 0.05 });   // dama, peón y alfil (personajes femeninos)
     }
   }
-  const moveSfx = color => sfx(color === 'w' ? 'move_w' : 'move_b', 0, { exact: true });
+  // el enroque tiene su propio sonido; el resto, según el color que movió
+  const moveSfx = (color, mv) => mv && /[kq]/.test(mv.flags) ? sfx('castle', 0, { exact: true }) : sfx(color === 'w' ? 'move_w' : 'move_b', 0, { exact: true });
 
   /* ---------- La pelea, en el tablero ---------- */
   async function strike(u, clip) {
@@ -938,12 +1013,13 @@ const SOUNDS = {
     D.sink = true;
   }
 
-  async function play_move(from, to) {
-    if (is2D) return move2d(from, to);
+  async function play_move(from, to, opt = {}) {
+    if (is2D) return move2d(from, to, opt);
     busy = true;
     if (viewPos) goLive();
     const mv = chess.move({ from, to, promotion: 'q' });
     if (!mv) { busy = false; return; }
+    if (!opt.remote) sendMove(mv);
     selected = null; targets = []; lastMove = { from, to };
     showArrow(from, to); updateHist();
     drawMarks();
@@ -979,7 +1055,7 @@ const SOUNDS = {
     units[to] = A; A.sq = to;
     extra.delete(A);
     await Promise.all(moves);
-    moveSfx(mv.color);
+    moveSfx(mv.color, mv);
     if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
 
     // Coronación
@@ -995,12 +1071,15 @@ const SOUNDS = {
     updateStatus();
     drawMarks();
     checkEnd();
+    afterMove();
+  }
+
+  // Después de cada jugada: si llegaron jugadas del rival se reproducen; si le toca a la CPU, mueve
+  function afterMove() {
+    if (online) { pumpQueue(); return; }
     if (cpuTurn() && !isOver()) {
       busy = true;
-      await wait(0.5);
-      busy = false;
-      const m = pickCpu();
-      if (m) play_move(m.from, m.to);
+      setTimeout(() => { busy = false; const m = pickCpu(); if (m) play_move(m.from, m.to); }, 450);
     }
   }
 
@@ -1063,7 +1142,8 @@ const SOUNDS = {
     else if (chess.in_check()) st.textContent = 'Jaque a las ' + side;
     else st.textContent = 'Juegan las ' + side;
     if (!is2D) st.textContent = st.textContent.replace(/las (azules|rojos)/g, 'los $1');
-    if (!moving && !isOver()) caption(vsCpu && turn !== localColor ? 'La CPU está pensando' : 'Tocá una pieza ' + sideAdj(turn, 'f') + ' para moverla');
+    if (!moving && !isOver() && online && turn !== localColor) caption('Esperando la jugada de ' + (online.oppName || 'tu rival'));
+    else if (!moving && !isOver()) caption(vsCpu && turn !== localColor ? 'La CPU está pensando' : 'Tocá una pieza ' + sideAdj(turn, 'f') + ' para moverla');
     updatePlayers();
   }
 
@@ -1071,6 +1151,8 @@ const SOUNDS = {
      El jugador local va abajo; el rival, arriba. */
   let localColor = 'w';   // se sortea en cada partida; en el modo online lo asignará el servidor
   const cpuTurn = () => vsCpu && chess.turn() !== localColor;
+  // contra la CPU o online, el jugador local solo mueve su color
+  const notMyTurn = () => (vsCpu || !!online) && chess.turn() !== localColor;
   function updatePlayers() {
     const full = { p: 8, n: 2, b: 2, r: 2, q: 1 };
     const count = { w: {}, b: {} }, mat = { w: 0, b: 0 };
@@ -1086,7 +1168,7 @@ const SOUNDS = {
       const adv = mat[c] - mat[o];
       el.querySelector('.adv').textContent = adv > 0 ? '+' + adv : '';
       el.querySelector('.chip').style.background = is2D ? (c === 'w' ? '#fbf7ee' : '#1e1a16') : (c === 'w' ? 'var(--blue)' : 'var(--red)');
-      const who = vsCpu ? (c === localColor ? 'Vos' : 'CPU') : (c === localColor ? 'Vos' : 'Rival');
+      const who = online ? (c === localColor ? (online.myName || 'Vos') : (online.oppName || 'Rival')) : vsCpu ? (c === localColor ? 'Vos' : 'CPU') : (c === localColor ? 'Vos' : 'Rival');
       el.querySelector('.pname').textContent = who + ' · ' + sidePl(c);
       el.classList.toggle('turn', chess.turn() === c && !isOver());
     };
@@ -1116,15 +1198,20 @@ const SOUNDS = {
 
   function setMode(cpu) {
     vsCpu = cpu;
-    $('m2').setAttribute('aria-pressed', String(!cpu));
     $('mcpu').setAttribute('aria-pressed', String(cpu));
+    $('mon').setAttribute('aria-pressed', String(!cpu));
     updateStatus();
-    if (started && cpuTurn() && !busy && !isOver()) { const m = pickCpu(); if (m) play_move(m.from, m.to); }
   }
-  $('m2').addEventListener('click', () => setMode(false));
-  $('mcpu').addEventListener('click', () => setMode(true));
+  $('mcpu').addEventListener('click', () => {
+    if (busy || (!online && vsCpu)) return;
+    leaveOnline();
+    setMode(true);
+    $('newg').click();
+  });
+  $('mon').addEventListener('click', () => openLobby());
   $('newg').addEventListener('click', () => {
     if (busy) return;
+    if (online) { openLobby(); return; }
     closeModal();
     chess.reset(); selected = null; targets = []; lastMove = null; ended = null; viewPos = null; viewLast = null;
     hideArrows(); updateHist();
@@ -1164,8 +1251,9 @@ const SOUNDS = {
      Corre para el bando que mueve; se detiene durante las animaciones, los carteles y al terminar. */
   const times = { w: 0, b: 0 };
   let clockLast = performance.now();
-  const fmt = ms => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, ss = String(s % 60).padStart(2, '0');
-                      return h ? h + ':' + String(m).padStart(2, '0') + ':' + ss : m + ':' + ss; };
+  const fmt = ms => { const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60, ss = String(s % 60).padStart(2, '0');
+                      if (d) return d + 'd ' + h + 'h';   // partidas por correspondencia
+                      return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + ss; };
   setInterval(() => {
     const now = performance.now(), dt = now - clockLast; clockLast = now;
     if (started && !busy && !isOver() && modal.hidden && $('loading').hidden) times[chess.turn()] += dt;
@@ -1198,8 +1286,10 @@ const SOUNDS = {
     else endGame('draw', chess.in_stalemate() ? 'stalemate' : chess.in_threefold_repetition() ? 'repetition' : chess.insufficient_material() ? 'material' : 'rule50');
   }
 
-  function endGame(result, reason) {
+  function endGame(result, reason, opt = {}) {
+    if (ended) return;
     ended = { result, reason };
+    if (online && !opt.remote) online.ref.child('result').transaction(cur => cur || { winner: result, reason });
     select(null);
     updateStatus();
     caption('');
@@ -1208,16 +1298,17 @@ const SOUNDS = {
 
   function showResult() {
     const { result, reason } = ended;
-    if (result !== 'draw') sfx(vsCpu && result !== localColor ? 'lose' : 'win', 0, { exact: true, vol: 0.8 });
+    if (result !== 'draw') sfx((vsCpu || online) && result !== localColor ? 'lose' : 'win', 0, { exact: true, vol: 0.8 });
     const moves = Math.max(1, Math.ceil(chess.history().length / 2));
     const mv = moves + (moves === 1 ? ' movimiento' : ' movimientos');
     const how = reason === 'mate' ? 'por jaque mate' : 'por abandono';
-    const again = [{ label: 'Nueva partida', primary: true, onClick: () => $('newg').click() }, { label: 'Ver el tablero' }];
+    const again = online ? [{ label: 'Revancha', primary: true, onClick: offerRematch }, { label: 'Ver el tablero' }]
+                         : [{ label: 'Nueva partida', primary: true, onClick: () => $('newg').click() }, { label: 'Ver el tablero' }];
     if (result === 'draw') {
       const why = { agreed: 'Los dos jugadores acordaron tablas.', stalemate: 'Tablas por ahogado: el bando que mueve no tiene jugadas legales y no está en jaque.',
                     repetition: 'Tablas por triple repetición de la posición.', material: 'Tablas: no queda material suficiente para dar mate.', rule50: 'Tablas por la regla de los 50 movimientos.' }[reason];
       showModal('Tablas', why + ' La partida duró ' + mv + '.', again);
-    } else if (vsCpu) {
+    } else if (vsCpu || online) {
       // Cada jugador ve su propio cartel (en el modo online, cada dispositivo mostrará el suyo)
       if (result === localColor) showModal('¡Felicitaciones!', 'Ganaste ' + how + ' en ' + mv + '.', again);
       else showModal('Derrota', 'Perdés esta partida en ' + mv + ' (' + how + ').', again);
@@ -1235,8 +1326,8 @@ const SOUNDS = {
 
   $('resign').addEventListener('click', () => {
     if (!started || busy || isOver()) return;
-    const who = vsCpu ? localColor : chess.turn();
-    showModal('¿Abandonar la partida?', (vsCpu ? 'Vas a perder' : Art(who) + ' van a perder') + ' por abandono. No se puede deshacer.', [
+    const who = (vsCpu || online) ? localColor : chess.turn();
+    showModal('¿Abandonar la partida?', ((vsCpu || online) ? 'Vas a perder' : Art(who) + ' van a perder') + ' por abandono. No se puede deshacer.', [
       { label: 'Abandonar', primary: true, onClick: () => endGame(opp(who), 'resign') },
       { label: 'Seguir jugando' }
     ]);
@@ -1244,6 +1335,11 @@ const SOUNDS = {
 
   $('drawoffer').addEventListener('click', () => {
     if (!started || busy || isOver()) return;
+    if (online) {
+      online.ref.update({ drawOffer: localColor, drawDeclined: null });
+      caption('Ofreciste tablas. Esperando la respuesta de ' + (online.oppName || 'tu rival'));
+      return;
+    }
     if (vsCpu) {
       // La CPU acepta solo si no va ganando en material
       const m = material(), cpu = opp(localColor);
@@ -1398,7 +1494,7 @@ const SOUNDS = {
   board2d.addEventListener('click', e => {
     const cell = e.target.closest('.sq2');
     if (cell && viewPos) { caption('Estás viendo una jugada anterior: tocá » para volver a la partida'); return; }
-    if (!cell || !started || busy || isOver() || cpuTurn()) return;
+    if (!cell || !started || busy || isOver() || notMyTurn()) return;
     const sq = cell.dataset.sq;
     if (selected && targets.some(m => m.to === sq)) { play_move(selected, sq); return; }
     const pc = chess.get(sq);
@@ -1439,11 +1535,12 @@ const SOUNDS = {
     void el.offsetWidth;
     el.style.transform = 'translate(' + (b.offsetLeft - a.offsetLeft) + 'px,' + (b.offsetTop - a.offsetTop) + 'px)';
   }
-  function move2d(from, to) {
+  function move2d(from, to, opt = {}) {
     if (viewPos) goLive();
     const before = new Chess(chess.fen());
     const mv = chess.move({ from, to, promotion: 'q' });
     if (!mv) return;
+    if (!opt.remote) sendMove(mv);
     busy = true;
     selected = null; targets = []; lastMove = { from, to }; dirty3d = true;
     showArrow(from, to); updateHist();
@@ -1458,14 +1555,11 @@ const SOUNDS = {
     setTimeout(() => {
       board2d.querySelectorAll('.fly').forEach(el => el.remove());
       busy = false;
-      moveSfx(mv.color);
+      moveSfx(mv.color, mv);
       if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
       updateStatus(); render2D(); checkEnd();
       if (mv.captured) caption(nameOf(mv.piece, mv.color) + ' captura ' + lc(nameOf(mv.captured, opp(mv.color))));
-      if (cpuTurn() && !isOver()) {
-        busy = true;
-        setTimeout(() => { busy = false; const m = pickCpu(); if (m) play_move(m.from, m.to); }, 350);
-      }
+      afterMove();
     }, 520);
   }
   $('view2d').addEventListener('click', () => {
@@ -1482,6 +1576,326 @@ const SOUNDS = {
     updateStatus(); layout();
   });
   $('skip').addEventListener('click', () => { skipping = true; timeScale = 6; });
+  // Menú plegable del celular: se cierra al tocar una acción o fuera de él
+  const bar = document.querySelector('.bar');
+  $('menuBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    const open = bar.classList.toggle('open');
+    $('menuBtn').setAttribute('aria-expanded', String(open));
+  });
+  $('more').addEventListener('click', e => {
+    if (e.target.closest('button')) { bar.classList.remove('open'); $('menuBtn').setAttribute('aria-expanded', 'false'); }
+  });
+  document.addEventListener('pointerdown', e => {
+    if (bar.classList.contains('open') && !bar.contains(e.target)) { bar.classList.remove('open'); $('menuBtn').setAttribute('aria-expanded', 'false'); }
+  });
+
+  /* ---------- Online (Firebase) ----------
+     Cada partida vive en games/<código>. Las jugadas se agregan en orden (moves/0, moves/1, …);
+     cada dispositivo las reproduce con su propia animación. users/<uid>/games indexa «Mis partidas». */
+  const HAS_FB = typeof firebase !== 'undefined';
+  const FB_CONFIG = {
+    apiKey: 'AIzaSyCaQ5FGXxR5WHa1CCrcf7scKjm0WtIlKNY',
+    authDomain: 'battlechess-d51bf.firebaseapp.com',
+    databaseURL: 'https://battlechess-d51bf-default-rtdb.firebaseio.com',
+    projectId: 'battlechess-d51bf',
+    storageBucket: 'battlechess-d51bf.firebasestorage.app',
+    messagingSenderId: '233502549019',
+    appId: '1:233502549019:web:d1670401bf2b4015fac4be'
+  };
+  let online = null, db = null, me = null;
+  const queue = [];
+  const NOW = () => firebase.database.ServerValue.TIMESTAMP;
+  const getNick = () => { try { return localStorage.getItem('chaskiboom.nick') || ''; } catch (_) { return ''; } };
+  const setNick = n => { try { localStorage.setItem('chaskiboom.nick', n); } catch (_) {} };
+
+  async function fbInit() {
+    if (db) return;
+    if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    if (!firebase.auth().currentUser) await firebase.auth().signInAnonymously();
+    me = firebase.auth().currentUser.uid;
+    db = firebase.database();
+  }
+
+  /* --- Sala de espera: apodo, desafío y «Mis partidas» --- */
+  const lobby = $('lobby');
+  async function openLobby() {
+    if (!HAS_FB) {
+      if (/github\.io$/.test(location.hostname))
+        showModal('Modo online en pruebas', 'El juego online todavía está en desarrollo. Podés probarlo en la versión de pruebas: ' + location.origin + location.pathname.replace(/[^/]*$/, '') + 'dev/', [{ label: 'Entendido', primary: true }]);
+      else
+        showModal('Modo online', 'El juego online funciona en la versión publicada en GitHub Pages; esta vista previa no puede conectarse a internet.', [{ label: 'Entendido', primary: true }]);
+      return;
+    }
+    $('nick').value = getNick();
+    $('lbMain').hidden = false; $('lbWait').hidden = true; $('lbMsg').textContent = '';
+    lobby.hidden = false;
+    try { await fbInit(); listGames(); }
+    catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.'; }
+  }
+  $('lbClose').addEventListener('click', () => { lobby.hidden = true; });
+
+  async function listGames() {
+    const ul = $('lbGames');
+    const idx = (await db.ref('users/' + me + '/games').once('value')).val() || {};
+    const ids = Object.keys(idx).sort((a, b) => (idx[b].updatedAt || 0) - (idx[a].updatedAt || 0)).slice(0, 15);
+    if (!ids.length) { ul.innerHTML = '<li class="empty">Todavía no tenés partidas online</li>'; return; }
+    const games = await Promise.all(ids.map(id => db.ref('games/' + id).once('value').then(s => [id, s.val()])));
+    ul.innerHTML = '';
+    games.forEach(([id, g]) => {
+      if (!g) return;
+      const myColor = g.white === me ? 'w' : g.black === me ? 'b' : null;
+      const oppName = !g.guest ? null : (g.host.uid === me ? g.guest.name : g.host.name);
+      let state, mine = false;
+      if (!g.guest) state = 'Esperando que tu amigo entre';
+      else if (g.result) state = g.result.winner === 'draw' ? 'Tablas' : (g.result.winner === myColor ? 'Ganaste' : 'Perdiste');
+      else if (!g.started) state = myColor === 'w' ? 'Te toca comenzar' : 'Sin comenzar';
+      else { mine = g.turn === myColor; state = mine ? 'Te toca mover' : 'Le toca a tu rival'; }
+      const li = document.createElement('li');
+      li.innerHTML = '<div class="who"><b></b><span></span></div><button>Abrir</button>';
+      li.querySelector('b').textContent = oppName ? 'Contra ' + oppName : 'Partida ' + id;
+      const sp = li.querySelector('span'); sp.textContent = state + ' · ' + (g.ply || 0) + ' jugadas'; if (mine) sp.className = 'mine';
+      li.querySelector('button').addEventListener('click', () => { lobby.hidden = true; enterOnline(id); });
+      ul.appendChild(li);
+    });
+  }
+
+  function askNick() {
+    const n = $('nick').value.trim().slice(0, 20);
+    if (!n) { $('lbMsg').textContent = 'Escribí un apodo para que tu rival sepa quién sos.'; $('nick').focus(); return null; }
+    setNick(n); return n;
+  }
+
+  let lbJoining = false;
+  $('lbCreate').addEventListener('click', async () => {
+    if (lbJoining) return;   // en modo «aceptar desafío» lo maneja promptNick
+    const name = askNick(); if (!name) return;
+    try {
+      await fbInit();
+      const id = await createGame(name);
+      enterOnline(id);
+    } catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo crear la partida. Intentá de nuevo.'; }
+  });
+
+  async function createGame(name, extra) {
+    const abc = 'abcdefghjkmnpqrstuvwxyz23456789';
+    let id = '';
+    for (let i = 0; i < 6; i++) id += abc[Math.floor(Math.random() * abc.length)];
+    await db.ref('games/' + id).update(Object.assign({ host: { uid: me, name }, createdAt: NOW() }, extra || {}));
+    await db.ref('users/' + me + '/games/' + id).set({ updatedAt: NOW() });
+    return id;
+  }
+
+  function showWaiting(id) {
+    const url = location.href.split('#')[0] + '#' + id;
+    $('lbLink').value = url;
+    $('lbMain').hidden = true; $('lbWait').hidden = false; $('lbMsg').textContent = '';
+    lobby.hidden = false;
+    $('lbCopy').onclick = () => {
+      const done = () => { $('lbMsg').textContent = 'Link copiado.'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => { $('lbLink').select(); });
+      else $('lbLink').select();
+    };
+    $('lbShare').onclick = () => {
+      if (navigator.share) navigator.share({ title: 'ChaskiBoom Battle Chess', text: (getNick() || 'Un amigo') + ' te desafía a una partida', url }).catch(() => {});
+      else $('lbCopy').click();
+    };
+  }
+
+  /* --- Entrar a una partida: crearla, unirse o retomarla --- */
+  const waitIdle = () => new Promise(res => { const f = () => busy ? setTimeout(f, 100) : res(); f(); });
+  async function enterOnline(id) {
+    await waitIdle();   // si hay una animación en curso, se espera a que termine
+    try { await fbInit(); }
+    catch (e) { console.error(e); showModal('Sin conexión', 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.', [{ label: 'Entendido', primary: true }]); return; }
+    const ref = db.ref('games/' + id);
+    const g = (await ref.once('value')).val();
+    if (!g || !g.host) { showModal('Partida no encontrada', 'El link no corresponde a ninguna partida. Pedile a tu amigo que te lo mande de nuevo.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
+    const isHost = g.host.uid === me, isGuest = g.guest && g.guest.uid === me;
+    if (!isHost && !isGuest) {
+      if (g.guest) { showModal('Partida completa', 'Esta partida ya tiene dos jugadores.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
+      let name = getNick();
+      if (!name) { name = await promptNick(g.host.name); if (!name) return; }
+      // el primero que entra se queda con el lugar; el sorteo de colores lo hace quien se une
+      const tx = await ref.child('guest').transaction(cur => cur ? undefined : { uid: me, name });
+      if (!tx.committed) { showModal('Partida completa', 'Otra persona entró a esta partida antes que vos.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
+      const whiteUid = Math.random() < 0.5 ? g.host.uid : me;
+      await ref.update({ white: whiteUid, black: whiteUid === me ? g.host.uid : me, turn: 'w', ply: 0 });
+      await db.ref('users/' + me + '/games/' + id).set({ updatedAt: NOW() });
+    }
+    startOnline(id, ref);
+  }
+
+  function promptNick(hostName) {
+    return new Promise(res => {
+      lbJoining = true;
+      $('lbMain').hidden = false; $('lbWait').hidden = true;
+      $('lbTitle').textContent = (hostName || 'Un amigo') + ' te desafía';
+      $('lbCreate').textContent = 'Aceptar el desafío';
+      $('lbGames').parentElement.querySelector('h3').hidden = true; $('lbGames').hidden = true;
+      $('nick').value = getNick(); $('lbMsg').textContent = '';
+      lobby.hidden = false;
+      const restore = () => { lbJoining = false; $('lbTitle').textContent = 'Jugar online'; $('lbCreate').textContent = 'Desafiar a un amigo'; $('lbGames').parentElement.querySelector('h3').hidden = false; $('lbGames').hidden = false; $('lbCreate').onclick = null; };
+      $('lbCreate').onclick = e => { e.stopImmediatePropagation(); const n = askNick(); if (!n) return; lobby.hidden = true; restore(); res(n); };
+      $('lbClose').onclick = () => { lobby.hidden = true; restore(); $('lbClose').onclick = null; res(null); };
+    });
+  }
+
+  function leaveOnline() {
+    if (!online) return;
+    online.ref.off();
+    online.pres.remove().catch(() => {});
+    online.pres.onDisconnect().cancel();
+    online = null; queue.length = 0;
+    history.replaceState(null, '', location.pathname + location.search);
+    $('pTop').querySelector('.net').hidden = true;
+    document.title = 'ChaskiBoom Battle Chess';
+  }
+
+  function startOnline(id, ref) {
+    leaveOnline();
+    closeModal(); lobby.hidden = true;
+    history.replaceState(null, '', '#' + id);
+    vsCpu = false;
+    $('mcpu').setAttribute('aria-pressed', 'false'); $('mon').setAttribute('aria-pressed', 'true');
+    const pres = db.ref('games/' + id + '/online/' + me);
+    pres.set(true); pres.onDisconnect().remove();
+    online = { id, ref, pres, applied: 0, loaded: false, color: null, myName: getNick(), oppName: '', offerShown: false, rematchShown: false, lastDecline: undefined, lastIdx: null };
+    // estado inicial vacío hasta que llegue la partida
+    chess.reset(); ended = null; started = false; selected = null; targets = []; lastMove = null; viewPos = null; viewLast = null;
+    times.w = times.b = 0; queue.length = 0;
+    hideArrows();
+    ref.on('value', s => onGame(s.val()));
+  }
+
+  function onGame(g) {
+    if (!online || !g) return;
+    online.g = g;
+    // ¿todavía no entró el rival?
+    if (!g.white) {
+      if (g.host.uid === me) showWaiting(online.id);
+      caption('Esperando que tu amigo entre a la partida');
+      return;
+    }
+    if (!lobby.hidden && !$('lbWait').hidden) lobby.hidden = true;
+    const color = g.white === me ? 'w' : 'b';
+    const host = g.host.uid === me;
+    online.myName = host ? g.host.name : g.guest.name;
+    online.oppName = host ? g.guest.name : g.host.name;
+    online.oppUid = host ? g.guest.uid : g.host.uid;
+    const moves = g.moves ? Object.keys(g.moves).map(Number).sort((a, b) => a - b).map(k => g.moves[k]) : [];
+
+    // Primera vez: se arma la posición de golpe, sin animaciones (también al retomar una partida)
+    if (!online.loaded) {
+      online.loaded = true;
+      localColor = color;
+      chess.reset();
+      moves.forEach(m => chess.move({ from: m.from, to: m.to, promotion: m.promo || 'q' }));
+      online.applied = moves.length;
+      const h = chess.history({ verbose: true });
+      lastMove = h.length ? { from: h[h.length - 1].from, to: h[h.length - 1].to } : null;
+      if (g.times) { times.w = g.times.w || 0; times.b = g.times.b || 0; }
+      started = !!g.started;
+      build2D(); setupBoard(); dirty3d = false;
+      if (is2D) render2D();
+      drawMarks(); updateHist(); updateStatus(); layout();
+      if (!started) caption(color === 'w' ? 'Te tocaron ' + art('w') + '. Tocá Comenzar' : 'Te tocaron ' + art('b') + '. Esperando que ' + online.oppName + ' comience');
+    }
+
+    // Cartel de inicio: lo toca quien juega con blancas
+    if (!g.started && !g.result) {
+      if (color === 'w' && modal.hidden) showModal('Partida contra ' + online.oppName, 'Te tocaron ' + art('w') + ': movés primero. Los relojes arrancan al comenzar.',
+        [{ label: 'Comenzar', primary: true, onClick: () => { audioInit(); online.ref.update({ started: true }); } }]);
+      if (color === 'b') caption('Te tocaron ' + art('b') + '. Esperando que ' + online.oppName + ' toque Comenzar');
+    }
+    if (g.started && !started) { started = true; clockLast = performance.now(); if (!modal.hidden && $('mTitle').textContent.startsWith('Partida contra')) closeModal(); updateStatus(); }
+
+    // Jugadas nuevas del rival: a la cola, se reproducen con animación
+    for (let i = online.applied + queue.length; i < moves.length; i++) queue.push(moves[i]);
+    pumpQueue();
+
+    // Ofertas de tablas
+    if (g.drawOffer && g.drawOffer !== localColor && !online.offerShown && !ended) {
+      online.offerShown = true;
+      showModal('Oferta de tablas', online.oppName + ' ofrece tablas. ¿Aceptás?', [
+        { label: 'Aceptar tablas', primary: true, onClick: () => endGame('draw', 'agreed') },
+        { label: 'Rechazar', onClick: () => online && online.ref.update({ drawOffer: null, drawDeclined: NOW() }) }
+      ]);
+    }
+    if (!g.drawOffer) online.offerShown = false;
+    if (online.lastDecline !== undefined && g.drawDeclined && g.drawDeclined !== online.lastDecline) caption(online.oppName + ' rechazó las tablas');
+    online.lastDecline = g.drawDeclined || null;
+
+    // Resultado (jaque mate, abandono o tablas): cada dispositivo muestra su propio cartel
+    if (g.result && !ended && !queue.length && !busy) endGame(g.result.winner, g.result.reason, { remote: true });
+
+    // Revancha propuesta por el rival
+    if (g.rematch && g.rematch.by !== me && !online.rematchShown) {
+      online.rematchShown = true;
+      showModal('Revancha', online.oppName + ' propone la revancha.', [
+        { label: 'Aceptar', primary: true, onClick: () => enterOnline(g.rematch.id) },
+        { label: 'No, gracias' }
+      ]);
+    }
+
+    // Conexión del rival
+    const net = $('pTop').querySelector('.net');
+    net.hidden = false;
+    const oppOn = !!(g.online && g.online[online.oppUid]);
+    net.classList.toggle('on', oppOn);
+    net.title = oppOn ? online.oppName + ' está en línea' : online.oppName + ' no está conectado';
+    if (g.lastMoveAt && g.lastMoveAt !== online.lastIdx) {
+      online.lastIdx = g.lastMoveAt;
+      db.ref('users/' + me + '/games/' + online.id + '/updatedAt').set(g.lastMoveAt).catch(() => {});
+    }
+    updatePlayers();
+    notifyTurn();
+  }
+
+  // Reproduce, de a una, las jugadas recibidas (espera a que termine cada animación o pelea)
+  function pumpQueue() {
+    if (!online || busy || !queue.length) {
+      if (online && !queue.length && !busy && online.g && online.g.result && !ended) endGame(online.g.result.winner, online.g.result.reason, { remote: true });
+      return;
+    }
+    const m = queue.shift();
+    online.applied++;
+    if (online.g && online.g.times) times[opp(localColor)] = online.g.times[opp(localColor)] || times[opp(localColor)];
+    play_move(m.from, m.to, { remote: true });
+  }
+
+  function sendMove(mv) {
+    if (!online) return;
+    const n = chess.history().length - 1;
+    online.applied = n + 1;
+    const upd = {};
+    upd['moves/' + n] = { from: mv.from, to: mv.to, promo: mv.promotion || null, san: mv.san };
+    upd.ply = n + 1;
+    upd.turn = chess.turn();
+    upd.fen = chess.fen();
+    upd['times/' + mv.color] = Math.round(times[mv.color]);
+    upd.lastMoveAt = NOW();
+    upd.drawOffer = null;
+    online.ref.update(upd).catch(e => { console.error(e); caption('No se pudo enviar la jugada. Revisá tu conexión.'); });
+  }
+
+  async function offerRematch() {
+    if (!online) return;
+    const prev = online;
+    try {
+      const id = await createGame(prev.myName);
+      await prev.ref.update({ rematch: { id, by: me } });
+      startOnline(id, db.ref('games/' + id));
+      caption('Revancha propuesta. Esperando que ' + prev.oppName + ' acepte');
+    } catch (e) { console.error(e); caption('No se pudo crear la revancha'); }
+  }
+
+  // Aviso en la pestaña cuando es tu turno y estás mirando otra cosa
+  function notifyTurn() {
+    const mine = online && started && !ended && chess.turn() === localColor;
+    document.title = mine && document.hidden ? '¡Tu turno! · ChaskiBoom' : 'ChaskiBoom Battle Chess';
+  }
+  document.addEventListener('visibilitychange', notifyTurn);
 
   /* ---------- Arranque ---------- */
   (async () => {
@@ -1496,9 +1910,10 @@ const SOUNDS = {
       boardView(); cam.pos.copy(cam.wantPos); cam.look.copy(cam.wantLook);
       updateStatus(); drawMarks(); layout(); updateHist();
       $('loading').hidden = true;
-      drawColors();
+      const code = location.hash.replace('#', '');
+      if (code && HAS_FB) enterOnline(code); else drawColors();
       document.fonts.ready.then(layout);
-      window.__game = { chess, units, play_move: (f, t) => play_move(f, t), get busy() { return busy; }, get sounds() { return Object.keys(sbuf).length; } };
+      window.__game = { chess, units, get online() { return online; }, play_move: (f, t) => play_move(f, t), get busy() { return busy; }, get sounds() { return Object.keys(sbuf).length; } };
     } catch (e) {
       $('loading').textContent = 'No se pudieron cargar los modelos';
       console.error(e);
