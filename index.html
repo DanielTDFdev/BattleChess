@@ -257,7 +257,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.15</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.16</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -2227,7 +2227,7 @@ const SOUNDS = {
     // contenido fijo de cada casilla: la pieza, la marca de jugada posible y las coordenadas del borde.
     // render2D solo cambia lo que difiere (recrear las imágenes en cada jugada hacía parpadear el tablero en iPhone)
     const bottomRank = localColor === 'w' ? '1' : '8', leftFile = localColor === 'w' ? 'a' : 'h';
-    d.innerHTML = '<img class="pc" alt="" hidden><span class="mk" hidden></span>'
+    d.innerHTML = '<img class="pc" alt="" decoding="sync" hidden><span class="mk" hidden></span>'
       + (sq[1] === bottomRank ? '<span class="co f">' + sq[0] + '</span>' : '')
       + (sq[0] === leftFile ? '<span class="co r">' + sq[1] + '</span>' : '');
     board2d.appendChild(d);
@@ -2255,7 +2255,7 @@ const SOUNDS = {
       cell.classList.toggle('chk', chk === sq);
       const m = targets.find(t => t.to === sq);
       let img = cell.querySelector('img.pc');
-      if (!img) { img = document.createElement('img'); img.className = 'pc'; img.alt = ''; cell.prepend(img); }   // se la llevó una pieza en vuelo
+      if (!img) { img = document.createElement('img'); img.className = 'pc'; img.alt = ''; img.decoding = 'sync'; cell.prepend(img); }   // se la llevó una pieza en vuelo
       const src = p ? pieceImg(p.color, p.type) : '';
       if (img.dataset.src !== src) { img.dataset.src = src; if (src) img.src = src; }
       img.hidden = !src;
@@ -2277,7 +2277,8 @@ const SOUNDS = {
     Object.assign(el.style, { left: a.offsetLeft + 'px', top: a.offsetTop + 'px', width: a.offsetWidth + 'px', height: a.offsetHeight + 'px' });
     const own = a.querySelector('img.pc');
     if (own && !own.hidden && own.dataset.src === pieceImg(color, type)) el.appendChild(own);   // se mueve la imagen ya dibujada
-    else el.innerHTML = '<img class="pc" src="' + pieceImg(color, type) + '" alt="">';
+    else { const im = new Image(); im.className = 'pc'; im.alt = ''; im.decoding = 'sync'; im.src = im.dataset.src = pieceImg(color, type); el.appendChild(im); }
+    el.dataset.to = to;
     board2d.appendChild(el);
     void el.offsetWidth;
     el.style.transform = 'translate(' + (b.offsetLeft - a.offsetLeft) + 'px,' + (b.offsetTop - a.offsetTop) + 'px)';
@@ -2301,7 +2302,16 @@ const SOUNDS = {
     render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
     castleSfx(mv);
     setTimeout(() => {
-      board2d.querySelectorAll('.fly').forEach(el => el.remove());
+      // la imagen que viajó se queda en la casilla de destino (reemplaza a la que había, vacía o la pieza comida):
+      // cambiarle el src a la de destino obligaba a Safari a redibujar el SVG y la pieza desaparecía un instante
+      board2d.querySelectorAll('.fly').forEach(el => {
+        const im = el.querySelector('img.pc'), cell = board2d.querySelector('[data-sq="' + el.dataset.to + '"]');
+        if (im && cell) {
+          const old = cell.querySelector('img.pc');
+          if (old) old.replaceWith(im); else cell.prepend(im);
+        }
+        el.remove();
+      });
       busy = false;
       moveSfx(mv.color, mv);
       if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
@@ -2950,7 +2960,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página y cada 15 minutos: la app instalada en el
      celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261012204008';
+  const BUILD = '20261012205122';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
