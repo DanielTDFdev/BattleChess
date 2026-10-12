@@ -2305,7 +2305,7 @@ const SOUNDS = {
     el.querySelector('.txt').textContent = m.text;
     clearTimeout(tauntTimer);
     el.hidden = false; void el.offsetWidth; el.classList.add('show');
-    tauntTimer = setTimeout(() => { el.classList.remove('show'); tauntTimer = setTimeout(() => { el.hidden = true; }, 220); }, 1000);
+    tauntTimer = setTimeout(() => { el.classList.remove('show'); tauntTimer = setTimeout(() => { el.hidden = true; }, 220); }, 3000);
     sfx('check', 0, { exact: true, vol: 0.5 });
   }
 
