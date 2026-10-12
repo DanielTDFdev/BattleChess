@@ -15,6 +15,17 @@ python -m http.server 8000
 
 y abrí http://localhost:8000
 
+## Cómo modificar
+
+El código del juego está en `src/game_template.html`. Después de editarlo:
+
+```
+python tools/build.py        # regenera index.html
+python tools/build.py dev    # regenera dev/index.html (copia de pruebas)
+```
+
+Más detalles del proyecto en [PROYECTO.md](PROYECTO.md).
+
 ## Créditos
 
 - Personajes, armas y animaciones: [KayKit](https://kaylousberg.com) de Kay Lousberg (CC0).
