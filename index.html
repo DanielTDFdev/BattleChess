@@ -86,6 +86,9 @@
   #lobby .primary { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   #lobby .link { display: flex; gap: 6px; }
   #lobby .link input { flex: 1; }
+  #lobby .acct { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 3px; font-size: 14px; color: var(--muted); }
+  #lobby .acct span { flex: 1; min-width: 0; }
+  #lobby .acct button { flex: none; }
   #lbGames { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   #lbGames li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
   #lbGames li.empty { color: var(--muted); justify-content: center; }
@@ -212,6 +215,7 @@
   <div class="card">
     <h2 id="lbTitle">Jugar online</h2>
     <div id="lbMain">
+      <div class="acct"><span id="acctTxt">Conectando…</span><button id="acctBtn">Entrar con Google</button></div>
       <label class="fld" for="nick">Tu apodo
         <input id="nick" maxlength="20" autocomplete="nickname" placeholder="Por ejemplo, Daniel">
       </label>
@@ -232,7 +236,9 @@
 <div id="loading">Preparando ChaskiBoom Battle Chess…</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
@@ -1612,10 +1618,61 @@ const SOUNDS = {
   async function fbInit() {
     if (db) return;
     if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
-    if (!firebase.auth().currentUser) await firebase.auth().signInAnonymously();
-    me = firebase.auth().currentUser.uid;
+    const auth = firebase.auth();
+    // hay que esperar a que Firebase restaure la sesión guardada; si no hay ninguna, se entra como anónimo
+    let user = await new Promise(res => { const off = auth.onAuthStateChanged(u => { off(); res(u); }); });
+    if (!user) user = (await auth.signInAnonymously()).user;
+    me = user.uid;
     db = firebase.database();
   }
+
+  /* --- Cuenta: anónima (solo este navegador) o con Google (las mismas partidas en todos tus dispositivos) --- */
+  function acctUI() {
+    const u = firebase.auth().currentUser;
+    if (!u) return;
+    if (u.isAnonymous) {
+      $('acctTxt').textContent = 'Sin cuenta: tus partidas quedan guardadas solo en este navegador.';
+      $('acctBtn').textContent = 'Entrar con Google';
+    } else {
+      $('acctTxt').textContent = 'Conectado como ' + (u.displayName || u.email || 'usuario de Google') + '. Tus partidas están en todos tus dispositivos.';
+      $('acctBtn').textContent = 'Salir';
+    }
+  }
+  $('acctBtn').addEventListener('click', async () => {
+    const auth = firebase.auth(), u = auth.currentUser;
+    if (!u) return;
+    $('lbMsg').textContent = '';
+    try {
+      if (u.isAnonymous) {
+        const prov = new firebase.auth.GoogleAuthProvider();
+        try {
+          // se vincula la cuenta anónima con Google: el jugador conserva su identidad y sus partidas
+          await u.linkWithPopup(prov);
+        } catch (e) {
+          if (e.code !== 'auth/credential-already-in-use' && e.code !== 'auth/email-already-in-use') throw e;
+          // esa cuenta de Google ya juega en otro dispositivo: se entra con ella
+          const cred = e.credential || (firebase.auth.GoogleAuthProvider.credentialFromError && firebase.auth.GoogleAuthProvider.credentialFromError(e));
+          if (cred) await auth.signInWithCredential(cred); else await auth.signInWithPopup(prov);
+          if (online) leaveOnline();
+          $('lbMsg').textContent = 'Entraste con tu cuenta de Google. Las partidas que jugaste sin cuenta en este navegador quedaron con la identidad anterior.';
+        }
+        const n = auth.currentUser.displayName;
+        if (!getNick() && n) { setNick(n.split(' ')[0].slice(0, 20)); $('nick').value = getNick(); }
+      } else {
+        if (online) leaveOnline();
+        await auth.signOut();
+        await auth.signInAnonymously();
+      }
+      me = auth.currentUser.uid;
+      acctUI(); listGames();
+    } catch (e) {
+      console.error(e);
+      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+      $('lbMsg').textContent = e.code === 'auth/popup-blocked' ? 'El navegador bloqueó la ventana de Google. Permití las ventanas emergentes para este sitio e intentá de nuevo.'
+        : e.code === 'auth/operation-not-allowed' ? 'El inicio de sesión con Google todavía no está activado en Firebase.'
+        : 'No se pudo iniciar sesión (' + (e.code || e.message) + ').';
+    }
+  });
 
   /* --- Sala de espera: apodo, desafío y «Mis partidas» --- */
   const lobby = $('lobby');
@@ -1630,7 +1687,7 @@ const SOUNDS = {
     $('nick').value = getNick();
     $('lbMain').hidden = false; $('lbWait').hidden = true; $('lbMsg').textContent = '';
     lobby.hidden = false;
-    try { await fbInit(); listGames(); }
+    try { await fbInit(); acctUI(); listGames(); }
     catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.'; }
   }
   $('lbClose').addEventListener('click', () => { lobby.hidden = true; });
