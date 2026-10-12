@@ -136,6 +136,7 @@
   .pbar.turn .clock { background: var(--ink); color: #1d140c; }
   .pbar .adv { margin-left: auto; padding-left: 8px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
   body:not(.mode2d) .only2d { display: none; }
+  body.online .onlycpu { display: none; }
   body.mode2d .hint, body.mode2d #resetv, body.mode2d label[for-3d] { display: none; }
   /* Celular: la consola se pliega a una fila (historial + Menú) y el resto se despliega hacia arriba */
   @media (max-width: 760px) {
@@ -185,6 +186,12 @@
     <button id="mcpu" aria-pressed="true">Contra la CPU</button>
     <button id="mon" aria-pressed="false">Online</button>
   </div>
+  <label class="chk onlycpu" for="lvl">Nivel
+    <select id="lvl">
+      <option value="0">Muy fácil</option><option value="1">Fácil</option><option value="2">Medio</option>
+      <option value="3">Difícil</option><option value="4">Experto</option>
+    </select>
+  </label>
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
   <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
@@ -1025,7 +1032,7 @@ const SOUNDS = {
     if (is2D) return move2d(from, to, opt);
     busy = true;
     if (viewPos) goLive();
-    const mv = chess.move({ from, to, promotion: 'q' });
+    const mv = chess.move({ from, to, promotion: opt.promo || 'q' });
     if (!mv) { busy = false; return; }
     if (!opt.remote) sendMove(mv);
     selected = null; targets = []; lastMove = { from, to };
@@ -1085,10 +1092,7 @@ const SOUNDS = {
   // Después de cada jugada: si llegaron jugadas del rival se reproducen; si le toca a la CPU, mueve
   function afterMove() {
     if (online) { pumpQueue(); return; }
-    if (cpuTurn() && !isOver()) {
-      busy = true;
-      setTimeout(() => { busy = false; const m = pickCpu(); if (m) play_move(m.from, m.to); }, 450);
-    }
+    if (cpuTurn() && !isOver()) cpuPlay(450);
   }
 
   function waitSink(u) { return new Promise(res => { u.onRemoved = res; }); }
@@ -1134,6 +1138,120 @@ const SOUNDS = {
     return best;
   }
 
+  /* ---------- Motor de la CPU ----------
+     Con Stockfish (versión publicada): 5 niveles combinando Skill Level y profundidad.
+     Sin Stockfish (vista previa o si no carga): búsqueda propia minimax con poda alfa-beta. */
+  const ENGINE_URL = '../assets/engine/stockfish-18-lite-single.js';
+  const LEVELS = [
+    { name: 'Muy fácil', skill: 0, depth: 1, fb: 0 },
+    { name: 'Fácil', skill: 3, depth: 2, fb: 1 },
+    { name: 'Medio', skill: 8, depth: 6, fb: 2 },
+    { name: 'Difícil', skill: 14, depth: 10, fb: 3 },
+    { name: 'Experto', skill: 20, time: 1000, fb: 3 }
+  ];
+  let cpuLevel = 1, gameSerial = 0, sf = null, sfReady = null, sfListener = null, sfFailed = !ENGINE_URL;
+  try { const l = Number(localStorage.getItem('chaskiboom.level')); if (l >= 0 && l < LEVELS.length) cpuLevel = l; } catch (_) {}
+
+  function sfInit() {
+    if (sfReady) return sfReady;
+    sfReady = new Promise((res, rej) => {
+      const fail = e => { sfFailed = true; rej(e); };
+      try { sf = new Worker(ENGINE_URL); } catch (e) { fail(e); return; }
+      const t = setTimeout(() => fail(new Error('Stockfish no respondió')), 25000);
+      sf.onmessage = e => {
+        const line = String(e.data);
+        if (line === 'uciok') sf.postMessage('isready');
+        else if (line === 'readyok') { clearTimeout(t); res(); }
+        if (sfListener) sfListener(line);
+      };
+      sf.onerror = e => { clearTimeout(t); fail(e); };
+      sf.postMessage('uci');
+    });
+    return sfReady;
+  }
+  function sfBest(fen, lvl) {
+    return new Promise(res => {
+      sfListener = line => {
+        if (!line.startsWith('bestmove')) return;
+        sfListener = null;
+        const m = line.split(' ')[1];
+        res(m && m !== '(none)' ? m : null);
+      };
+      sf.postMessage('setoption name Skill Level value ' + lvl.skill);
+      sf.postMessage('position fen ' + fen);
+      sf.postMessage(lvl.depth ? 'go depth ' + lvl.depth : 'go movetime ' + lvl.time);
+    });
+  }
+
+  // Evaluación propia: material + tablas de posición (desde las blancas; fila 0 = octava)
+  const PV = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
+  const PST = {
+    p: [0,0,0,0,0,0,0,0, 50,50,50,50,50,50,50,50, 10,10,20,30,30,20,10,10, 5,5,10,25,25,10,5,5, 0,0,0,20,20,0,0,0, 5,-5,-10,0,0,-10,-5,5, 5,10,10,-20,-20,10,10,5, 0,0,0,0,0,0,0,0],
+    n: [-50,-40,-30,-30,-30,-30,-40,-50, -40,-20,0,0,0,0,-20,-40, -30,0,10,15,15,10,0,-30, -30,5,15,20,20,15,5,-30, -30,0,15,20,20,15,0,-30, -30,5,10,15,15,10,5,-30, -40,-20,0,5,5,0,-20,-40, -50,-40,-30,-30,-30,-30,-40,-50],
+    b: [-20,-10,-10,-10,-10,-10,-10,-20, -10,0,0,0,0,0,0,-10, -10,0,5,10,10,5,0,-10, -10,5,5,10,10,5,5,-10, -10,0,10,10,10,10,0,-10, -10,10,10,10,10,10,10,-10, -10,5,0,0,0,0,5,-10, -20,-10,-10,-10,-10,-10,-10,-20],
+    r: [0,0,0,0,0,0,0,0, 5,10,10,10,10,10,10,5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, 0,0,0,5,5,0,0,0],
+    q: [-20,-10,-10,-5,-5,-10,-10,-20, -10,0,0,0,0,0,0,-10, -10,0,5,5,5,5,0,-10, -5,0,5,5,5,5,0,-5, 0,0,5,5,5,5,0,-5, -10,5,5,5,5,5,0,-10, -10,0,5,0,0,0,0,-10, -20,-10,-10,-5,-5,-10,-10,-20],
+    k: [-30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -20,-30,-30,-40,-40,-30,-30,-20, -10,-20,-20,-20,-20,-20,-20,-10, 20,20,0,0,0,0,20,20, 20,30,10,0,0,10,30,20]
+  };
+  function evalWhite(c) {
+    let s = 0;
+    c.board().forEach((row, r) => row.forEach((p, f) => {
+      if (!p) return;
+      const v = PV[p.type] + PST[p.type][p.color === 'w' ? r * 8 + f : (7 - r) * 8 + f];
+      s += p.color === 'w' ? v : -v;
+    }));
+    return s;
+  }
+  function negamax(c, depth, alpha, beta) {
+    const moves = c.moves({ verbose: true });
+    if (!moves.length) return c.in_check() ? -100000 - depth : 0;
+    if (depth === 0) return (c.turn() === 'w' ? 1 : -1) * evalWhite(c);
+    moves.sort((a, b) => (b.captured ? PV[b.captured] : 0) - (a.captured ? PV[a.captured] : 0));
+    for (const m of moves) {
+      c.move(m);
+      const sc = -negamax(c, depth - 1, -beta, -alpha);
+      c.undo();
+      if (sc >= beta) return beta;
+      if (sc > alpha) alpha = sc;
+    }
+    return alpha;
+  }
+  function fallbackMove(depth) {
+    if (depth === 0) return pickCpu();
+    const c = new Chess(chess.fen());
+    const scored = c.moves({ verbose: true }).map(m => {
+      c.move(m); const sc = -negamax(c, depth - 1, -Infinity, Infinity); c.undo();
+      return { m, sc: sc + Math.random() * 8 };   // un poco de variedad entre jugadas parejas
+    });
+    scored.sort((a, b) => b.sc - a.sc);
+    return scored.length ? scored[0].m : null;
+  }
+
+  async function chooseCpuMove() {
+    const lvl = LEVELS[cpuLevel];
+    if (!sfFailed) {
+      try {
+        if (!sf) caption('Preparando a la CPU…');
+        await sfInit();
+        const uci = await sfBest(chess.fen(), lvl);
+        if (uci) return { from: uci.slice(0, 2), to: uci.slice(2, 4), promo: uci[4] };
+      } catch (e) { console.warn('Stockfish no disponible; se usa el motor propio', e); }
+    }
+    await new Promise(r => setTimeout(r, 30));   // deja que se pinte la pantalla antes de calcular
+    return fallbackMove(lvl.fb);
+  }
+
+  async function cpuPlay(delay) {
+    busy = true;
+    const serial = gameSerial;
+    await new Promise(r => setTimeout(r, delay));
+    let mv = null;
+    try { mv = await chooseCpuMove(); } catch (e) { console.error(e); }
+    busy = false;
+    if (serial !== gameSerial || online || !vsCpu || isOver() || !cpuTurn() || !mv) return;
+    play_move(mv.from, mv.to, { promo: mv.promo });
+  }
+
   const VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
   function updateStatus(moving) {
     const st = $('status');
@@ -1176,7 +1294,7 @@ const SOUNDS = {
       const adv = mat[c] - mat[o];
       el.querySelector('.adv').textContent = adv > 0 ? '+' + adv : '';
       el.querySelector('.chip').style.background = is2D ? (c === 'w' ? '#fbf7ee' : '#1e1a16') : (c === 'w' ? 'var(--blue)' : 'var(--red)');
-      const who = online ? (c === localColor ? (online.myName || 'Vos') : (online.oppName || 'Rival')) : vsCpu ? (c === localColor ? 'Vos' : 'CPU') : (c === localColor ? 'Vos' : 'Rival');
+      const who = online ? (c === localColor ? (online.myName || 'Vos') : (online.oppName || 'Rival')) : vsCpu ? (c === localColor ? 'Vos' : 'CPU ' + LEVELS[cpuLevel].name.toLowerCase()) : (c === localColor ? 'Vos' : 'Rival');
       el.querySelector('.pname').textContent = who + ' · ' + sidePl(c);
       el.classList.toggle('turn', chess.turn() === c && !isOver());
     };
@@ -1239,6 +1357,8 @@ const SOUNDS = {
   let started = false;
   function drawColors() {
     started = false;
+    gameSerial++;
+    if (ENGINE_URL && !sfFailed) sfInit().then(() => sf.postMessage('ucinewgame')).catch(() => {});
     localColor = Math.random() < 0.5 ? 'w' : 'b';
     times.w = times.b = 0;
     build2D(); render2D(); drawMarks(); updateStatus(); layout();
@@ -1257,10 +1377,7 @@ const SOUNDS = {
     started = true;
     clockLast = performance.now();
     updateStatus();
-    if (cpuTurn()) {
-      busy = true;
-      setTimeout(() => { busy = false; const m = pickCpu(); if (m) play_move(m.from, m.to); }, 600);
-    }
+    if (cpuTurn()) cpuPlay(600);
   }
 
   /* Reloj acumulado de cada jugador (todavía sin límite de tiempo).
@@ -1561,7 +1678,7 @@ const SOUNDS = {
   function move2d(from, to, opt = {}) {
     if (viewPos) goLive();
     const before = new Chess(chess.fen());
-    const mv = chess.move({ from, to, promotion: 'q' });
+    const mv = chess.move({ from, to, promotion: opt.promo || 'q' });
     if (!mv) return;
     if (!opt.remote) sendMove(mv);
     busy = true;
@@ -1824,6 +1941,7 @@ const SOUNDS = {
     online.pres.remove().catch(() => {});
     online.pres.onDisconnect().cancel();
     online = null; queue.length = 0;
+    document.body.classList.remove('online');
     history.replaceState(null, '', location.pathname + location.search);
     $('pTop').querySelector('.net').hidden = true;
     document.title = 'ChaskiBoom Battle Chess';
@@ -1837,6 +1955,8 @@ const SOUNDS = {
     $('mcpu').setAttribute('aria-pressed', 'false'); $('mon').setAttribute('aria-pressed', 'true');
     const pres = db.ref('games/' + id + '/online/' + me);
     pres.set(true); pres.onDisconnect().remove();
+    gameSerial++;
+    document.body.classList.add('online');
     online = { id, ref, pres, applied: 0, loaded: false, color: null, myName: getNick(), oppName: '', offerShown: false, rematchShown: false, lastDecline: undefined, lastIdx: null };
     // estado inicial vacío hasta que llegue la partida
     chess.reset(); ended = null; started = false; selected = null; targets = []; lastMove = null; viewPos = null; viewLast = null;
@@ -1973,6 +2093,14 @@ const SOUNDS = {
     document.title = mine && document.hidden ? '¡Tu turno! · ChaskiBoom' : 'ChaskiBoom Battle Chess';
   }
   document.addEventListener('visibilitychange', notifyTurn);
+
+  $('lvl').value = String(cpuLevel);
+  $('lvl').addEventListener('change', e => {
+    cpuLevel = Number(e.target.value);
+    try { localStorage.setItem('chaskiboom.level', String(cpuLevel)); } catch (_) {}
+    updatePlayers();
+    if (vsCpu && started && !isOver()) caption('Nivel de la CPU: ' + LEVELS[cpuLevel].name);
+  });
 
   /* ---------- Arranque ---------- */
   (async () => {

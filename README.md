@@ -23,5 +23,6 @@ y abrí http://localhost:8000
   - Merida: Armando Hernández Marroquín, GPLv2+.
   - Chessnut: Alexis Luengas, Apache 2.0.
   - Celtic y Fantasy: Maurizio Monge, MIT.
+- CPU: [Stockfish](https://stockfishchess.org) vía [Stockfish.js](https://github.com/nmrugg/stockfish.js) 18 (versión lite), GPLv3. La licencia está en `assets/engine/Copying.txt` y el código fuente en esos enlaces.
 - Motor 3D: [three.js](https://threejs.org) r147. Reglas de ajedrez: [chess.js](https://github.com/jhlywa/chess.js) 0.10.3.
 - Tipografías: Cinzel y EB Garamond (Google Fonts, SIL Open Font License).
