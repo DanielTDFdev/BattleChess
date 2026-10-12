@@ -67,6 +67,7 @@ __PWA__
   .hist { display: flex; align-items: center; gap: 4px; width: 100%; }
   .hist button { min-width: 36px; padding: 4px 8px; font-size: 20px; line-height: 1; }
   .hist button:disabled { opacity: .35; cursor: default; }
+  #mcpu:disabled, #mon:disabled, #newg:disabled { opacity: .4; cursor: not-allowed; }
   #hLabel { min-width: 0; flex: 1; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body.reviewing #hLabel { color: var(--torch); }
   #modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(10, 7, 12, .62); z-index: 20; }
@@ -1319,7 +1320,17 @@ const SOUNDS = __SOUNDS__;
   }
 
   const VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  // con una partida en curso no se puede cambiar de modo ni empezar otra: primero hay que terminarla o abandonarla
+  const inGame = () => started && !isOver();
+  function lockGameButtons() {
+    const lock = inGame();
+    ['mcpu', 'mon', 'newg'].forEach(id => {
+      $(id).disabled = lock;
+      $(id).title = lock ? 'Partida en curso: terminala o abandonala para empezar otra' : '';
+    });
+  }
   function updateStatus(moving) {
+    lockGameButtons();
     const st = $('status');
     const turn = chess.turn(), side = sidePl(turn), other = sidePl(turn === 'w' ? 'b' : 'w');
     st.className = turn === 'w' ? '' : 'b';
@@ -1416,14 +1427,14 @@ const SOUNDS = __SOUNDS__;
     updateStatus();
   }
   $('mcpu').addEventListener('click', () => {
-    if (busy || (!online && vsCpu)) return;
+    if (busy || inGame() || (!online && vsCpu)) return;
     leaveOnline();
     setMode(true);
     $('newg').click();
   });
-  $('mon').addEventListener('click', () => openLobby());
+  $('mon').addEventListener('click', () => { if (!inGame()) openLobby(); });
   $('newg').addEventListener('click', () => {
-    if (busy) return;
+    if (busy || inGame()) return;
     if (online) { openLobby(); return; }
     // con una partida en curso (o terminada), Cancelar vuelve a ella tal como estaba
     drawColors(started ? null : chooseMode);

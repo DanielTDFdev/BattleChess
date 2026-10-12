@@ -109,6 +109,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   (GitHub Pages deja cachear 10 min). En /dev/ también funciona: cada build nueva cuenta como versión nueva.
 - **Logo en celular (v1.15):** `layout()` agranda `#logo` con el espacio que sobra sobre el tablero 2D
   (hasta el 80 % del ancho), sin achicar el tablero.
+- **Botones bloqueados en partida (v1.17, en dev):** con una partida en curso (`inGame()` = empezada y sin terminar)
+  Contra la CPU, Online y Nueva partida quedan deshabilitados (`lockGameButtons()` en `updateStatus`). Para empezar otra
+  hay que terminarla o abandonarla. Para pasar a otra partida online sigue funcionando el aviso «Ver partida».
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
