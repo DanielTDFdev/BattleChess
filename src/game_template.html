@@ -63,6 +63,12 @@ __PWA__
   @media (prefers-reduced-motion: reduce) { #loading .ldBar i::after { animation: none; } }
   @media (max-width: 500px) { #loading { font-size: 18px; } }
   #loading .ldPct { font-family: var(--body); font-size: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  /* ícono de la clasificación sobre la pieza que hizo la jugada revisada (arriba a la derecha de su casilla) */
+  #clsMark, #clsMark3d { position: absolute; z-index: 7; margin: 0; pointer-events: none; transform: translate(-75%, -25%);
+    min-width: 0; width: calc(var(--sq) * .42); height: calc(var(--sq) * .42); padding: 0; border-radius: 50%;
+    display: grid; place-items: center; font-size: calc(var(--sq) * .24); line-height: 1; border: 2px solid #1e1a16; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  #clsMark3d { position: fixed; --sq: 52px; transform: translate(-50%, -50%); }
+  #clsMark[hidden], #clsMark3d[hidden] { display: none; }
   #best2d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; opacity: .8; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
   #arrow2d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; opacity: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
   .hist { display: flex; align-items: center; gap: 4px; width: 100%; }
@@ -266,7 +272,8 @@ __PWA__
 </style>
 
 <div id="stage"></div>
-<div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg><svg id="best2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
+<div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg><svg id="best2d" viewBox="0 0 8 8" aria-hidden="true"></svg><span id="clsMark" class="cls" hidden></span></div>
+<span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="__LOGO__" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
   <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.21</span></p>
@@ -1891,6 +1898,7 @@ const SOUNDS = __SOUNDS__;
     if (viewLast) showArrow(viewLast.from, viewLast.to); else hideArrows();
     const bm = analysis && analysis.done && n > 0 && analysis.cls[n - 1] !== 'best' && analysis.best[n - 1];
     if (bm) showBest(bm.slice(0, 2), bm.slice(2, 4)); else hideBest();
+    setClsMark(n && analysis && analysis.done ? h[n - 1].to : null, n && analysis && analysis.done ? analysis.cls[n - 1] : null);
     caption(n ? (analysis && analysis.done ? moveComment(n) : 'Revisando la jugada ' + n + ' de ' + h.length) : 'Posición inicial');
     updatePlayers(); updateHist();
   }
@@ -1898,7 +1906,7 @@ const SOUNDS = __SOUNDS__;
     if (!viewPos) return;
     viewPos = null; viewLast = null;
     if (is2D) { render2D(); dirty3d = true; } else { setupBoard(); drawMarks(); }
-    hideArrows(); hideBest();
+    hideArrows(); hideBest(); setClsMark(null);
     if (!silent) updateStatus();
     updatePlayers(); updateHist();
   }
@@ -2725,7 +2733,7 @@ const SOUNDS = __SOUNDS__;
     analysis = null;
     document.body.classList.remove('analyzed');
     $('anaBtn').hidden = true;
-    hideBest();
+    hideBest(); setClsMark(null);
   }
   const winPct = cp => 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * Math.max(-1000, Math.min(1000, cp)))) - 1);
   // una posición: devuelve { cp (desde las blancas), best (uci) }
@@ -2837,6 +2845,30 @@ const SOUNDS = __SOUNDS__;
     return g;
   }
   $('anaBtn').addEventListener('click', () => startAnalysis());
+  // ícono de la clasificación de la jugada revisada, sobre la pieza que la hizo
+  let clsAt = null;   // { sq, cls }
+  function setClsMark(sq, c) {
+    clsAt = sq && c ? { sq, cls: c } : null;
+    [$('clsMark'), $('clsMark3d')].forEach(el => {
+      el.hidden = !clsAt || (el.id === 'clsMark') !== is2D;
+      if (!clsAt) return;
+      el.className = 'cls ' + c; el.textContent = CLS[c].icon; el.title = CLS[c].name;
+    });
+    if (!clsAt || !is2D) return;
+    const f = FILES.indexOf(sq[0]), r = Number(sq[1]) - 1;
+    const col = localColor === 'w' ? f : 7 - f, row = localColor === 'w' ? 7 - r : r;
+    Object.assign($('clsMark').style, { left: ((col + 1) / 8 * 100) + '%', top: (row / 8 * 100) + '%' });
+  }
+  // en 3D se ubica cada cuadro proyectando un punto arriba y a la derecha del personaje
+  const clsV = new THREE.Vector3();
+  function placeClsMark3d() {
+    const el = $('clsMark3d');
+    if (!clsAt || is2D || el.hidden) return;
+    clsV.copy(sqPos(clsAt.sq)).add(new THREE.Vector3(TS * 0.35, 1.55, 0)).project(camera);
+    const r = renderer.domElement.getBoundingClientRect();
+    el.style.left = (r.left + (clsV.x + 1) / 2 * r.width) + 'px';
+    el.style.top = (r.top + (1 - clsV.y) / 2 * r.height) + 'px';
+  }
   // la barra de evaluación en la posición n (0 = inicial)
   function showEval(n) {
     if (!analysis || !analysis.done) return;
@@ -3039,7 +3071,7 @@ const SOUNDS = __SOUNDS__;
     // la niebla acompaña a la cámara: con zoom lejano (sobre todo en el celular) no tiene que oscurecer el tablero
     const camDist = camera.position.distanceTo(cam.look);
     scene.fog.near = camDist + 8; scene.fog.far = camDist + 40;
-    if (!is2D) renderer.render(scene, camera);
+    if (!is2D) { renderer.render(scene, camera); placeClsMark3d(); }
   }
   tick();
 })();

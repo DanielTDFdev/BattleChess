@@ -139,6 +139,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Y esto? (?!), Ah bue (?), Calambres (??). Al revisar, flecha verde fija con la mejor jugada (`showBest`, `#best2d`
   en 2D y `bestMat` en 3D; `arrowGeom/svgArrow/meshArrow` compartidas con la flecha de la última jugada). El resumen
   tiene un gráfico de la ventaja con puntos en Y esto?/Ah bue/Calambres; tocarlo lleva a esa jugada.
+  El ícono de la clasificación también va sobre la pieza que hizo la jugada, arriba a la derecha (`#clsMark` dentro del
+  tablero 2D; `#clsMark3d` proyectado desde la posición del personaje en cada cuadro en 3D, `placeClsMark3d`).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
