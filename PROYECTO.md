@@ -9,14 +9,16 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
-- Versión actual: ver `<span id="ver">` en `src/game_template.html`
+- Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
+- Versión actual: **v1.7** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
 | Ruta | Qué es |
 |---|---|
-| `src/game_template.html` | **Código fuente del juego. Se edita acá.** Tiene marcadores `__ASSETS__`, `__PIECES__`, `__SOUNDS__`, `__LOGO__`, `__ENGINE__`, `__FIREBASE__` |
-| `tools/build.py` | Genera `index.html`, `dev/index.html` o `build/artifact.html` a partir del template |
+| `src/game_template.html` | **Código fuente del juego. Se edita acá.** Tiene marcadores `__ASSETS__`, `__PIECES__`, `__SOUNDS__`, `__LOGO__`, `__ENGINE__`, `__FIREBASE__`, `__PWA__` |
+| `src/sw.js` | Service worker (la build lo copia como `sw.js` junto a cada página, con la versión en el nombre de la caché) |
+| `tools/build.py` | Genera `index.html`, `dev/index.html` o `build/artifact.html` a partir del template (más `manifest.webmanifest` y `sw.js` en raíz y dev) |
 | `index.html` | Página principal (generada, no editar a mano) |
 | `dev/index.html` | Copia de pruebas (generada) |
 | `assets/models`, `assets/anims` | Personajes, armas y animaciones KayKit (.glb) |
@@ -24,8 +26,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 | `assets/sounds/` | Sonidos convertidos a MP3 mono (los originales de Daniel están en `/sonidos`) |
 | `assets/engine/` | Stockfish 18 lite (Stockfish.js, GPLv3) + licencia |
 | `assets/logo.webp` | Logo con transparencia real (recortado de `logo_chaskiboom.jpg`) |
-| `src/sw.js` | Service worker (la build lo copia como `sw.js` junto a cada página, con la versión en el nombre de la caché) |
-| `assets/icons/` | Íconos de la app generados desde `assets/icono_chaskiboom.png` (favicon, apple-touch-icon, 192/512 normales y maskable) |
+| `assets/icono_chaskiboom.png` | Ícono original de la app (fondo blanco) |
+| `assets/icons/` | Íconos generados desde `icono_chaskiboom.png`: favicon, apple-touch-icon, 192/512 normales y maskable |
 | `database.rules.json` | Reglas de seguridad de Firebase Realtime Database (se pegan en la consola) |
 
 ## Forma de trabajo
@@ -33,9 +35,13 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"**: subir la versión en el template (v1.4 → v1.5…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.7 → v1.8…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
+5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
+   Playwright hay que instalar `three@0.147.0` y `chess.js@0.10.3` con npm y servirlos con `page.route`. Es lento
+   (la CPU y las animaciones bloquean con `busy`); para cambios chicos alcanza con `node --check` del script generado.
+   El servidor local tiene que mandar `image/svg+xml` para los SVG, si no las piezas 2D no se ven.
 
 ## Decisiones tomadas
 
@@ -45,27 +51,41 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   dama = maga con varita y corona (sin sombrero), rey = caballero con corona (sin casco).
 - **Bandos:** azules (blancas) y rojos (negras), recoloreando la ropa en la textura; gorro de oso de la torre
   recoloreado entero; base redonda del color del bando. En 2D: blanco y negro clásico.
+- **Vista inicial (v1.7):** el juego arranca en 2D (`setView(true)` en el arranque, después de cargar los modelos);
+  el botón «Vista 3D» pasa a las peleas. No se recuerda la última vista elegida.
 - **Peleas:** tres tiempos (golpe, contraataque, remate), impacto calculado por la velocidad de la mano del arma,
   cámara lateral, piezas vecinas translúcidas, la capturada se hunde en el tablero.
 - **Sonidos:** de batalla solo en peleas 3D; espadas/hachas/armaduras/quejidos al azar sin repetir;
   quejidos femeninos para dama, peón y alfil; magia para dama y alfil; enroque, jaque, ganador/perdedor.
 - **CPU:** Stockfish 18 lite en Web Worker, 5 niveles (Muy fácil … Experto) elegidos en el cartel de nueva partida.
+- **Nueva partida (v1.6):** el cartel tiene Comenzar y Cancelar. `drawColors(onCancel)` solo sortea y muestra el cartel;
+  el tablero se reinicia recién en Comenzar (`resetGame(col)`). Cancelar deja la partida anterior intacta
+  (y restaura el nivel de CPU si se cambió en el cartel); si no había partida empezada, vuelve a `chooseMode()`.
 - **Online (Firebase, proyecto `battlechess-d51bf`):** autenticación anónima con vinculación opcional a Google,
   Realtime Database `games/<código>` y `users/<uid>/games`; desafío por link `#código`, sorteo de colores,
   las blancas tocan Comenzar, jugadas en cola reproducidas con animación, tablas, abandono, revancha,
-  correspondencia («Mis partidas»), chat con 20 frases para el rival (cartel 1 s, una cada 15 s).
-- **Instalable como app (PWA):** la build genera `manifest.webmanifest` y `sw.js` al lado de `index.html` y de `dev/index.html`
-  (la de dev se instala aparte, como «ChaskiBoom dev»). El service worker es *red primero*: siempre baja lo último y usa la caché
-  solo sin conexión; no toca Firebase ni pedidos de audio por rangos. El artifact no lleva nada de esto (marcador `__PWA__` vacío).
+  correspondencia («Mis partidas»), chat con 20 frases para el rival (cartel 3 s desde v1.5, una cada 15 s).
+- **Instalable como app (PWA, v1.7):** la build genera `manifest.webmanifest` y `sw.js` al lado de `index.html` y de
+  `dev/index.html` (la de dev se instala aparte, como «ChaskiBoom dev»). El service worker es *red primero*: siempre baja
+  lo último y usa la caché solo sin conexión; no toca Firebase ni pedidos de audio por rangos. El artifact no lleva nada
+  de esto (marcador `__PWA__` vacío).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
+## Historial reciente
+
+- **v1.5:** el cartel de las frases para el rival dura 3 s (antes 1 s).
+- **v1.6:** botón Cancelar en el cartel de Nueva partida contra la CPU.
+- **v1.7:** instalable como app en el celular (PWA, íconos de `icono_chaskiboom.png`) y arranque en vista 2D.
+
 ## Pendientes / ideas
 
-- **Probar la instalación como app (v1.7, ya en producción):** Android (Chrome → Instalar app) e iPhone (Safari → Compartir → Agregar a inicio).
+- **Probar la instalación como app (v1.7):** Android (Chrome → Instalar app) e iPhone (Safari → Compartir → Agregar a inicio).
   Revisar ícono, pantalla completa, desafío por link y online. En iPhone la app instalada no comparte sesión con Safari:
   el usuario anónimo es otro, así que «Mis partidas» solo se conserva vinculando Google.
-
+- **Probar Cancelar de v1.6 en producción:** con una partida en curso, tocar Nueva partida → Cancelar y verificar que quedan
+  jugadas, relojes, lado del tablero y nivel de CPU como estaban. Solo se probó Cancelar desde la pantalla inicial.
+- Mostrar el tablero 2D sin esperar a que bajen los modelos 3D (cargarlos por detrás).
 - Partidas con tiempo límite (los relojes ya existen).
 - Calibrar los niveles de la CPU con partidas reales.
 - Logo nuevo con la "E" de BATTLE completa, exportado como PNG transparente.
