@@ -70,6 +70,25 @@ __PWA__
   #mcpu:disabled, #mon:disabled, #newg:disabled { opacity: .4; cursor: not-allowed; }
   #hLabel { min-width: 0; flex: 1; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body.reviewing #hLabel { color: var(--torch); }
+  /* ---- Análisis ---- */
+  #evalBar { position: fixed; z-index: 3; display: none; width: 12px; border: 1px solid #5a4330; border-radius: 3px; overflow: hidden; background: #1e1a16; pointer-events: none; }
+  body.analyzed #evalBar { display: block; }
+  #evalBar i { position: absolute; left: 0; right: 0; bottom: 0; height: 50%; background: #fbf7ee; transition: height .35s ease-out; }
+  #evalBar.flip i { bottom: auto; top: 0; }
+  #evalBar b { position: absolute; left: 0; right: 0; font: 600 8px/1 var(--body); text-align: center; color: #7a5c43; }
+  #evalBar b.top { top: 2px; color: #cdb98f; } #evalBar b.bot { bottom: 2px; }
+  .cls { display: inline-block; min-width: 1.3em; margin-left: 4px; padding: 0 3px; border-radius: 3px; font-weight: 700; font-size: .85em; line-height: 1.35; text-align: center; color: #1d140c; }
+  .cls.best { background: #7fb34a; } .cls.excellent { background: #8fc46a; } .cls.good { background: #a7c28a; }
+  .cls.inaccuracy { background: #e8c45a; } .cls.mistake { background: #e8913d; } .cls.blunder { background: #d4553f; color: #fff; }
+  @media (max-width: 500px) { body.analyzed #hLabel .cnt { display: none; } }   /* en el celular no entra: queda la jugada y su clasificación */
+  .pbar .acc { font-size: 13px; font-weight: 700; color: var(--torch); white-space: nowrap; }
+  #modal .anaProg { width: 100%; height: 10px; margin: 0 0 18px; border: 1px solid #5a4330; border-radius: 5px; background: #241c2a; overflow: hidden; }
+  #modal .anaProg i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #b8742a, var(--torch), #f6d365); }
+  #modal .anaSum { width: 100%; margin: 0 0 18px; border-collapse: collapse; font-size: 16px; }
+  #modal .anaSum th { font-family: var(--display); font-weight: 600; color: var(--muted); padding: 2px 6px; }
+  #modal .anaSum td { padding: 3px 6px; text-align: center; border-top: 1px solid var(--line); }
+  #modal .anaSum td:first-child { text-align: left; }
+  #modal .anaSum tr.accRow td { font-family: var(--display); font-size: 28px; font-weight: 700; color: var(--torch); border-top: none; padding-bottom: 8px; }
   #modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(10, 7, 12, .62); z-index: 20; }
   #modal[hidden] { display: none; }
   #modal .card { width: min(420px, 100%); background: #221b28; border: 2px solid var(--torch); outline: 1px solid #5a4330; outline-offset: 4px; border-radius: 4px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
@@ -281,13 +300,15 @@ __PWA__
   <button id="drawoffer">Ofrecer tablas</button>
   <button id="resign">Abandonar</button>
   <button id="newg">Nueva partida</button>
+  <button id="anaBtn" hidden>Analizar partida</button>
   <div class="caps">
     <span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span>
   </div>
   </div>
 </div>
-<div class="pbar" id="pTop"><span class="chip"></span><span class="pname"></span><span class="net" hidden title="Conexión del rival"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
-<div class="pbar" id="pBot"><span class="chip"></span><span class="pname"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
+<div id="evalBar" aria-hidden="true"><i></i><b class="top"></b><b class="bot"></b></div>
+<div class="pbar" id="pTop"><span class="chip"></span><span class="pname"></span><span class="acc"></span><span class="net" hidden title="Conexión del rival"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
+<div class="pbar" id="pBot"><span class="chip"></span><span class="pname"></span><span class="acc"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
 <div id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="card">
     <h2 id="mTitle"></h2>
@@ -1440,6 +1461,7 @@ const SOUNDS = __SOUNDS__;
       el.querySelector('.chip').style.background = is2D ? (c === 'w' ? '#fbf7ee' : '#1e1a16') : (c === 'w' ? 'var(--blue)' : 'var(--red)');
       const who = online ? (c === localColor ? (online.myName || 'Vos') : (online.oppName || 'Rival')) : vsCpu ? (c === localColor ? 'Vos' : 'CPU ' + LEVELS[cpuLevel].name.toLowerCase()) : (c === localColor ? 'Vos' : 'Rival');
       el.querySelector('.pname').textContent = who + ' · ' + sidePl(c);
+      el.querySelector('.acc').textContent = analysis && analysis.done ? analysis.acc[c] + ' %' : '';
       el.classList.toggle('turn', chess.turn() === c && !isOver());
     };
     fill($('pBot'), localColor);
@@ -1475,9 +1497,11 @@ const SOUNDS = __SOUNDS__;
       Object.assign(board2d.style, { left: left + 'px', top: top + 'px', width: size + 'px', height: size + 'px' });
       board2d.style.setProperty('--sq', ((size - 12) / 8) + 'px');
       [[pTop, top - BH - GAP], [pBot, top + size + GAP]].forEach(([el, y]) => Object.assign(el.style, { left: left + 'px', top: y + 'px', width: size + 'px', maxWidth: 'none' }));
+      Object.assign($('evalBar').style, { left: Math.max(2, left - 15) + 'px', top: top + 'px', height: size + 'px' });
     } else {
       // en 3D, barras compactas en la esquina para no tapar las filas de atrás
       [[pTop, topY], [pBot, botY - BH]].forEach(([el, y]) => Object.assign(el.style, { left: (x0 + 16) + 'px', top: y + 'px', width: 'auto', maxWidth: (W - 32) + 'px' }));
+      Object.assign($('evalBar').style, { left: (x0 + 4) + 'px', top: (topY + BH + 12) + 'px', height: Math.max(120, botY - topY - 2 * BH - 24) + 'px' });
     }
     resize();
   }
@@ -1534,6 +1558,7 @@ const SOUNDS = __SOUNDS__;
   function resetGame(col) {
     chess.reset(); selected = null; targets = []; lastMove = null; ended = null; viewPos = null; viewLast = null;
     premove = null; preSel = null; preTargets = [];
+    clearAnalysis();
     hideArrows(); updateHist();
     setupBoard(); dirty3d = false;
     started = false;
@@ -1593,6 +1618,8 @@ const SOUNDS = __SOUNDS__;
       modal.querySelector('.card').prepend(img);
     }
     const oldPick = modal.querySelector('.lvlPick'); if (oldPick) oldPick.remove();
+    modal.querySelectorAll('.mExtra').forEach(x => x.remove());
+    if (opt.node) { opt.node.classList.add('mExtra'); modal.querySelector('.card').insertBefore(opt.node, $('mBtns')); }
     if (opt.levels) {
       // selector de nivel de la CPU, antes de empezar
       const pick = document.createElement('div');
@@ -1679,6 +1706,7 @@ const SOUNDS = __SOUNDS__;
     ended = { result, reason };
     if (online && !opt.remote) online.ref.child('result').transaction(cur => cur || { winner: result, reason });
     premove = null; preSel = null; preTargets = [];
+    $('anaBtn').hidden = !canAnalyze(); $('anaBtn').textContent = 'Analizar partida';
     select(null);
     updateStatus();
     caption('');
@@ -1693,6 +1721,7 @@ const SOUNDS = __SOUNDS__;
     const how = reason === 'mate' ? 'por jaque mate' : 'por abandono';
     const again = online ? [{ label: 'Revancha', primary: true, onClick: offerRematch }, { label: 'Ver el tablero' }]
                          : [{ label: 'Nueva partida', primary: true, onClick: () => $('newg').click() }, { label: 'Ver el tablero' }];
+    if (canAnalyze()) again.splice(1, 0, { label: 'Analizar', onClick: () => startAnalysis() });
     if (result === 'draw') {
       const why = { agreed: 'Los dos jugadores acordaron tablas.', stalemate: 'Tablas por ahogado: el bando que mueve no tiene jugadas legales y no está en jaque.',
                     repetition: 'Tablas por triple repetición de la posición.', material: 'Tablas: no queda material suficiente para dar mate.', rule50: 'Tablas por la regla de los 50 movimientos.' }[reason];
@@ -1812,7 +1841,13 @@ const SOUNDS = __SOUNDS__;
     const lbl = $('hLabel');
     if (!h.length) lbl.textContent = 'Sin jugadas';
     else if (n === 0) lbl.textContent = 'Inicio · 0/' + h.length;
-    else lbl.textContent = Math.ceil(n / 2) + (n % 2 ? '. ' : '… ') + sanEs(h[n - 1]) + ' · ' + n + '/' + h.length;
+    else {
+      lbl.textContent = Math.ceil(n / 2) + (n % 2 ? '. ' : '… ') + sanEs(h[n - 1]);
+      const c = analysis && analysis.done && analysis.cls[n - 1];
+      if (c) { const b = document.createElement('span'); b.className = 'cls ' + c; b.textContent = CLS[c].icon; b.title = CLS[c].name; lbl.appendChild(b); }
+      const cnt = document.createElement('span'); cnt.className = 'cnt'; cnt.textContent = ' · ' + n + '/' + h.length; lbl.appendChild(cnt);
+    }
+    showEval(n);
     $('hFirst').disabled = $('hPrev').disabled = n === 0;
     $('hNext').disabled = $('hLast').disabled = n === h.length;
     document.body.classList.toggle('reviewing', !!viewPos);
@@ -1830,7 +1865,7 @@ const SOUNDS = __SOUNDS__;
     selected = null; targets = [];
     if (is2D) render2D(); else { setupBoard(tmp); drawMarks(); }
     if (viewLast) showArrow(viewLast.from, viewLast.to); else hideArrows();
-    caption(n ? 'Revisando la jugada ' + n + ' de ' + h.length : 'Posición inicial');
+    caption(n ? (analysis && analysis.done ? moveComment(n) : 'Revisando la jugada ' + n + ' de ' + h.length) : 'Posición inicial');
     updatePlayers(); updateHist();
   }
   function goLive(silent) {
@@ -2251,6 +2286,7 @@ const SOUNDS = __SOUNDS__;
     // estado inicial vacío hasta que llegue la partida
     chess.reset(); ended = null; started = false; selected = null; targets = []; lastMove = null; viewPos = null; viewLast = null;
     premove = null; preSel = null; preTargets = [];
+    clearAnalysis();
     times.w = times.b = 0; queue.length = 0;
     hideArrows();
     ref.on('value', s => onGame(s.val()));
@@ -2641,6 +2677,138 @@ const SOUNDS = __SOUNDS__;
   function resetChat() {
     chatSeen = new Set(); chatLoaded = false; unread = 0; updateBadge();
     $('chatLog').innerHTML = ''; setChatOpen(false);
+  }
+
+  /* ---------- Análisis de la partida ----------
+     Al terminar, Stockfish (nivel máximo) evalúa todas las posiciones. Con eso:
+     - Precisión de cada jugador: fórmula pública de lichess (cuánto baja tu probabilidad de ganar en cada jugada,
+       promedio ponderado por la volatilidad de la partida y media armónica).
+     - Clasificación de cada jugada por la probabilidad de ganar que perdiste: mejor (o la del motor), excelente < 2,
+       buena < 5, imprecisión < 10, error < 20, metida de pata ≥ 20 (puntos de probabilidad, como chess.com).
+     - Barra de evaluación al costado del tablero, que sigue a « ‹ › ».
+     No hay análisis durante la partida (online sería trampa) ni sin Stockfish (artifact). */
+  const CLS = {
+    best: { icon: '★', name: 'Mejor jugada' }, excellent: { icon: '!', name: 'Excelente' }, good: { icon: '✓', name: 'Buena' },
+    inaccuracy: { icon: '?!', name: 'Imprecisión' }, mistake: { icon: '?', name: 'Error' }, blunder: { icon: '??', name: 'Metida de pata' }
+  };
+  const CLS_ORDER = ['best', 'excellent', 'good', 'inaccuracy', 'mistake', 'blunder'];
+  let analysis = null;   // { done, evals: [cp desde las blancas por posición], best: [uci], cls: [por jugada], acc: { w, b } }
+  const canAnalyze = () => !!ENGINE_URL && !sfFailed && chess.history().length > 0;
+  function clearAnalysis() {
+    if (analysis && !analysis.done) analysis.cancel = true;
+    analysis = null;
+    document.body.classList.remove('analyzed');
+    $('anaBtn').hidden = true;
+  }
+  const winPct = cp => 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * Math.max(-1000, Math.min(1000, cp)))) - 1);
+  // una posición: devuelve { cp (desde las blancas), best (uci) }
+  function sfEval(fen, turn) {
+    return new Promise(res => {
+      let score = 0;
+      sfListener = line => {
+        const m = line.match(/ score (cp|mate) (-?\d+)/);
+        if (m && !/ (lower|upper)bound/.test(line)) score = m[1] === 'cp' ? +m[2] : (+m[2] > 0 ? 1 : -1) * (100000 - Math.abs(+m[2]) * 100);
+        if (!line.startsWith('bestmove')) return;
+        sfListener = null;
+        const b = line.split(' ')[1];
+        res({ cp: turn === 'w' ? score : -score, best: b && b !== '(none)' ? b : null });
+      };
+      sf.postMessage('position fen ' + fen);
+      sf.postMessage('go depth 13 movetime 600');
+    });
+  }
+  async function startAnalysis() {
+    if (!canAnalyze() || busy) return;
+    if (analysis && analysis.done) { showAnalysisSummary(); return; }
+    const hist = chess.history({ verbose: true }), N = hist.length;
+    const run = analysis = { done: false, cancel: false, evals: [], best: [], cls: [], acc: { w: 0, b: 0 } };
+    const prog = document.createElement('div'); prog.className = 'anaProg'; prog.innerHTML = '<i></i>';
+    showModal('Analizando la partida', 'Preparando el motor…', [{ label: 'Cancelar', onClick: () => { run.cancel = true; if (sf) sf.postMessage('stop'); } }], { node: prog });
+    try { await sfInit(); } catch (e) { closeModal(); caption('No se pudo cargar el motor de análisis'); analysis = null; return; }
+    sf.postMessage('ucinewgame');
+    sf.postMessage('setoption name Skill Level value 20');
+    const c = new Chess();
+    for (let i = 0; i <= N; i++) {
+      if (run.cancel) { if (analysis === run) analysis = null; return; }
+      $('mText').textContent = 'Stockfish revisa cada posición: ' + i + ' de ' + N + ' jugadas.';
+      prog.firstChild.style.width = (i / (N + 1) * 100) + '%';
+      let r;
+      if (c.in_checkmate()) r = { cp: c.turn() === 'w' ? -100000 : 100000, best: null };
+      else if (c.game_over()) r = { cp: 0, best: null };
+      else r = await sfEval(c.fen(), c.turn());
+      run.evals.push(r.cp); run.best.push(r.best);
+      if (i < N) c.move(hist[i]);
+    }
+    if (run.cancel || analysis !== run) return;
+    // clasificación y precisión
+    const accs = { w: [], b: [] }, wins = run.evals.map(winPct);
+    for (let i = 0; i < N; i++) {
+      const mv = hist[i], col = mv.color, sgn = col === 'w' ? 1 : -1;
+      const before = col === 'w' ? wins[i] : 100 - wins[i], after = col === 'w' ? wins[i + 1] : 100 - wins[i + 1];
+      const loss = Math.max(0, before - after);
+      const isBest = run.best[i] && run.best[i].slice(0, 4) === mv.from + mv.to;
+      run.cls.push(isBest || loss < 0.5 ? 'best' : loss < 2 ? 'excellent' : loss < 5 ? 'good' : loss < 10 ? 'inaccuracy' : loss < 20 ? 'mistake' : 'blunder');
+      accs[col].push(Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * loss) - 3.1669)));
+    }
+    // precisión de la partida (como lichess): promedio ponderado por volatilidad y media armónica
+    const win = Math.max(2, Math.min(8, Math.floor(N / 10)));
+    const vol = [];
+    for (let i = 0; i < N; i++) {
+      const w = wins.slice(Math.max(0, i - win + 1), i + 2), m = w.reduce((a, b) => a + b, 0) / w.length;
+      vol.push(Math.max(0.5, Math.min(12, Math.sqrt(w.reduce((a, b) => a + (b - m) * (b - m), 0) / w.length))));
+    }
+    ['w', 'b'].forEach(col => {
+      const idx = hist.map((m, i) => m.color === col ? i : -1).filter(i => i >= 0);
+      const a = accs[col];
+      if (!a.length) { run.acc[col] = 0; return; }
+      const wsum = idx.reduce((s, i) => s + vol[i], 0), wmean = idx.reduce((s, i, k) => s + vol[i] * a[k], 0) / wsum;
+      const harm = a.length / a.reduce((s, x) => s + 1 / Math.max(x, 1), 0);
+      run.acc[col] = Math.round((wmean + harm) / 2);
+    });
+    run.done = true;
+    document.body.classList.add('analyzed');
+    $('anaBtn').hidden = false; $('anaBtn').textContent = 'Ver análisis';
+    updatePlayers(); updateHist(); layout();
+    showAnalysisSummary();
+  }
+  function showAnalysisSummary() {
+    if (!analysis || !analysis.done) return;
+    const t = document.createElement('table'); t.className = 'anaSum';
+    const nameOfSide = c => online ? (c === localColor ? 'Vos' : (online.oppName || 'Rival')) : vsCpu ? (c === localColor ? 'Vos' : 'CPU') : sidePl(c);
+    const cnt = col => { const o = {}; analysis.cls.forEach((c, i) => { if ((i % 2 === 0 ? 'w' : 'b') === col) o[c] = (o[c] || 0) + 1; }); return o; };
+    const first = localColor, second = opp(localColor), A = cnt(first), B = cnt(second);
+    let html = '<tr><th></th><th>' + nameOfSide(first) + '</th><th>' + nameOfSide(second) + '</th></tr>';
+    html += '<tr class="accRow"><td>Precisión</td><td>' + analysis.acc[first] + ' %</td><td>' + analysis.acc[second] + ' %</td></tr>';
+    CLS_ORDER.forEach(k => { html += '<tr><td><span class="cls ' + k + '">' + CLS[k].icon + '</span> ' + CLS[k].name + '</td><td>' + (A[k] || 0) + '</td><td>' + (B[k] || 0) + '</td></tr>'; });
+    t.innerHTML = html;
+    showModal('Análisis de la partida', 'Recorré las jugadas con « ‹ › » para ver cada una y la barra de evaluación.',
+      [{ label: 'Revisar jugadas', primary: true, onClick: () => viewAt(1) }, { label: 'Cerrar' }], { node: t });
+  }
+  $('anaBtn').addEventListener('click', () => startAnalysis());
+  // la barra de evaluación en la posición n (0 = inicial)
+  function showEval(n) {
+    if (!analysis || !analysis.done) return;
+    const cp = analysis.evals[Math.min(n, analysis.evals.length - 1)];
+    const bar = $('evalBar'), w = winPct(cp);
+    bar.classList.toggle('flip', localColor === 'b');   // el color de abajo es el del jugador local
+    bar.querySelector('i').style.height = w + '%';
+    const mate = Math.abs(cp) >= 50000 ? Math.round((100000 - Math.abs(cp)) / 100) : null;
+    const txt = mate === null ? (Math.abs(cp) / 100).toFixed(1) : mate ? 'M' + mate : '#';
+    const whiteAhead = cp >= 0, whiteBottom = localColor === 'w';
+    bar.querySelector('.top').textContent = whiteAhead !== whiteBottom ? txt : '';
+    bar.querySelector('.bot').textContent = whiteAhead === whiteBottom ? txt : '';
+  }
+  // comentario de la jugada n (1 = la primera) para el renglón de abajo
+  function moveComment(n) {
+    const h = chess.history({ verbose: true }), mv = h[n - 1], c = analysis.cls[n - 1];
+    let s = Math.ceil(n / 2) + (n % 2 ? '. ' : '… ') + sanEs(mv.san) + ' · ' + CLS[c].name;
+    const b = analysis.best[n - 1];
+    if (b && c !== 'best') {
+      const t = new Chess(); for (let i = 0; i < n - 1; i++) t.move(h[i]);
+      const bm = t.move({ from: b.slice(0, 2), to: b.slice(2, 4), promotion: b[4] || 'q' });
+      if (bm) s += '. Lo mejor era ' + sanEs(bm.san);
+    }
+    return s;
   }
 
   /* ---------- Versión nueva ----------
