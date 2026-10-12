@@ -1283,13 +1283,15 @@ const SOUNDS = __SOUNDS__;
     return fallbackMove(lvl.fb);
   }
 
+  // busy bloquea el tablero mientras la CPU piensa; cpuThinking hace que en ese rato su reloj sí corra
+  let cpuThinking = false;
   async function cpuPlay(delay) {
-    busy = true;
+    busy = true; cpuThinking = true;
     const serial = gameSerial;
     await new Promise(r => setTimeout(r, delay));
     let mv = null;
     try { mv = await chooseCpuMove(); } catch (e) { console.error(e); }
-    busy = false;
+    busy = false; cpuThinking = false;
     if (serial !== gameSerial || online || !vsCpu || isOver() || !cpuTurn() || !mv) return;
     play_move(mv.from, mv.to, { promo: mv.promo });
   }
@@ -1442,7 +1444,8 @@ const SOUNDS = __SOUNDS__;
   }
 
   /* Reloj acumulado de cada jugador (todavía sin límite de tiempo).
-     Corre para el bando que mueve; se detiene durante las animaciones, los carteles y al terminar. */
+     Corre para el bando que mueve; se detiene durante las animaciones, los carteles y al terminar.
+     Mientras la CPU piensa el tablero está bloqueado (busy) pero su reloj corre (cpuThinking). */
   const times = { w: 0, b: 0 };
   let clockLast = performance.now();
   const fmt = ms => { const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60, ss = String(s % 60).padStart(2, '0');
@@ -1450,7 +1453,7 @@ const SOUNDS = __SOUNDS__;
                       return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + ss; };
   setInterval(() => {
     const now = performance.now(), dt = now - clockLast; clockLast = now;
-    if (started && !busy && !isOver() && modal.hidden && $('loading').hidden) times[chess.turn()] += dt;
+    if (started && (!busy || cpuThinking) && !isOver() && modal.hidden && $('loading').hidden) times[chess.turn()] += dt;
     $('pBot').querySelector('.clock').textContent = fmt(times[localColor]);
     $('pTop').querySelector('.clock').textContent = fmt(times[opp(localColor)]);
   }, 200);
