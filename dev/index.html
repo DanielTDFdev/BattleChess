@@ -309,6 +309,7 @@ const SOUNDS = {
   "armor3": "../assets/sounds/armor3.mp3",
   "axe1": "../assets/sounds/axe1.mp3",
   "axe2": "../assets/sounds/axe2.mp3",
+  "castle": "../assets/sounds/castle.mp3",
   "check": "../assets/sounds/check.mp3",
   "grunt_m1": "../assets/sounds/grunt_m1.mp3",
   "grunt_m2": "../assets/sounds/grunt_m2.mp3",
@@ -874,7 +875,8 @@ const SOUNDS = {
       else sfx('grunt_q', 6, { delay: 0.05 });   // dama, peón y alfil (personajes femeninos)
     }
   }
-  const moveSfx = color => sfx(color === 'w' ? 'move_w' : 'move_b', 0, { exact: true });
+  // el enroque tiene su propio sonido; el resto, según el color que movió
+  const moveSfx = (color, mv) => mv && /[kq]/.test(mv.flags) ? sfx('castle', 0, { exact: true }) : sfx(color === 'w' ? 'move_w' : 'move_b', 0, { exact: true });
 
   /* ---------- La pelea, en el tablero ---------- */
   async function strike(u, clip) {
@@ -1027,7 +1029,7 @@ const SOUNDS = {
     units[to] = A; A.sq = to;
     extra.delete(A);
     await Promise.all(moves);
-    moveSfx(mv.color);
+    moveSfx(mv.color, mv);
     if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
 
     // Coronación
@@ -1527,7 +1529,7 @@ const SOUNDS = {
     setTimeout(() => {
       board2d.querySelectorAll('.fly').forEach(el => el.remove());
       busy = false;
-      moveSfx(mv.color);
+      moveSfx(mv.color, mv);
       if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
       updateStatus(); render2D(); checkEnd();
       if (mv.captured) caption(nameOf(mv.piece, mv.color) + ' captura ' + lc(nameOf(mv.captured, opp(mv.color))));
