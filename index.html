@@ -242,7 +242,7 @@
 <div id="board2d" hidden aria-label="Tablero 2D"><svg id="arrow2d" viewBox="0 0 8 8" aria-hidden="true"></svg></div>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.11</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.12</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -954,11 +954,66 @@ const SOUNDS = {
   // decodeAudioData con callbacks: Safari viejo (iOS < 14.5) no devuelve una promesa
   const decode = ab => new Promise((res, rej) => { const p = actx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
   let unlocked = false;
+  // iPhone/iPad: Web Audio queda mudo con el interruptor de silencio (y a veces en la app instalada) porque iOS lo trata
+  // como sonido «ambiente». Un <audio> HTML en bucle con silencio pasa la sesión de audio a «reproducción»,
+  // y con eso también suena el Web Audio del juego. Se pausa al salir de la página.
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  let iosKeep = null;
+  const audioDiag = { keepCuts: 0, states: [], tries: 0, lastErr: '', recreated: 0 };
+  function iosAudioSession() {
+    if (!IOS || !$('sound').checked) return;
+    if (!iosKeep) {
+      iosKeep = document.createElement('audio');
+      iosKeep.src = 'data:audio/wav;base64,UklGRsQPAABXQVZFZm10IBAAAAABAAEAoA8AAKAPAAABAAgAZGF0YaAPAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
+      iosKeep.loop = true; iosKeep.preload = 'auto';
+      iosKeep.setAttribute('playsinline', ''); iosKeep.setAttribute('x-webkit-airplay', 'deny'); iosKeep.disableRemotePlayback = true;
+      // si iOS lo corta con la página a la vista (otra app de audio, fin de una pelea, etc.), se cuenta para el diagnóstico
+      iosKeep.addEventListener('pause', () => { if (!document.hidden && $('sound').checked) audioDiag.keepCuts++; });
+      iosKeep.addEventListener('ended', () => { audioDiag.keepCuts++; });
+    }
+    keepPlay(true);
+  }
+  // retoma el audio de silencio; si iOS rechaza el play() durante un toque, el elemento se descarta y el
+  // próximo toque crea uno nuevo (un <audio> que iOS dejó «trabado» no vuelve a arrancar)
+  function keepPlay(gesture) {
+    if (!iosKeep || !iosKeep.paused || document.hidden || !$('sound').checked) return;
+    const el = iosKeep;
+    audioDiag.tries++;
+    el.play().then(() => { audioDiag.lastErr = ''; }).catch(e => {
+      audioDiag.lastErr = (e && e.name) || 'error';
+      if (gesture && iosKeep === el) { try { el.removeAttribute('src'); el.load(); } catch (_) {} iosKeep = null; audioDiag.recreated++; }
+    });
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden && iosKeep) iosKeep.pause(); });
+  // Diagnóstico de sonido: agregar ?diag a la dirección muestra el estado del audio en una esquina
+  if (/[?&]diag\b/.test(location.search)) {
+    const box = document.createElement('pre');
+    box.style.cssText = 'position:fixed;left:6px;bottom:6px;z-index:99;margin:0;padding:6px 8px;font:11px/1.35 monospace;background:rgba(0,0,0,.8);color:#7f7;border-radius:4px;pointer-events:none;white-space:pre-wrap;max-width:94vw';
+    document.body.appendChild(box);
+    setInterval(() => {
+      box.textContent = 'iOS: ' + IOS + ' · app instalada: ' + (matchMedia('(display-mode: standalone)').matches || !!navigator.standalone)
+        + '\naudioSession: ' + (navigator.audioSession ? navigator.audioSession.type : 'no existe')
+        + '\nAudioContext: ' + (actx ? actx.state : 'sin crear (tocá la pantalla)') + ' · unlocked: ' + unlocked
+        + '\nsonidos cargados: ' + Object.keys(sbuf).length + '/' + Object.keys(SOUNDS).length
+        + '\naudio silencio: ' + (iosKeep ? (iosKeep.paused ? 'pausado' : 'sonando') + (iosKeep.error ? ' error ' + iosKeep.error.code : '') : '—')
+        + ' · casilla Sonido: ' + $('sound').checked
+        + '\nSW: ' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'activo' : 'no') + ' · ' + $('ver').textContent
+        + '\nreducir movimiento: ' + matchMedia('(prefers-reduced-motion: reduce)').matches
+        + '\ncortes del silencio: ' + audioDiag.keepCuts + ' · intentos: ' + audioDiag.tries + ' · recreado: ' + audioDiag.recreated
+        + (audioDiag.lastErr ? ' · último error: ' + audioDiag.lastErr : '')
+        + '\nestados del audio: ' + audioDiag.states.join(' → ');
+    }, 500);
+  }
   function audioInit() {
     // iPhone: que el juego suene aunque el interruptor de silencio esté activado (Safari 16.4+)
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+    iosAudioSession();
     if (!actx) {
       try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { return; }
+      actx.onstatechange = () => {
+        audioDiag.states.push(actx.state); if (audioDiag.states.length > 6) audioDiag.states.shift();
+        if (actx.state !== 'running' && actx.state !== 'closed' && !document.hidden) { unlocked = false; actx.resume().catch(() => {}); }
+      };
       Object.entries(SOUNDS).forEach(async ([k, src]) => {
         try {
           const ab = src.startsWith('data:') ? toBuffer(src.split(',')[1]) : await (await fetch(src)).arrayBuffer();
@@ -974,6 +1029,7 @@ const SOUNDS = {
         s.buffer = actx.createBuffer(1, 1, 22050);
         s.connect(actx.destination); s.start(0);
         unlocked = actx.state === 'running';
+        if (!unlocked && actx.resume) actx.resume().then(() => { unlocked = actx.state === 'running'; }).catch(() => {});
       } catch (_) {}
     }
   }
@@ -983,12 +1039,16 @@ const SOUNDS = {
   // al volver a la pestaña (o tras una llamada en iPhone) el audio queda pausado: se reanuda con el próximo toque
   document.addEventListener('visibilitychange', () => { if (!document.hidden && actx && actx.state !== 'running') { unlocked = false; } });
   try { if (localStorage.getItem('chaskiboom.sound') === '0') $('sound').checked = false; } catch (_) {}
-  $('sound').addEventListener('change', e => { try { localStorage.setItem('chaskiboom.sound', e.target.checked ? '1' : '0'); } catch (_) {} });
+  $('sound').addEventListener('change', e => {
+    try { localStorage.setItem('chaskiboom.sound', e.target.checked ? '1' : '0'); } catch (_) {}
+    if (!e.target.checked && iosKeep) iosKeep.pause();
+  });
 
   // sfx('sword', 3) elige una de sword1..sword3 al azar, sin repetir la última
   function sfx(base, n, opt = {}) {
     if (!actx || !$('sound').checked) return;
     if (actx.state !== 'running') { actx.resume().catch(() => {}); }
+    keepPlay(false);
     let key = base;
     if (n) {
       let i;
@@ -1248,11 +1308,15 @@ const SOUNDS = {
 
   /* ---------- Motor de la CPU ----------
      Con Stockfish (versión publicada): 5 niveles combinando Skill Level y profundidad.
-     Sin Stockfish (vista previa o si no carga): búsqueda propia minimax con poda alfa-beta. */
+     Sin Stockfish (vista previa o si no carga): búsqueda propia minimax con poda alfa-beta.
+     Stockfish aun en Skill Level 0 juega como un aficionado de club (no regala piezas), así que los dos niveles
+     de abajo mezclan jugadas al azar (rnd = probabilidad de jugar cualquier jugada legal):
+       Muy fácil: mitad al azar, mitad con el criterio simple de pickCpu (come lo que ve y no deja piezas colgadas a 1 jugada), sin Stockfish.
+       Fácil: una de cada cinco al azar, el resto Stockfish nivel 0 a profundidad 1 (desde v1.12). */
   const ENGINE_URL = 'assets/engine/stockfish-18-lite-single.js';
   const LEVELS = [
-    { name: 'Muy fácil', skill: 0, depth: 1, fb: 0 },
-    { name: 'Fácil', skill: 3, depth: 2, fb: 1 },
+    { name: 'Muy fácil', own: true, rnd: 0.5, fb: 0 },
+    { name: 'Fácil', skill: 0, depth: 1, rnd: 0.2, fb: 1 },
     { name: 'Medio', skill: 8, depth: 6, fb: 2 },
     { name: 'Difícil', skill: 14, depth: 10, fb: 3 },
     { name: 'Experto', skill: 20, time: 1000, fb: 3 }
@@ -1337,7 +1401,12 @@ const SOUNDS = {
 
   async function chooseCpuMove() {
     const lvl = LEVELS[cpuLevel];
-    if (!sfFailed) {
+    if (lvl.rnd && Math.random() < lvl.rnd) {
+      await new Promise(r => setTimeout(r, 250));   // que no conteste instantáneamente
+      const ms = chess.moves({ verbose: true });
+      if (ms.length) { const m = ms[Math.floor(Math.random() * ms.length)]; return { from: m.from, to: m.to, promo: m.promotion }; }
+    }
+    if (!sfFailed && !lvl.own) {
       try {
         if (!sf) caption('Preparando a la CPU…');
         await sfInit();
@@ -1398,7 +1467,8 @@ const SOUNDS = {
         const n = Math.max(0, full[t] - (count[o][t] || 0));
         if (n) html += '<span class="grp">' + ('<img src="' + pieceImg(o, t) + '" alt="">').repeat(n) + '</span>';
       });
-      el.querySelector('.taken').innerHTML = html;
+      const tk = el.querySelector('.taken');
+      if (tk.dataset.html !== html) { tk.dataset.html = html; tk.innerHTML = html; }   // reescribirlo siempre hacía parpadear en iPhone
       const adv = mat[c] - mat[o];
       el.querySelector('.adv').textContent = adv > 0 ? '+' + adv : '';
       el.querySelector('.chip').style.background = is2D ? (c === 'w' ? '#fbf7ee' : '#1e1a16') : (c === 'w' ? 'var(--blue)' : 'var(--red)');
@@ -1577,9 +1647,11 @@ const SOUNDS = {
     if (opt.img === 'win') requestAnimationFrame(() => confetti(modal.querySelector('.card')));
   }
 
-  /* --- Confeti al ganar: una explosión de 1 s desde el cartel, dibujada en un canvas encima de todo --- */
+  /* --- Confeti al ganar: una explosión de 1 s desde el cartel, dibujada en un canvas encima de todo.
+     Con «Reducir movimiento» activado (accesibilidad) sale una versión suave: menos papelitos, sin giros,
+     que caen despacio desde arriba del cartel en vez de explotar. --- */
   function confetti(from) {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const soft = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const cv = document.createElement('canvas');
     cv.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:45';
     document.body.appendChild(cv);
@@ -1589,22 +1661,25 @@ const SOUNDS = {
     const r = from.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * 0.35;
     const COLORS = ['#e8a33d', '#f6d365', '#e2483d', '#3d7be8', '#3dbf6e', '#b45de8', '#fbf7ee', '#ff7eb6'];
     const k = Math.min(W, H) / 700;                       // escala con la pantalla
-    const P = Array.from({ length: W < 600 ? 140 : 220 }, () => {
+    const P = Array.from({ length: soft ? (W < 600 ? 45 : 70) : (W < 600 ? 140 : 220) }, () => {
       const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.7;   // abanico hacia arriba y a los costados
       const v = (700 + Math.random() * 900) * Math.max(k, 0.6);
+      if (soft) return { x: r.left + Math.random() * r.width, y: r.top - Math.random() * 60, vx: 0, vy: (130 + Math.random() * 120) * Math.max(k, 0.7),
+                         w: 8 * Math.max(k, 0.7), h: 5 * Math.max(k, 0.7), rot: (Math.random() - 0.5) * 0.6, vr: 0, flip: 0, vf: 0,
+                         c: COLORS[Math.floor(Math.random() * COLORS.length)] };
       return { x: cx + (Math.random() - 0.5) * r.width * 0.3, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
                w: (6 + Math.random() * 6) * Math.max(k, 0.7), h: (3 + Math.random() * 4) * Math.max(k, 0.7),
                rot: Math.random() * 6.28, vr: (Math.random() - 0.5) * 18, flip: Math.random() * 6.28, vf: 8 + Math.random() * 10,
                c: COLORS[Math.floor(Math.random() * COLORS.length)] };
     });
-    const DUR = 1000, t0 = performance.now();
+    const DUR = soft ? 1400 : 1000, t0 = performance.now();
     let last = t0;
     (function frame(now) {
       const dt = Math.min((now - last) / 1000, 0.05), t = now - t0; last = now;
       ctx.clearRect(0, 0, W, H);
       ctx.globalAlpha = t < DUR - 300 ? 1 : Math.max(0, (DUR - t) / 300);   // se desvanece en los últimos 0,3 s
       for (const p of P) {
-        p.vx *= 1 - 2.2 * dt; p.vy = p.vy * (1 - 2.2 * dt) + 1400 * k * dt;    // rozamiento del aire y gravedad
+        if (!soft) { p.vx *= 1 - 2.2 * dt; p.vy = p.vy * (1 - 2.2 * dt) + 1400 * k * dt; }   // rozamiento del aire y gravedad
         p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.flip += p.vf * dt;
         ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, Math.cos(p.flip));   // el papelito gira y "da vueltas"
         ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
@@ -1802,11 +1877,21 @@ const SOUNDS = {
   let pieceSet = 'cburnett';
   try { const s = localStorage.getItem('chaskiboom.pieces'); if (s && PIECE_SETS[s]) pieceSet = s; } catch (_) {}
   const pieceImg = (c, t) => PIECE_SETS[pieceSet][c + t];
+  // las 12 piezas del juego elegido quedan cargadas y decodificadas de antemano (se guardan para que no se descarten)
+  const preloaded = {};
+  function preloadPieces() {
+    Object.values(PIECE_SETS[pieceSet]).forEach(src => {
+      if (preloaded[src]) return;
+      const im = new Image(); im.src = src; preloaded[src] = im;
+      if (im.decode) im.decode().catch(() => {});
+    });
+  }
+  preloadPieces();
   $('pset').value = pieceSet;
   $('pset').addEventListener('change', e => {
     pieceSet = e.target.value;
     try { localStorage.setItem('chaskiboom.pieces', pieceSet); } catch (_) {}
-    render2D(); updatePlayers();
+    preloadPieces(); render2D(); updatePlayers();
   });
   const board2d = $('board2d');
   function build2D() {
@@ -1821,6 +1906,12 @@ const SOUNDS = {
     d.dataset.sq = sq;
     d.setAttribute('role', 'button');
     d.setAttribute('aria-label', sq);
+    // contenido fijo de cada casilla: la pieza, la marca de jugada posible y las coordenadas del borde.
+    // render2D solo cambia lo que difiere (recrear las imágenes en cada jugada hacía parpadear el tablero en iPhone)
+    const bottomRank = localColor === 'w' ? '1' : '8', leftFile = localColor === 'w' ? 'a' : 'h';
+    d.innerHTML = '<img class="pc" alt="" hidden><span class="mk" hidden></span>'
+      + (sq[1] === bottomRank ? '<span class="co f">' + sq[0] + '</span>' : '')
+      + (sq[0] === leftFile ? '<span class="co r">' + sq[1] + '</span>' : '');
     board2d.appendChild(d);
   }
   }
@@ -1845,12 +1936,14 @@ const SOUNDS = {
       cell.classList.toggle('sel', selected === sq);
       cell.classList.toggle('chk', chk === sq);
       const m = targets.find(t => t.to === sq);
-      let html = p ? '<img class="pc" src="' + pieceImg(p.color, p.type) + '" alt="">' : '';
-      if (m) html += m.captured ? '<span class="ring"></span>' : '<span class="dot"></span>';
-      const bottomRank = localColor === 'w' ? '1' : '8', leftFile = localColor === 'w' ? 'a' : 'h';
-      if (sq[1] === bottomRank) html += '<span class="co f">' + sq[0] + '</span>';
-      if (sq[0] === leftFile) html += '<span class="co r">' + sq[1] + '</span>';
-      cell.innerHTML = html;
+      let img = cell.querySelector('img.pc');
+      if (!img) { img = document.createElement('img'); img.className = 'pc'; img.alt = ''; cell.prepend(img); }   // se la llevó una pieza en vuelo
+      const src = p ? pieceImg(p.color, p.type) : '';
+      if (img.dataset.src !== src) { img.dataset.src = src; if (src) img.src = src; }
+      img.hidden = !src;
+      const mk = cell.querySelector('.mk'), cls = m ? (m.captured ? 'mk ring' : 'mk dot') : 'mk';
+      if (mk.className !== cls) mk.className = cls;
+      mk.hidden = !m;
     });
   }
   function kingSquare2d(P, color) {
@@ -1864,7 +1957,9 @@ const SOUNDS = {
     const el = document.createElement('div');
     el.className = 'fly';
     Object.assign(el.style, { left: a.offsetLeft + 'px', top: a.offsetTop + 'px', width: a.offsetWidth + 'px', height: a.offsetHeight + 'px' });
-    el.innerHTML = '<img class="pc" src="' + pieceImg(color, type) + '" alt="">';
+    const own = a.querySelector('img.pc');
+    if (own && !own.hidden && own.dataset.src === pieceImg(color, type)) el.appendChild(own);   // se mueve la imagen ya dibujada
+    else el.innerHTML = '<img class="pc" src="' + pieceImg(color, type) + '" alt="">';
     board2d.appendChild(el);
     void el.offsetWidth;
     el.style.transform = 'translate(' + (b.offsetLeft - a.offsetLeft) + 'px,' + (b.offsetTop - a.offsetTop) + 'px)';
@@ -1884,8 +1979,8 @@ const SOUNDS = {
       flights.push(mv.flags.includes('k') ? ['h' + rank, 'f' + rank, mv.color, 'r'] : ['a' + rank, 'd' + rank, mv.color, 'r']);
     }
     // se muestra la posición previa sin las piezas que viajan (la capturada sigue en su casilla hasta que llega el atacante)
-    render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
     flights.forEach(f => fly(...f));
+    render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
     castleSfx(mv);
     setTimeout(() => {
       board2d.querySelectorAll('.fly').forEach(el => el.remove());
