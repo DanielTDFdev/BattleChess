@@ -313,7 +313,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.27</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.28</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -1615,6 +1615,7 @@ const SOUNDS = {
   }
 
   async function play_move(from, to, opt = {}) {
+    clockFlush();   // el tiempo hasta acá es del que mueve
     if (is2D) return move2d(from, to, opt);
     busy = true;
     if (viewPos) goLive();
@@ -1669,6 +1670,7 @@ const SOUNDS = {
     }
 
     checkSync();
+    clockFlush();   // la animación no cuenta para nadie
     busy = false;
     updateStatus();
     drawMarks();
@@ -1747,13 +1749,19 @@ const SOUNDS = {
   function sfInit() {
     if (sfReady) return sfReady;
     sfReady = new Promise((res, rej) => {
-      const fail = e => { sfFailed = true; rej(e); };
+      let ok = false;
+      const fail = e => { if (ok || sfFailed) return; sfFailed = true; rej(e); updatePlayers(); };
       try { sf = new Worker(ENGINE_URL); } catch (e) { fail(e); return; }
       const t = setTimeout(() => fail(new Error('Stockfish no respondió')), 25000);
+      // un firewall que bloquea el .wasm deja a Stockfish colgado hasta los 25 s (o devuelve su página de bloqueo):
+      // se pregunta aparte por el .wasm para darse cuenta enseguida
+      fetch(ENGINE_URL.replace(/\.js$/, '.wasm'), { method: 'HEAD', cache: 'no-store' }).then(r => {
+        if (!r.ok || !/wasm|octet/.test(r.headers.get('content-type') || '')) { clearTimeout(t); fail(new Error('El .wasm de Stockfish no llega (' + r.status + ' ' + r.headers.get('content-type') + ')')); }
+      }, e => { if (navigator.onLine) { clearTimeout(t); fail(e); } });   // sin conexión puede estar en la caché: se espera
       sf.onmessage = e => {
         const line = String(e.data);
         if (line === 'uciok') sf.postMessage('isready');
-        else if (line === 'readyok') { clearTimeout(t); res(); }
+        else if (line === 'readyok') { clearTimeout(t); ok = true; res(); }
         if (sfListener) sfListener(line);
       };
       sf.onerror = e => { clearTimeout(t); fail(e); };
@@ -1808,15 +1816,42 @@ const SOUNDS = {
     }
     return alpha;
   }
-  function fallbackMove(depth) {
-    if (depth === 0) return pickCpu();
-    const c = new Chess(chess.fen());
+  function bestAt(c, depth) {
     const scored = c.moves({ verbose: true }).map(m => {
       c.move(m); const sc = -negamax(c, depth - 1, -Infinity, Infinity); c.undo();
       return { m, sc: sc + Math.random() * 8 };   // un poco de variedad entre jugadas parejas
     });
     scored.sort((a, b) => b.sc - a.sc);
     return scored.length ? scored[0].m : null;
+  }
+
+  /* El motor propio corre en un Web Worker (armado con el código de estas funciones y de chess.js) para no congelar
+     la pantalla: a profundidad 3 tarda varios segundos. Hace falta cuando Stockfish no carga (p. ej. un firewall que
+     bloquea el .wasm). Si no se puede crear el worker, calcula acá mismo como antes. */
+  let fbWorker = null, fbSeq = 0;
+  const fbPending = new Map();
+  function fbWorkerGet() {
+    if (fbWorker !== null) return fbWorker;
+    try {
+      const src = 'var Chess = ' + Chess.toString() + ';\n' +
+        'const PV = ' + JSON.stringify(PV) + ', PST = ' + JSON.stringify(PST) + ';\n' +
+        evalWhite + '\n' + negamax + '\n' + bestAt + '\n' +
+        'onmessage = e => postMessage({ id: e.data.id, m: bestAt(new Chess(e.data.fen), e.data.depth) });';
+      fbWorker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+      fbWorker.onmessage = e => { const r = fbPending.get(e.data.id); if (r) { fbPending.delete(e.data.id); r(e.data.m); } };
+      fbWorker.onerror = e => { console.warn('Worker del motor propio falló', e); fbWorker = false; fbPending.forEach(r => r(undefined)); fbPending.clear(); };
+    } catch (e) { console.warn('Sin worker para el motor propio', e); fbWorker = false; }
+    return fbWorker;
+  }
+  async function fallbackMove(depth) {
+    if (depth === 0) return pickCpu();
+    const w = fbWorkerGet();
+    if (w) {
+      const m = await new Promise(res => { const id = ++fbSeq; fbPending.set(id, res); w.postMessage({ id, fen: chess.fen(), depth }); });
+      if (m !== undefined) return m;
+    }
+    await new Promise(r => setTimeout(r, 30));   // deja que se pinte la pantalla antes de calcular
+    return bestAt(new Chess(chess.fen()), depth);
   }
 
   async function chooseCpuMove() {
@@ -1832,20 +1867,24 @@ const SOUNDS = {
         await sfInit();
         const uci = await sfBest(chess.fen(), lvl);
         if (uci) return { from: uci.slice(0, 2), to: uci.slice(2, 4), promo: uci[4] };
-      } catch (e) { console.warn('Stockfish no disponible; se usa el motor propio', e); }
+      } catch (e) {
+        console.warn('Stockfish no disponible; se usa el motor propio', e);
+        caption('No se pudo cargar Stockfish (¿un firewall?): la CPU juega con el motor simple');
+      }
     }
-    await new Promise(r => setTimeout(r, 30));   // deja que se pinte la pantalla antes de calcular
     return fallbackMove(lvl.fb);
   }
 
   // busy bloquea el tablero mientras la CPU piensa; cpuThinking hace que en ese rato su reloj sí corra
   let cpuThinking = false;
   async function cpuPlay(delay) {
+    clockFlush();
     busy = true; cpuThinking = true;
     const serial = gameSerial;
     await new Promise(r => setTimeout(r, delay));
     let mv = null;
     try { mv = await chooseCpuMove(); } catch (e) { console.error(e); }
+    clockFlush();   // todo lo que pensó, aunque el tic no haya caído adentro
     busy = false; cpuThinking = false;
     if (serial !== gameSerial || online || !vsCpu || isOver() || !cpuTurn() || !mv) return;
     play_move(mv.from, mv.to, { promo: mv.promo });
@@ -1904,8 +1943,9 @@ const SOUNDS = {
       const adv = mat[c] - mat[o];
       el.querySelector('.adv').textContent = adv > 0 ? '+' + adv : '';
       el.querySelector('.chip').style.background = is2D ? (c === 'w' ? '#fbf7ee' : '#1e1a16') : (c === 'w' ? 'var(--blue)' : 'var(--red)');
-      const who = online ? (c === localColor ? (online.myName || 'Vos') : (online.oppName || 'Rival')) : vsCpu ? (c === localColor ? 'Vos' : 'CPU ' + LEVELS[cpuLevel].name.toLowerCase()) : (c === localColor ? 'Vos' : 'Rival');
+      const who = online ? (c === localColor ? (online.myName || 'Vos') : (online.oppName || 'Rival')) : vsCpu ? (c === localColor ? 'Vos' : 'CPU ' + LEVELS[cpuLevel].name.toLowerCase() + (sfFailed && !LEVELS[cpuLevel].own ? ' (simple)' : '')) : (c === localColor ? 'Vos' : 'Rival');
       el.querySelector('.pname').textContent = who + ' · ' + sidePl(c);
+      el.querySelector('.pname').title = vsCpu && !online && c !== localColor && sfFailed && !LEVELS[cpuLevel].own ? 'Stockfish no cargó: la CPU usa el motor simple, más flojo' : '';
       el.querySelector('.acc').textContent = analysis && analysis.done ? analysis.acc[c] + ' %' : '';
       el.classList.toggle('turn', chess.turn() === c && !isOver());
     };
@@ -2046,15 +2086,21 @@ const SOUNDS = {
 
   /* Reloj acumulado de cada jugador (todavía sin límite de tiempo).
      Corre para el bando que mueve; se detiene durante las animaciones, los carteles y al terminar.
-     Mientras la CPU piensa el tablero está bloqueado (busy) pero su reloj corre (cpuThinking). */
+     Mientras la CPU piensa el tablero está bloqueado (busy) pero su reloj corre (cpuThinking).
+     clockFlush() asigna el tiempo transcurrido según el estado actual. Además del tic de 200 ms se llama en cada cambio
+     de estado (la CPU empieza o termina de pensar, empieza o termina una jugada): si la pantalla se trababa mientras
+     pensaba la CPU no había tic adentro y ese tiempo se perdía. */
   const times = { w: 0, b: 0 };
   let clockLast = performance.now();
   const fmt = ms => { const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60, ss = String(s % 60).padStart(2, '0');
                       if (d) return d + 'd ' + h + 'h';   // partidas por correspondencia
                       return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + ss; };
-  setInterval(() => {
+  function clockFlush() {
     const now = performance.now(), dt = now - clockLast; clockLast = now;
     if (started && (!busy || cpuThinking) && !isOver() && modal.hidden && $('loading').hidden) times[chess.turn()] += dt;
+  }
+  setInterval(() => {
+    clockFlush();
     $('pBot').querySelector('.clock').textContent = fmt(times[localColor]);
     $('pTop').querySelector('.clock').textContent = fmt(times[opp(localColor)]);
   }, 200);
@@ -2582,6 +2628,7 @@ const SOUNDS = {
         }
         el.remove();
       });
+      clockFlush();
       busy = false;
       moveSfx(mv.color, mv);
       if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
@@ -3442,7 +3489,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261013013814';
+  const BUILD = '20261013125444';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
