@@ -186,6 +186,12 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Mensaje del desafío (v1.33):** Compartir y Copiar mandan el mensaje entero con el link al final: «Daniel te desafía a
   una partida de ChaskiBoom Battle Chess a 3 días por jugada. Aceptá entrando a este link (el desafío vence en 24 h): …».
   Va todo en `text` de `navigator.share` (sin `url` aparte), porque WhatsApp a veces descarta el texto si el link va separado.
+- **Planilla de jugadas (v1.34, en dev):** solo en PC (`body.wide`), `<ol id="moves">` en la columna izquierda entre el estado
+  y la consola (`layout()` le da `top` y `maxHeight`; se oculta si quedan menos de 90 px). Dos columnas con el ícono de la
+  pieza (`pieceImg`, el juego de piezas elegido; las negras con borde claro) y la jugada sin la letra de la pieza; enroques
+  como O-O. Con el análisis hecho muestra la clasificación. Tocar una jugada = `viewAt(n)` (la última, `goLive()`); la que
+  se ve queda marcada y a la vista. `renderMoves(n)` se llama desde `updateHist()` y rehace la lista solo si cambian las
+  jugadas, el juego de piezas o el análisis.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
