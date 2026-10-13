@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.31** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.32** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.31 → v1.32…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.32 → v1.33…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -176,7 +176,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   app: resumen al abrir o al volver tras 1 min afuera («Te toca en 2 partidas · una vence en 4 h», `turnSummary`, en rojo con
   menos de 12 h) y, después de cada jugada con plazo, «Avisar por WhatsApp» (`wa.me` con el link). «Mis partidas» pone primero
   las que te tocan, por vencimiento, con la etiqueta del plazo. Prueba con mock: `test_corr.py` (no está en el repo).
-- **Desafíos que vencen y borrar partidas (v1.32, en dev):** un desafío sin aceptar vence a las 24 h de `createdAt`
+- **Desafíos que vencen y borrar partidas (v1.32):** un desafío sin aceptar vence a las 24 h de `createdAt`
   (`inviteExpired`). No hay servidor: lo borra de la base (y del índice) la app de quien lo creó al verlo vencido, en
   «Mis partidas» o en el vigía; quien abre un link vencido ve «Desafío vencido» y las reglas no lo dejan entrar
   (`guest` exige `createdAt > now - 24 h`). En «Mis partidas», ✕ (dos toques: ✕ → Cancelar/Quitar) en los desafíos pendientes
@@ -196,6 +196,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.32:** los desafíos sin aceptar vencen a las 24 h y se borran; ✕ en «Mis partidas» para cancelar desafíos o quitar
+  partidas terminadas de la lista. Reglas nuevas (borrado del desafío y `guest` con `createdAt`).
 - **v1.31:** se puede salir de una partida online sin abandonarla (Contra la CPU, Online y Nueva partida habilitados).
 - **v1.30:** partidas por correspondencia: plazo por jugada (1, 3, 7 días o sin límite), se pierde al vencer
   (tablas si al otro solo le queda el rey), relojes con lo que queda, resumen «Te toca en…» al abrir, «Mis partidas» por
@@ -230,8 +232,6 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
-
-- **Pegar de nuevo `database.rules.json` en Firebase antes de publicar v1.32** (borrado de desafíos y vencimiento de 24 h).
 
 - **Pegar `database.rules.json` en la consola de Firebase antes de probar v1.30** (reglas de `perMove`, `deadline` y `result`).
   Sin eso el vencimiento igual se registra, pero sin validar que el plazo haya pasado. Probar con dos dispositivos a 1 día.

@@ -171,6 +171,8 @@
   #lbGames { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   #lbGames li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
   #lbGames li.empty { color: var(--muted); justify-content: center; }
+  #lbGames .del { flex: none; background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 6px; }
+  #lbGames .del.sure { background: #b8382b; color: #fff; border-radius: 3px; font-size: 14px; padding: 6px 10px; }
   #lbGames .who { flex: 1; min-width: 0; }
   #lbGames .who b { display: block; font-weight: 600; }
   #lbGames .who span { font-size: 14px; color: var(--muted); }
@@ -323,7 +325,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.31</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.32</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -2747,7 +2749,7 @@ const SOUNDS = {
   // dicho para una persona: «2 días», «5 h», «20 min»
   function leftTxt(ms) {
     const h = Math.max(0, ms) / 3600e3;
-    if (h >= 48) return Math.floor(h / 24) + ' días';
+    if (h >= 24) { const d = Math.floor(h / 24), r = Math.floor(h % 24); return d + (d === 1 ? ' día' : ' días') + (r ? ' ' + r + ' h' : ''); }
     if (h >= 12) return Math.floor(h) + ' h';
     if (h >= 1) return Math.floor(h) + ' h ' + Math.floor(h * 60 % 60) + ' min';
     return Math.max(1, Math.ceil(h * 60)) + ' min';
@@ -2872,12 +2874,24 @@ const SOUNDS = {
     if (!online && !started && !ended && modal.hidden) chooseMode();   // si todavía no hay partida, vuelve a la elección inicial
   });
 
+  /* Los desafíos que nadie aceptó vencen a las 24 h: el que lo creó lo borra de la base al verlo vencido (no hay servidor
+     que lo haga solo); mientras tanto las reglas no dejan entrar a nadie. */
+  const inviteExpired = g => g && !g.guest && g.createdAt && srvNow() - g.createdAt > DAY;
+  function dropGame(id, whole) {
+    if (whole) db.ref('games/' + id).remove().catch(e => console.warn('borrar', e));   // solo un desafío propio sin aceptar
+    return db.ref('users/' + me + '/games/' + id).remove();
+  }
   async function listGames() {
     const ul = $('lbGames');
     const idx = (await db.ref('users/' + me + '/games').once('value')).val() || {};
     const ids = Object.keys(idx).sort((a, b) => (idx[b].updatedAt || 0) - (idx[a].updatedAt || 0)).slice(0, 15);
-    if (!ids.length) { ul.innerHTML = '<li class="empty">Todavía no tenés partidas online</li>'; return; }
-    const games = (await Promise.all(ids.map(id => db.ref('games/' + id).once('value').then(s => [id, s.val()])))).filter(([, g]) => g && g.host);
+    const all = await Promise.all(ids.map(id => db.ref('games/' + id).once('value').then(s => [id, s.val()])));
+    all.forEach(([id, g]) => {
+      if (!g || !g.host) dropGame(id, false);                              // ya no existe: se limpia el índice
+      else if (inviteExpired(g) && g.host.uid === me) dropGame(id, true);   // desafío vencido
+    });
+    const games = all.filter(([, g]) => g && g.host && !inviteExpired(g));
+    if (!games.length) { ul.innerHTML = '<li class="empty">Todavía no tenés partidas online</li>'; return; }
     const myTurn = g => { const c = g.white === me ? 'w' : g.black === me ? 'b' : null; return !!g.white && !g.result && !timeoutResult(g) && (g.started ? g.turn === c : c === 'w'); };
     // primero las que te tocan (las que vencen antes, arriba); el resto como venía, por la última novedad
     games.sort((a, b) => (myTurn(b[1]) - myTurn(a[1])) || (myTurn(a[1]) ? (a[1].deadline || Infinity) - (b[1].deadline || Infinity) : 0));
@@ -2888,7 +2902,7 @@ const SOUNDS = {
       const tr = claimTimeout(id, g);   // si venció el plazo y nadie la cerró todavía, se cierra ahora
       const res = g.result || tr;
       let state, mine = false, late = false;
-      if (!g.guest) state = 'Esperando que tu amigo entre';
+      if (!g.guest) state = 'Esperando que tu amigo entre' + (g.createdAt ? ' · vence en ' + leftTxt(g.createdAt + DAY - srvNow()) : '');
       else if (res) state = (res.winner === 'draw' ? 'Tablas' : (res.winner === myColor ? 'Ganaste' : 'Perdiste')) + (/^timeout/.test(res.reason) ? ' por tiempo' : '');
       else if (!g.started) { mine = myColor === 'w'; state = mine ? 'Te toca comenzar' : 'Sin comenzar'; }
       else {
@@ -2899,8 +2913,30 @@ const SOUNDS = {
       li.innerHTML = '<div class="who"><b></b><span></span></div>' + (g.perMove !== undefined ? '<span class="tag"></span>' : '') + '<button>Abrir</button>';
       li.querySelector('b').textContent = oppName ? 'Contra ' + oppName : 'Partida ' + id;
       if (g.perMove !== undefined) { const t = li.querySelector('.tag'); t.textContent = plazoTag(g.perMove); t.title = g.perMove ? plazoTxt(g.perMove) + ' por jugada' : 'Sin límite de tiempo'; }
-      const sp = li.querySelector('span'); sp.textContent = state + ' · ' + (g.ply || 0) + ' jugadas'; if (mine) sp.className = late ? 'mine late' : 'mine';
+      const sp = li.querySelector('span'); sp.textContent = state + ' · ' + (g.ply || 0) + (g.ply === 1 ? ' jugada' : ' jugadas'); if (mine) sp.className = late ? 'mine late' : 'mine';
       li.querySelector('button').addEventListener('click', () => { lobby.hidden = true; enterOnline(id); });
+      // ✕: cancelar un desafío sin aceptar (se borra) o quitar de tu lista una terminada (al rival le queda). Las en curso, no.
+      if (!g.guest || res) {
+        const x = document.createElement('button');
+        x.className = 'del'; x.textContent = '✕';
+        x.title = !g.guest ? 'Cancelar el desafío' : 'Quitar de la lista';
+        x.setAttribute('aria-label', x.title);
+        let t = null;
+        x.addEventListener('click', () => {
+          if (!x.classList.contains('sure')) {   // primer toque: pide confirmar
+            x.classList.add('sure'); x.textContent = !g.guest ? 'Cancelar' : 'Quitar';
+            t = setTimeout(() => { x.classList.remove('sure'); x.textContent = '✕'; }, 3000);
+            return;
+          }
+          clearTimeout(t);
+          dropGame(id, !g.guest && g.host.uid === me).then(() => {
+            li.remove();
+            if (!ul.children.length) ul.innerHTML = '<li class="empty">Todavía no tenés partidas online</li>';
+          }).catch(e => { console.error(e); $('lbMsg').textContent = 'No se pudo borrar. Intentá de nuevo.'; });
+          if (online && online.id === id) leaveOnline();
+        });
+        li.appendChild(x);
+      }
       ul.appendChild(li);
     });
   }
@@ -2958,6 +2994,7 @@ const SOUNDS = {
     if (!g || !g.host) { showModal('Partida no encontrada', 'El link no corresponde a ninguna partida. Pedile a tu amigo que te lo mande de nuevo.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
     const isHost = g.host.uid === me, isGuest = g.guest && g.guest.uid === me;
     if (!isHost && !isGuest) {
+      if (inviteExpired(g)) { showModal('Desafío vencido', 'Este desafío venció: duran 24 horas. Pedile a ' + (g.host.name || 'tu amigo') + ' que te mande uno nuevo.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
       if (g.guest) { showModal('Partida completa', 'Esta partida ya tiene dos jugadores.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
       let name = getNick();
       if (!name || g.perMove) { name = await promptNick(g.host.name, g.perMove); if (!name) return; }
@@ -3259,7 +3296,8 @@ const SOUNDS = {
     const w = { ref: db.ref('games/' + id), prev: null };
     w.cb = s => {
       const g = s.val();
-      if (!g || !g.host) return;
+      if (!g || !g.host) { w.prev = w.prev || {}; watch.done.add(id); unwatchGame(id); turnSummary(); return; }
+      if (inviteExpired(g)) { if (g.host.uid === me) dropGame(id, true); watch.done.add(id); unwatchGame(id); turnSummary(); return; }
       const prev = w.prev; w.prev = g;
       if (prev) otherNews(id, prev, g);            // la primera lectura es la referencia, no avisa
       else claimTimeout(id, g);
@@ -3648,7 +3686,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261013170218';
+  const BUILD = '20261013171408';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
