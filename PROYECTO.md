@@ -145,7 +145,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Revisión con sonido y meneo (v1.22):** al avanzar o retroceder de a una jugada (‹ ›, flechas del teclado)
   suena la jugada mostrada como en la partida (movimiento, comer, enroque, jaque) y la pieza hace el meneo; los saltos
   (« », gráfico) van en silencio (`stepReview`). En 2D cada pieza que aterriza hace un meneo corto (`wiggle()`,
-  animación `land` de .38 s; no se hace con «Reducir movimiento»).
+  animación `land` de .38 s; con «Reducir movimiento», `landSoft`: rebote sin girar, desde v1.24).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
