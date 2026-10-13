@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.30** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.31** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.30 → v1.31…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.31 → v1.32…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -113,7 +113,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Botones bloqueados en partida (v1.17):** con una partida en curso (`inGame()` = empezada y sin terminar)
   Contra la CPU, Online y Nueva partida quedan deshabilitados (`lockGameButtons()` en `updateStatus`). Para empezar otra
   hay que terminarla o abandonarla. Para pasar a otra partida online sigue funcionando el aviso «Ver partida».
-  Desde v1.31 (en dev) solo se bloquean con una partida local (CPU o dos jugadores): de una online se puede salir sin
+  Desde v1.31 solo se bloquean con una partida local (CPU o dos jugadores): de una online se puede salir sin
   abandonarla (queda en «Mis partidas»); «Contra la CPU» la deja con `leaveOnline()` y abre el cartel de nueva partida.
 - **Service worker sin reemplazo a mitad de carga (v1.18):** antes el SW nuevo hacía `skipWaiting()` al instalarse.
   En iPhone eso mataba al viejo con las descargas de los .glb en curso y la carga quedaba trabada (pasó en el 45 %
@@ -189,6 +189,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.31:** se puede salir de una partida online sin abandonarla (Contra la CPU, Online y Nueva partida habilitados).
 - **v1.30:** partidas por correspondencia: plazo por jugada (1, 3, 7 días o sin límite), se pierde al vencer
   (tablas si al otro solo le queda el rey), relojes con lo que queda, resumen «Te toca en…» al abrir, «Mis partidas» por
   vencimiento y «Avisar por WhatsApp» después de jugar. Reglas nuevas de `perMove`, `deadline` y `result`.
