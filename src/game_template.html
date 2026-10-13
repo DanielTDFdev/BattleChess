@@ -69,6 +69,9 @@ __PWA__
     display: grid; place-items: center; font-size: calc(var(--sq) * .24); line-height: 1; border: 2px solid #1e1a16; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
   #clsMark3d { position: fixed; --sq: 52px; transform: translate(-50%, -50%); }
   #clsMark[hidden], #clsMark3d[hidden] { display: none; }
+  #board2d { touch-action: none; }   /* que arrastrar una pieza no desplace la página en el celular */
+  .dragGhost { position: fixed; z-index: 50; pointer-events: none; transform: translate(-50%, -55%); filter: drop-shadow(0 8px 10px rgba(0,0,0,.45)); }
+  .sq2.hover { box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .55); }
   .sq2 img.pc.land { animation: land .38s ease-out; transform-origin: 50% 85%; }
   .sq2 img.pc.landSoft { animation: landSoft .34s ease-out; transform-origin: 50% 90%; }
   @keyframes landSoft { 0% { transform: scale(1.1, .86); } 45% { transform: scale(.96, 1.06); } 75% { transform: scale(1.02, .98); } 100% { transform: none; } }
@@ -1985,9 +1988,70 @@ const SOUNDS = __SOUNDS__;
   board2d.addEventListener('click', e => {
     const cell = e.target.closest('.sq2');
     if (cell && viewPos) { caption('Estás viendo una jugada anterior: tocá » para volver a la partida'); return; }
+    if (dragEnded) { dragEnded = false; return; }   // el click que el navegador manda después de soltar
     if (!cell || !started) return;
     tapSquare(cell.dataset.sq);
   });
+
+  /* --- Arrastrar y soltar (2D) ---
+     Además de tocar origen y destino, se puede arrastrar la pieza: al pasar 6 px se levanta (con sus destinos marcados)
+     y sigue al dedo o al mouse; al soltarla en un destino válido se juega sin animación de vuelo. Vale también para
+     anotar premoves. Si se suelta en otro lado vuelve a su casilla y queda seleccionada. */
+  let drag2 = null, dragDrop = false, dragEnded = false;
+  function canDrag(sq) {
+    if (!started || viewPos || premove || isOver()) return false;
+    if (canPremove()) { const P = premovePos(), pc = P && P.get(sq); return !!pc && pc.color === localColor; }
+    if (busy || notMyTurn()) return false;
+    const pc = chess.get(sq); return !!pc && pc.color === chess.turn();
+  }
+  board2d.addEventListener('pointerdown', e => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    const cell = e.target.closest('.sq2');
+    if (!cell || !canDrag(cell.dataset.sq)) return;
+    const img = cell.querySelector('img.pc');
+    if (!img || img.hidden) return;
+    drag2 = { from: cell.dataset.sq, img, x: e.clientX, y: e.clientY, id: e.pointerId, ghost: null, over: null };
+  });
+  window.addEventListener('pointermove', e => {
+    if (!drag2 || e.pointerId !== drag2.id) return;
+    if (!drag2.ghost) {
+      if (Math.hypot(e.clientX - drag2.x, e.clientY - drag2.y) < 6) return;
+      // se levanta la pieza: se selecciona (marca sus destinos) y una copia sigue al puntero
+      if (selected !== drag2.from && preSel !== drag2.from) tapSquare(drag2.from);
+      if (selected !== drag2.from && preSel !== drag2.from) { drag2 = null; return; }
+      const r = drag2.img.getBoundingClientRect(), g = drag2.img.cloneNode();
+      g.className = 'dragGhost'; g.removeAttribute('hidden');
+      Object.assign(g.style, { width: r.width * 1.15 + 'px', height: r.height * 1.15 + 'px' });
+      document.body.appendChild(g);
+      drag2.ghost = g; drag2.img.style.visibility = 'hidden';
+    }
+    const g = drag2.ghost;
+    g.style.left = e.clientX + 'px'; g.style.top = e.clientY + 'px';
+    const under = document.elementFromPoint(e.clientX, e.clientY), cell = under && under.closest && under.closest('#board2d .sq2');
+    const sq = cell ? cell.dataset.sq : null;
+    if (sq !== drag2.over) {
+      board2d.querySelectorAll('.sq2.hover').forEach(c => c.classList.remove('hover'));
+      if (cell && sq !== drag2.from) cell.classList.add('hover');
+      drag2.over = sq;
+    }
+  });
+  const endDrag = e => {
+    if (!drag2 || e.pointerId !== drag2.id) return;
+    const d = drag2; drag2 = null;
+    if (!d.ghost) return;   // no se movió: fue un toque normal (lo maneja el click)
+    d.ghost.remove(); d.img.style.visibility = '';
+    board2d.querySelectorAll('.sq2.hover').forEach(c => c.classList.remove('hover'));
+    dragEnded = true; setTimeout(() => { dragEnded = false; }, 400);
+    const to = e.type === 'pointerup' ? d.over : null;
+    if (!to || to === d.from) return;   // vuelve a su casilla y queda seleccionada
+    const legal = (selected === d.from && targets.some(m => m.to === to)) || (preSel === d.from && preTargets.some(m => m.to === to));
+    if (!legal) return;
+    dragDrop = selected === d.from;   // las jugadas reales aterrizan sin vuelo; un premove solo se anota
+    tapSquare(to);
+    dragDrop = false;
+  };
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
   function render2D(opt) {
     opt = opt || {};
     const P = opt.pos || shownPos(), L = 'last' in opt ? opt.last : shownLast();
@@ -2015,7 +2079,7 @@ const SOUNDS = __SOUNDS__;
     return null;
   }
   // La pieza se desliza medio segundo hasta su casilla (en el enroque, también la torre)
-  function fly(from, to, color, type) {
+  function fly(from, to, color, type, instant) {
     const a = board2d.querySelector('[data-sq="' + from + '"]'), b = board2d.querySelector('[data-sq="' + to + '"]');
     const el = document.createElement('div');
     el.className = 'fly';
@@ -2024,6 +2088,7 @@ const SOUNDS = __SOUNDS__;
     if (own && !own.hidden && own.dataset.src === pieceImg(color, type)) el.appendChild(own);   // se mueve la imagen ya dibujada
     else { const im = new Image(); im.className = 'pc'; im.alt = ''; im.decoding = 'sync'; im.src = im.dataset.src = pieceImg(color, type); el.appendChild(im); }
     el.dataset.to = to;
+    if (instant) el.style.transition = 'none';
     board2d.appendChild(el);
     void el.offsetWidth;
     el.style.transform = 'translate(' + (b.offsetLeft - a.offsetLeft) + 'px,' + (b.offsetTop - a.offsetTop) + 'px)';
@@ -2039,6 +2104,7 @@ const SOUNDS = __SOUNDS__;
     im.addEventListener('animationend', () => im.classList.remove(cls), { once: true });
   }
   function move2d(from, to, opt = {}) {
+    const drop = dragDrop; dragDrop = false;   // jugada hecha arrastrando: la pieza ya está en su lugar, no vuela
     if (viewPos) goLive();
     const before = new Chess(chess.fen());
     const mv = chess.move({ from, to, promotion: opt.promo || 'q' });
@@ -2053,7 +2119,7 @@ const SOUNDS = __SOUNDS__;
       flights.push(mv.flags.includes('k') ? ['h' + rank, 'f' + rank, mv.color, 'r'] : ['a' + rank, 'd' + rank, mv.color, 'r']);
     }
     // se muestra la posición previa sin las piezas que viajan (la capturada sigue en su casilla hasta que llega el atacante)
-    flights.forEach(f => fly(...f));
+    flights.forEach((f, i) => fly(...f, drop && i === 0));
     render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
     castleSfx(mv);
     setTimeout(() => {
@@ -2074,7 +2140,7 @@ const SOUNDS = __SOUNDS__;
       updateStatus(); render2D(); checkEnd();
       if (mv.captured) caption(nameOf(mv.piece, mv.color) + ' captura ' + lc(nameOf(mv.captured, opp(mv.color))));
       afterMove();
-    }, 370);
+    }, drop && flights.length === 1 ? 30 : 370);
   }
   $('view2d').addEventListener('click', () => {
     if (busy) return;

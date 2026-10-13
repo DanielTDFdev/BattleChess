@@ -146,6 +146,10 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   suena la jugada mostrada como en la partida (movimiento, comer, enroque, jaque) y la pieza hace el meneo; los saltos
   (« », gráfico) van en silencio (`stepReview`). En 2D cada pieza que aterriza hace un meneo corto (`wiggle()`,
   animación `land` de .38 s; con «Reducir movimiento», `landSoft`: rebote sin girar, desde v1.24).
+- **Arrastrar y soltar (v1.25, en dev, solo 2D):** pointerdown en una pieza propia, a los 6 px se levanta (copia
+  `.dragGhost` que sigue al puntero, destinos marcados, casilla bajo el dedo con `.hover`); al soltar en un destino
+  legal se juega con `tapSquare(to)` y `dragDrop` hace que `move2d` no anime el vuelo. Sirve para premoves.
+  Soltar en otro lado la devuelve y queda seleccionada. `#board2d { touch-action: none }`. En 3D no (arrastrar gira la cámara).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
