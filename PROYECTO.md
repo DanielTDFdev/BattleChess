@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.32** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.33** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.32 → v1.33…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.33 → v1.34…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -183,7 +183,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   (borra `games/<código>`; regla `.write` en `$g` solo para borrar entero, del creador y sin `guest`) y en las terminadas
   (solo quita `users/<uid>/games/<código>`; al rival le queda). Las en curso no tienen ✕. También se limpian del índice
   las partidas que ya no existen.
-- **Mensaje del desafío (v1.33, en dev):** Compartir y Copiar mandan el mensaje entero con el link al final: «Daniel te desafía a
+- **Mensaje del desafío (v1.33):** Compartir y Copiar mandan el mensaje entero con el link al final: «Daniel te desafía a
   una partida de ChaskiBoom Battle Chess a 3 días por jugada. Aceptá entrando a este link (el desafío vence en 24 h): …».
   Va todo en `text` de `navigator.share` (sin `url` aparte), porque WhatsApp a veces descarta el texto si el link va separado.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
@@ -199,6 +199,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.33:** Compartir y Copiar mandan el mensaje del desafío con el plazo y el link; la confirmación del ✕ dice «Quitar ahora».
 - **v1.32:** los desafíos sin aceptar vencen a las 24 h y se borran; ✕ en «Mis partidas» para cancelar desafíos o quitar
   partidas terminadas de la lista. Reglas nuevas (borrado del desafío y `guest` con `createdAt`).
 - **v1.31:** se puede salir de una partida online sin abandonarla (Contra la CPU, Online y Nueva partida habilitados).
