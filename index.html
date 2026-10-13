@@ -298,7 +298,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.22</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.23</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -2137,6 +2137,7 @@ const SOUNDS = {
     if (online && !opt.remote) online.ref.child('result').transaction(cur => cur || { winner: result, reason });
     premove = null; preSel = null; preTargets = [];
     $('anaBtn').hidden = !canAnalyze(); $('anaBtn').textContent = 'Analizar partida';
+    setTimeout(checkUpdate, 3000);   // buen momento para enterarse de una versión nueva (ofrece el cartel, no recarga)
     select(null);
     updateStatus();
     caption('');
@@ -3337,10 +3338,10 @@ const SOUNDS = {
 
   /* ---------- Versión nueva ----------
      La build escribe version.json al lado de la página con un código de build distinto en cada publicación
-     (también en /dev/). Se consulta al abrir, al volver a la página y cada 15 minutos: la app instalada en el
-     celular puede quedar días abierta en segundo plano sin recargarse.
+     (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
+     2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261013000110';
+  const BUILD = '20261013000912';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
@@ -3376,15 +3377,21 @@ const SOUNDS = {
     if (triedRecently(v.build)) return;
     $('upd').dataset.build = v.build;
     const playing = started && !isOver();
-    if (!playing && !busy && lobby.hidden) { doUpdate(); return; }   // nada que perder: se actualiza sola
+    // sin partida empezada no hay nada que perder: se actualiza sola. Con una terminada (puede estar revisándola
+    // o analizándola) o en curso, se ofrece el cartel.
+    if (!started && !busy && lobby.hidden) { doUpdate(); return; }
     $('upd').querySelector('.txt').textContent = 'Hay una versión nueva del juego' + (v.version ? ' (' + v.version + ')' : '') + '.'
-      + (online ? ' La partida online sigue al actualizar.' : ' Si actualizás ahora se pierde la partida en curso.');
+      + (!playing ? '' : online ? ' La partida online sigue al actualizar.' : ' Si actualizás ahora se pierde la partida en curso.');
     $('upd').hidden = false;
   }
   $('upd').querySelector('.go').addEventListener('click', doUpdate);
   $('upd').querySelector('.later').addEventListener('click', () => { updLater = $('upd').dataset.build; $('upd').hidden = true; });
+  // se consulta al volver a la página o a la ventana, al reconectarse, al terminar una partida y cada 2 minutos
+  // (version.json pesa unos pocos bytes; antes eran 15 minutos y con la pestaña siempre a la vista tardaba en enterarse)
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
-  setInterval(checkUpdate, 15 * 60 * 1000);
+  window.addEventListener('focus', () => checkUpdate());
+  window.addEventListener('online', () => checkUpdate());
+  setInterval(() => { if (!document.hidden) checkUpdate(); }, 2 * 60 * 1000);
 
   // la carga falló o se trabó: mensaje y botón para volver a intentar
   function loadFailed(msg) {
