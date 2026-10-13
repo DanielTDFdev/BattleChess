@@ -116,7 +116,7 @@ __PWA__
   #modal .card.withImg > :not(.mSide) { grid-column: 2; }
   #modal .mSide { grid-column: 1; grid-row: 1 / span 3; width: clamp(88px, 27vw, 180px); height: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.6)); }
   @media (max-width: 380px) { #modal .card.withImg { padding: 20px 14px 16px; } #modal .card.withImg h2 { font-size: 22px; } #modal .card.withImg p { font-size: 16px; } }
-  .colPick { display: flex; justify-content: center; gap: 8px; margin: -6px 0 16px; flex-wrap: wrap; }
+  .colPick { display: flex; justify-content: center; gap: 8px; margin: 6px 0 16px; flex-wrap: wrap; }
   .colPick .lbl { width: 100%; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
   .colPick button { display: grid; justify-items: center; gap: 2px; min-width: 84px; padding: 6px 10px 5px; font-size: 14px; }
   .colPick .ic { position: relative; display: block; width: 46px; height: 46px; border-radius: 6px; background: #cdb98f; }
@@ -1577,13 +1577,8 @@ const SOUNDS = __SOUNDS__;
     let col = colorPref === 'r' ? (Math.random() < 0.5 ? 'w' : 'b') : colorPref;
     const prevLevel = cpuLevel;
     // Cartel de inicio: lo toca quien juega con blancas (contra la CPU, siempre el jugador local)
-    const message = () => {
-      const how = vsCpu && colorPref === 'r' ? 'Al azar te tocaron ' : 'Jugás con ';
-      const msg = vsCpu ? (col === 'b' ? how + art('b') + '. La CPU juega con ' + art('w') + ' y mueve primero.'
-                                       : how + art('w') + '. Movés primero.')
-                        : 'Abajo juegan ' + art(col) + '. Que toquen Comenzar ' + art('w') + '.';
-      return msg + ' Los relojes arrancan al comenzar.';
-    };
+    // contra la CPU el cartel no lleva texto: el color se elige con los caballos
+    const message = () => vsCpu ? '' : 'Abajo juegan ' + art(col) + '. Que toquen Comenzar ' + art('w') + '. Los relojes arrancan al comenzar.';
     let node = null;
     if (vsCpu) {
       node = document.createElement('div');
@@ -1692,6 +1687,7 @@ const SOUNDS = __SOUNDS__;
     $('mTitle').hidden = !!opt.logo;
     $('mTitle').textContent = title;
     $('mText').textContent = text;
+    $('mText').hidden = !text;
     const box = $('mBtns'); box.innerHTML = '';
     buttons.forEach(b => {
       const el = document.createElement('button');
