@@ -113,6 +113,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Botones bloqueados en partida (v1.17):** con una partida en curso (`inGame()` = empezada y sin terminar)
   Contra la CPU, Online y Nueva partida quedan deshabilitados (`lockGameButtons()` en `updateStatus`). Para empezar otra
   hay que terminarla o abandonarla. Para pasar a otra partida online sigue funcionando el aviso «Ver partida».
+  Desde v1.31 (en dev) solo se bloquean con una partida local (CPU o dos jugadores): de una online se puede salir sin
+  abandonarla (queda en «Mis partidas»); «Contra la CPU» la deja con `leaveOnline()` y abre el cartel de nueva partida.
 - **Service worker sin reemplazo a mitad de carga (v1.18):** antes el SW nuevo hacía `skipWaiting()` al instalarse.
   En iPhone eso mataba al viejo con las descargas de los .glb en curso y la carga quedaba trabada (pasó en el 45 %
   al actualizar a v1.17). Ahora el nuevo espera; `doUpdate()` lo activa con `postMessage('skipWaiting')` y recarga

@@ -1488,8 +1488,10 @@ const SOUNDS = __SOUNDS__;
   const VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
   // con una partida en curso no se puede cambiar de modo ni empezar otra: primero hay que terminarla o abandonarla
   const inGame = () => started && !isOver();
+  // una partida online queda guardada en Firebase («Mis partidas»): se puede salir de ella sin abandonarla
+  const lockedGame = () => inGame() && !online;
   function lockGameButtons() {
-    const lock = inGame();
+    const lock = lockedGame();
     ['mcpu', 'mon', 'newg'].forEach(id => {
       $(id).disabled = lock;
       $(id).title = lock ? 'Partida en curso: terminala o abandonala para empezar otra' : '';
@@ -1599,14 +1601,21 @@ const SOUNDS = __SOUNDS__;
     updateStatus();
   }
   $('mcpu').addEventListener('click', () => {
-    if (busy || inGame() || (!online && vsCpu)) return;
-    leaveOnline();
+    if (busy || lockedGame() || (!online && vsCpu)) return;
+    if (online) {
+      // se deja la partida online como está (sigue en «Mis partidas») y se arma una contra la CPU
+      leaveOnline();
+      started = false; ended = null;
+      setMode(true);
+      drawColors(chooseMode);
+      return;
+    }
     setMode(true);
     $('newg').click();
   });
-  $('mon').addEventListener('click', () => { if (!inGame()) openLobby(); });
+  $('mon').addEventListener('click', () => { if (!lockedGame()) openLobby(); });
   $('newg').addEventListener('click', () => {
-    if (busy || inGame()) return;
+    if (busy || lockedGame()) return;
     if (online) { openLobby(); return; }
     // con una partida en curso (o terminada), Cancelar vuelve a ella tal como estaba
     drawColors(started ? null : chooseMode);
