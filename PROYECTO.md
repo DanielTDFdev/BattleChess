@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.21** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.22** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.21 → v1.22…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.22 → v1.23…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -141,7 +141,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   tiene un gráfico de la ventaja con puntos en Y esto?/Ah bue/Calambres; tocarlo lleva a esa jugada.
   El ícono de la clasificación también va sobre la pieza que hizo la jugada, arriba a la derecha (`#clsMark` dentro del
   tablero 2D; `#clsMark3d` proyectado desde la posición del personaje en cada cuadro en 3D, `placeClsMark3d`).
-- **Revisión con sonido y meneo (v1.22, en dev):** al avanzar o retroceder de a una jugada (‹ ›, flechas del teclado)
+- **Revisión con sonido y meneo (v1.22):** al avanzar o retroceder de a una jugada (‹ ›, flechas del teclado)
   suena la jugada mostrada como en la partida (movimiento, comer, enroque, jaque) y la pieza hace el meneo; los saltos
   (« », gráfico) van en silencio (`stepReview`). En 2D cada pieza que aterriza hace un meneo corto (`wiggle()`,
   animación `land` de .38 s; no se hace con «Reducir movimiento»).
@@ -158,6 +158,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.22:** ícono de la clasificación sobre la pieza al revisar, sonidos de las jugadas en la revisión y meneo de
+  la pieza al aterrizar en 2D.
 - **v1.21:** análisis de la partida con Stockfish: precisión, clasificación con nombres propios, barra de evaluación,
   flecha verde con la mejor jugada y gráfico de la partida.
 - **v1.20:** premoves contra la CPU y online (2D y 3D).
