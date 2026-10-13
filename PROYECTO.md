@@ -179,7 +179,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Desafíos que vencen y borrar partidas (v1.32):** un desafío sin aceptar vence a las 24 h de `createdAt`
   (`inviteExpired`). No hay servidor: lo borra de la base (y del índice) la app de quien lo creó al verlo vencido, en
   «Mis partidas» o en el vigía; quien abre un link vencido ve «Desafío vencido» y las reglas no lo dejan entrar
-  (`guest` exige `createdAt > now - 24 h`). En «Mis partidas», ✕ (dos toques: ✕ → «¿Borrar?»/«¿Quitar?» en rojo durante 5 s; antes decía «Cancelar» y se entendía como no borrar) en los desafíos pendientes
+  (`guest` exige `createdAt > now - 24 h`). En «Mis partidas», ✕ (dos toques: ✕ → «Quitar ahora» en rojo durante 5 s; antes decía «Cancelar» y se entendía como no borrar) en los desafíos pendientes
   (borra `games/<código>`; regla `.write` en `$g` solo para borrar entero, del creador y sin `guest`) y en las terminadas
   (solo quita `users/<uid>/games/<código>`; al rival le queda). Las en curso no tienen ✕. También se limpian del índice
   las partidas que ya no existen.
