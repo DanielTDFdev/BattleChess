@@ -2969,16 +2969,21 @@ const SOUNDS = {
 
   function showWaiting(id) {
     const url = location.href.split('#')[0] + '#' + id;
+    const pm = online && online.id === id && online.g ? online.g.perMove : undefined;
+    // el mensaje va entero en «text» (con el link al final): WhatsApp a veces descarta el texto si el link va aparte
+    const msg = (getNick() || 'Un amigo') + ' te desafía a una partida de ChaskiBoom Battle Chess'
+      + (pm ? ' a ' + plazoTxt(pm) + ' por jugada' : pm === 0 ? ' sin límite de tiempo' : '')
+      + '. Aceptá entrando a este link (el desafío vence en 24 h): ' + url;
     $('lbLink').value = url;
     $('lbMain').hidden = true; $('lbWait').hidden = false; $('lbMsg').textContent = '';
     lobby.hidden = false;
     $('lbCopy').onclick = () => {
-      const done = () => { $('lbMsg').textContent = 'Link copiado.'; };
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => { $('lbLink').select(); });
+      const done = () => { $('lbMsg').textContent = 'Mensaje con el link copiado.'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(msg).then(done, () => { $('lbLink').select(); });
       else $('lbLink').select();
     };
     $('lbShare').onclick = () => {
-      if (navigator.share) navigator.share({ title: 'ChaskiBoom Battle Chess', text: (getNick() || 'Un amigo') + ' te desafía a una partida', url }).catch(() => {});
+      if (navigator.share) navigator.share({ title: 'ChaskiBoom Battle Chess', text: msg }).catch(() => {});
       else $('lbCopy').click();
     };
   }
@@ -3686,7 +3691,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261013171408';
+  const BUILD = '20261013172436';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json

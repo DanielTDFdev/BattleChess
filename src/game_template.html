@@ -2552,16 +2552,21 @@ const SOUNDS = __SOUNDS__;
 
   function showWaiting(id) {
     const url = location.href.split('#')[0] + '#' + id;
+    const pm = online && online.id === id && online.g ? online.g.perMove : undefined;
+    // el mensaje va entero en «text» (con el link al final): WhatsApp a veces descarta el texto si el link va aparte
+    const msg = (getNick() || 'Un amigo') + ' te desafía a una partida de ChaskiBoom Battle Chess'
+      + (pm ? ' a ' + plazoTxt(pm) + ' por jugada' : pm === 0 ? ' sin límite de tiempo' : '')
+      + '. Aceptá entrando a este link (el desafío vence en 24 h): ' + url;
     $('lbLink').value = url;
     $('lbMain').hidden = true; $('lbWait').hidden = false; $('lbMsg').textContent = '';
     lobby.hidden = false;
     $('lbCopy').onclick = () => {
-      const done = () => { $('lbMsg').textContent = 'Link copiado.'; };
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => { $('lbLink').select(); });
+      const done = () => { $('lbMsg').textContent = 'Mensaje con el link copiado.'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(msg).then(done, () => { $('lbLink').select(); });
       else $('lbLink').select();
     };
     $('lbShare').onclick = () => {
-      if (navigator.share) navigator.share({ title: 'ChaskiBoom Battle Chess', text: (getNick() || 'Un amigo') + ' te desafía a una partida', url }).catch(() => {});
+      if (navigator.share) navigator.share({ title: 'ChaskiBoom Battle Chess', text: msg }).catch(() => {});
       else $('lbCopy').click();
     };
   }

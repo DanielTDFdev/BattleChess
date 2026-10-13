@@ -183,6 +183,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   (borra `games/<código>`; regla `.write` en `$g` solo para borrar entero, del creador y sin `guest`) y en las terminadas
   (solo quita `users/<uid>/games/<código>`; al rival le queda). Las en curso no tienen ✕. También se limpian del índice
   las partidas que ya no existen.
+- **Mensaje del desafío (v1.33, en dev):** Compartir y Copiar mandan el mensaje entero con el link al final: «Daniel te desafía a
+  una partida de ChaskiBoom Battle Chess a 3 días por jugada. Aceptá entrando a este link (el desafío vence en 24 h): …».
+  Va todo en `text` de `navigator.share` (sin `url` aparte), porque WhatsApp a veces descarta el texto si el link va separado.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
