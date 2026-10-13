@@ -176,6 +176,13 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   app: resumen al abrir o al volver tras 1 min afuera («Te toca en 2 partidas · una vence en 4 h», `turnSummary`, en rojo con
   menos de 12 h) y, después de cada jugada con plazo, «Avisar por WhatsApp» (`wa.me` con el link). «Mis partidas» pone primero
   las que te tocan, por vencimiento, con la etiqueta del plazo. Prueba con mock: `test_corr.py` (no está en el repo).
+- **Desafíos que vencen y borrar partidas (v1.32, en dev):** un desafío sin aceptar vence a las 24 h de `createdAt`
+  (`inviteExpired`). No hay servidor: lo borra de la base (y del índice) la app de quien lo creó al verlo vencido, en
+  «Mis partidas» o en el vigía; quien abre un link vencido ve «Desafío vencido» y las reglas no lo dejan entrar
+  (`guest` exige `createdAt > now - 24 h`). En «Mis partidas», ✕ (dos toques: ✕ → Cancelar/Quitar) en los desafíos pendientes
+  (borra `games/<código>`; regla `.write` en `$g` solo para borrar entero, del creador y sin `guest`) y en las terminadas
+  (solo quita `users/<uid>/games/<código>`; al rival le queda). Las en curso no tienen ✕. También se limpian del índice
+  las partidas que ya no existen.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
@@ -223,6 +230,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **Pegar de nuevo `database.rules.json` en Firebase antes de publicar v1.32** (borrado de desafíos y vencimiento de 24 h).
 
 - **Pegar `database.rules.json` en la consola de Firebase antes de probar v1.30** (reglas de `perMove`, `deadline` y `result`).
   Sin eso el vencimiento igual se registra, pero sin validar que el plazo haya pasado. Probar con dos dispositivos a 1 día.

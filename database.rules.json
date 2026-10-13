@@ -3,6 +3,7 @@
     "games": {
       "$g": {
         ".read": "auth != null",
+        ".write": "auth != null && !newData.exists() && data.child('host/uid').val() === auth.uid && !data.child('guest').exists()",
         "host": {
           ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid"
         },
@@ -10,7 +11,7 @@
           ".write": "auth != null && !data.exists()"
         },
         "guest": {
-          ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid && root.child('games/' + $g + '/host/uid').val() !== auth.uid"
+          ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid && root.child('games/' + $g + '/host/uid').val() !== auth.uid && root.child('games/' + $g + '/createdAt').val() > now - 86400000"
         },
         "white": {
           ".write": "auth != null && !data.exists() && newData.parent().child('guest/uid').val() === auth.uid"
