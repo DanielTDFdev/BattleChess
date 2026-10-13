@@ -37,6 +37,18 @@
             ".write": "auth != null && auth.uid === $uid"
           }
         },
+        "perMove": {
+          ".write": "auth != null && !data.exists() && newData.parent().child('host/uid').val() === auth.uid",
+          ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 86400000 || newData.val() === 259200000 || newData.val() === 604800000)"
+        },
+        "deadline": {
+          ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid) && (!data.exists() || newData.parent().child('ply').val() !== data.parent().child('ply').val())",
+          ".validate": "newData.isNumber() && newData.parent().child('perMove').val() > 0 && newData.val() <= now + newData.parent().child('perMove').val() + 300000"
+        },
+        "result": {
+          ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid) && !data.exists()",
+          ".validate": "newData.hasChildren(['winner', 'reason']) && ((newData.child('reason').val() !== 'timeout' && newData.child('reason').val() !== 'timeoutDraw') || (root.child('games/' + $g + '/deadline').val() < now && ((newData.child('reason').val() === 'timeout' && newData.child('winner').val() !== 'draw' && newData.child('winner').val() !== root.child('games/' + $g + '/turn').val()) || (newData.child('reason').val() === 'timeoutDraw' && newData.child('winner').val() === 'draw'))))"
+        },
         "$other": {
           ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid || root.child('games/' + $g + '/host/uid').val() === auth.uid)"
         }

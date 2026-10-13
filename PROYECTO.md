@@ -163,6 +163,17 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Reloj exacto (v1.28):** `clockFlush()` asigna el tiempo transcurrido según el estado; se llama en el tic de 200 ms y en
   cada cambio de estado (empieza/termina de pensar la CPU, empieza/termina una jugada). Antes, si la pantalla se trababa
   mientras pensaba la CPU, no caía ningún tic adentro y ese tiempo se perdía.
+- **Correspondencia (v1.30):** al desafiar se elige «Tiempo por jugada»: 1, 3 o 7 días o sin límite (localStorage
+  `chaskiboom.perMove`, por defecto sin límite). En la partida: `perMove` (ms; 0 = sin límite; las viejas no lo tienen) y
+  `deadline` (hora del servidor, `srvNow()` con `.info/serverTimeOffset`), que escriben las blancas al tocar Comenzar y cada
+  jugada en el mismo `update`. Al vencer se pierde; si al que le sobra tiempo solo le queda el rey, tablas (`timeout` /
+  `timeoutDraw`). No hay servidor: cualquier cliente que vea la partida vencida la cierra (`claimTimeout`, cada 20 s, al abrirla,
+  en el vigía y en «Mis partidas»); las reglas aceptan ese resultado solo si `deadline < now`, `deadline` solo cambia junto
+  con `ply` y no puede pasar de `now + perMove`. Relojes: al que le toca, lo que le queda (rojo con menos de 12 h); al otro, el
+  plazo («3d»). Quien acepta ve el plazo antes de entrar aunque ya tenga apodo. La revancha hereda el plazo. Avisos solo en la
+  app: resumen al abrir o al volver tras 1 min afuera («Te toca en 2 partidas · una vence en 4 h», `turnSummary`, en rojo con
+  menos de 12 h) y, después de cada jugada con plazo, «Avisar por WhatsApp» (`wa.me` con el link). «Mis partidas» pone primero
+  las que te tocan, por vencimiento, con la etiqueta del plazo. Prueba con mock: `test_corr.py` (no está en el repo).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
@@ -206,6 +217,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **Pegar `database.rules.json` en la consola de Firebase antes de probar v1.30** (reglas de `perMove`, `deadline` y `result`).
+  Sin eso el vencimiento igual se registra, pero sin validar que el plazo haya pasado. Probar con dos dispositivos a 1 día.
 
 - **Probar los avisos de v1.8 con dos dispositivos reales:** desafío aceptado y jugada con la página minimizada
   o el celular bloqueado, y dos partidas en paralelo (aviso de la otra partida y «Ver partida»). Solo se probó con Firebase simulado.
