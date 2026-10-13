@@ -2507,8 +2507,8 @@ const SOUNDS = __SOUNDS__;
         let t = null;
         x.addEventListener('click', () => {
           if (!x.classList.contains('sure')) {   // primer toque: pide confirmar
-            x.classList.add('sure'); x.textContent = !g.guest ? 'Cancelar' : 'Quitar';
-            t = setTimeout(() => { x.classList.remove('sure'); x.textContent = '✕'; }, 3000);
+            x.classList.add('sure'); x.textContent = !g.guest ? '¿Borrar?' : '¿Quitar?';
+            t = setTimeout(() => { x.classList.remove('sure'); x.textContent = '✕'; }, 5000);
             return;
           }
           clearTimeout(t);

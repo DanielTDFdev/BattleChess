@@ -2924,8 +2924,8 @@ const SOUNDS = {
         let t = null;
         x.addEventListener('click', () => {
           if (!x.classList.contains('sure')) {   // primer toque: pide confirmar
-            x.classList.add('sure'); x.textContent = !g.guest ? 'Cancelar' : 'Quitar';
-            t = setTimeout(() => { x.classList.remove('sure'); x.textContent = '✕'; }, 3000);
+            x.classList.add('sure'); x.textContent = !g.guest ? '¿Borrar?' : '¿Quitar?';
+            t = setTimeout(() => { x.classList.remove('sure'); x.textContent = '✕'; }, 5000);
             return;
           }
           clearTimeout(t);
@@ -3691,7 +3691,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261013172436';
+  const BUILD = '20261013172751';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
