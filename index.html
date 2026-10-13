@@ -120,6 +120,7 @@
   #modal .anaGraph svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   #modal .anaGraph b.cls { position: absolute; width: 9px; height: 9px; min-width: 0; margin: -5px 0 0 -5px; padding: 0; border-radius: 50%; border: 1px solid #1e1a16; font-size: 0; }
   #modal .anaSum { width: 100%; margin: 0 0 18px; border-collapse: collapse; font-size: 16px; }
+  #modal .anaSum td .cls { margin: 0 9px 0 0; }   /* separa el ícono del nombre */
   #modal .anaSum th { font-family: var(--display); font-weight: 600; color: var(--muted); padding: 2px 6px; }
   #modal .anaSum td { padding: 3px 6px; text-align: center; border-top: 1px solid var(--line); }
   #modal .anaSum td:first-child { text-align: left; }
@@ -313,7 +314,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.28</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.29</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -3489,7 +3490,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261013125444';
+  const BUILD = '20261013134503';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
