@@ -316,6 +316,22 @@
   body.wide .bar .seg { width: 100%; }
   body.wide .bar .seg button { flex: 1; }
   body.wide .caps .hint { margin-left: 0; font-size: 13px; }
+  /* Planilla de jugadas (solo PC): entre el estado y la consola, con el ícono de la pieza que movió */
+  #moves { display: none; }
+  body.wide #moves { display: block; position: fixed; z-index: 9; left: 12px; width: 306px; overflow-y: auto; margin: 0; padding: 4px 0;
+    list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; font-variant-numeric: tabular-nums; scrollbar-width: thin; }
+  body.wide #moves[hidden] { display: none; }
+  #moves li { display: grid; grid-template-columns: 34px 1fr 1fr; align-items: center; padding: 0 6px; }
+  #moves li:nth-child(even) { background: rgba(255,255,255,.035); }
+  #moves .n { color: var(--muted); font-size: 13px; text-align: right; padding-right: 6px; }
+  #moves button { display: flex; align-items: center; gap: 3px; min-width: 0; margin: 1px 2px; padding: 2px 5px; border: 1px solid transparent; border-radius: 3px;
+    background: none; color: var(--ink); font: inherit; font-size: 15px; text-align: left; cursor: pointer; white-space: nowrap; }
+  #moves button:hover { background: rgba(255,255,255,.08); }
+  #moves button.cur { background: var(--torch); color: #1d140c; font-weight: 600; }
+  #moves button img { width: 22px; height: 22px; flex: none; }
+  #moves button img.b { filter: drop-shadow(0 0 1px rgba(240,227,196,.9)) drop-shadow(0 0 1px rgba(240,227,196,.6)); }   /* negras: borde claro sobre el fondo oscuro */
+  #moves button.cur img.b { filter: none; }
+  #moves button .cls { margin-left: auto; font-size: 12px; }
 </style>
 
 </head>
@@ -325,10 +341,11 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.33</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.34</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
+<ol id="moves" hidden aria-label="Planilla de jugadas"></ol>
 <div class="bar">
   <div class="hist" role="group" aria-label="Historial de jugadas">
     <button id="hFirst" aria-label="Ir al inicio">«</button>
@@ -1992,6 +2009,12 @@ const SOUNDS = {
       if (spare > 8) logo.style.height = Math.round(Math.min(base + spare * 0.85, W * 0.8 * 414 / 480)) + 'px';
     }
     const topY = wide ? 12 : document.querySelector('.top').getBoundingClientRect().bottom + 6;
+    if (wide) {
+      // planilla: del estado a la consola
+      const mt = document.querySelector('.top').getBoundingClientRect().bottom + 8, mb = document.querySelector('.bar').getBoundingClientRect().top - 10;
+      Object.assign($('moves').style, { top: mt + 'px', maxHeight: Math.max(0, mb - mt) + 'px', visibility: mb - mt < 90 ? 'hidden' : '' });
+      movesKey = ''; renderMoves(viewPos ? viewPly : chess.history().length);
+    }
     const botY = wide ? window.innerHeight - 12 : document.querySelector('.bar').getBoundingClientRect().top - 6;
     if (is2D) {
       const avail = botY - topY - 2 * (BH + GAP);
@@ -2423,10 +2446,52 @@ const SOUNDS = {
       const cnt = document.createElement('span'); cnt.className = 'cnt'; cnt.textContent = ' · ' + n + '/' + h.length; lbl.appendChild(cnt);
     }
     showEval(n);
+    renderMoves(n);
     $('hFirst').disabled = $('hPrev').disabled = n === 0;
     $('hNext').disabled = $('hLast').disabled = n === h.length;
     document.body.classList.toggle('reviewing', !!viewPos);
   }
+  /* Planilla de jugadas (PC): se rehace solo si cambió algo (jugadas, juego de piezas, análisis); si no, solo se marca
+     la jugada que se está viendo. Tocar una jugada lleva a esa posición, como las flechas. */
+  let movesKey = '';
+  function renderMoves(n) {
+    const ol = $('moves');
+    if (!document.body.classList.contains('wide')) return;
+    const h = chess.history({ verbose: true });
+    ol.hidden = !h.length;
+    const key = h.length + '|' + (h.length ? h[h.length - 1].san : '') + '|' + pieceSet + '|' + (analysis && analysis.done ? 'a' : '');
+    if (key !== movesKey) {
+      movesKey = key;
+      ol.innerHTML = '';
+      let li = null;
+      h.forEach((m, i) => {
+        if (i % 2 === 0) {
+          li = document.createElement('li');
+          const num = document.createElement('span'); num.className = 'n'; num.textContent = (i / 2 + 1) + '.';
+          li.appendChild(num); ol.appendChild(li);
+        }
+        const b = document.createElement('button');
+        b.type = 'button'; b.dataset.ply = i + 1;
+        const img = document.createElement('img'); img.src = pieceImg(m.color, m.piece); img.alt = ''; img.className = m.color;
+        const castle = /^O-O/.test(m.san);
+        b.append(img, document.createTextNode(castle ? m.san : sanEs(m.san.replace(/^[NBRQK]/, ''))));
+        b.title = (m.color === 'w' ? 'Blancas' : 'Negras') + ': ' + sanEs(m.san);
+        const c = analysis && analysis.done && analysis.cls[i];
+        if (c) { const t = document.createElement('span'); t.className = 'cls ' + c; t.textContent = CLS[c].icon; t.title = CLS[c].name; b.appendChild(t); }
+        b.addEventListener('click', () => { if (+b.dataset.ply === h.length) goLive(); else viewAt(+b.dataset.ply); });
+        li.appendChild(b);
+      });
+    }
+    ol.querySelectorAll('button.cur').forEach(b => b.classList.remove('cur'));
+    const cur = n ? ol.querySelector('button[data-ply="' + n + '"]') : null;
+    if (cur) {
+      cur.classList.add('cur');
+      // que la jugada marcada quede a la vista (sin mover la página)
+      const r = cur.getBoundingClientRect(), R = ol.getBoundingClientRect();
+      if (r.top < R.top || r.bottom > R.bottom) ol.scrollTop += r.top - R.top - (R.height - r.height) / 2;
+    } else if (!n) ol.scrollTop = 0;
+  }
+
   let viewPly = 0;
   function viewAt(n) {
     if (busy) return;
@@ -2496,7 +2561,7 @@ const SOUNDS = {
   $('pset').addEventListener('change', e => {
     pieceSet = e.target.value;
     try { localStorage.setItem('chaskiboom.pieces', pieceSet); } catch (_) {}
-    preloadPieces(); render2D(); updatePlayers();
+    preloadPieces(); render2D(); updatePlayers(); updateHist();
   });
   const board2d = $('board2d');
   function build2D() {
@@ -3691,7 +3756,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261013173146';
+  const BUILD = '20261013211054';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
