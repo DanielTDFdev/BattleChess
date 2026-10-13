@@ -134,6 +134,16 @@
   #modal .card.withImg > :not(.mSide) { grid-column: 2; }
   #modal .mSide { grid-column: 1; grid-row: 1 / span 3; width: clamp(88px, 27vw, 180px); height: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.6)); }
   @media (max-width: 380px) { #modal .card.withImg { padding: 20px 14px 16px; } #modal .card.withImg h2 { font-size: 22px; } #modal .card.withImg p { font-size: 16px; } }
+  .colPick { display: flex; justify-content: center; gap: 8px; margin: -6px 0 16px; flex-wrap: wrap; }
+  .colPick .lbl { width: 100%; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .colPick button { display: grid; justify-items: center; gap: 2px; min-width: 84px; padding: 6px 10px 5px; font-size: 14px; }
+  .colPick .ic { position: relative; display: block; width: 46px; height: 46px; border-radius: 6px; background: #cdb98f; }
+  .colPick .ic img { position: absolute; inset: 3px; width: 40px; height: 40px; }
+  .colPick .rnd img:first-child { clip-path: inset(0 50% 0 0); }   /* mitad caballo blanco, mitad negro */
+  .colPick .rnd img:last-child { clip-path: inset(0 0 0 50%); }
+  .colPick .rnd::after { content: ""; position: absolute; top: 4px; bottom: 4px; left: 50%; border-left: 1px dashed #7a5c43; }
+  .colPick button[aria-pressed="true"] { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
+  .colPick button[aria-pressed="true"] .ic { box-shadow: 0 0 0 2px #1d140c; }
   .lvlPick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: -6px 0 18px; }
   .lvlPick .lbl { width: 100%; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
   .lvlPick button { padding: 6px 10px; font-size: 15px; }
@@ -303,7 +313,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.25</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.26</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -1977,18 +1987,43 @@ const SOUNDS = {
      El tablero no se toca hasta que se aprieta Comenzar: con Cancelar queda la partida anterior como estaba
      (onCancel null) o se vuelve a la elección inicial (onCancel = chooseMode). */
   let started = false;
+  // contra la CPU se elige el color: blancas, al azar o negras (se recuerda la elección)
+  let colorPref = 'r';
+  try { const c = localStorage.getItem('chaskiboom.color'); if (c === 'w' || c === 'b' || c === 'r') colorPref = c; } catch (_) {}
   function drawColors(onCancel) {
-    const col = Math.random() < 0.5 ? 'w' : 'b';
+    let col = colorPref === 'r' ? (Math.random() < 0.5 ? 'w' : 'b') : colorPref;
     const prevLevel = cpuLevel;
     // Cartel de inicio: lo toca quien juega con blancas (contra la CPU, siempre el jugador local)
-    const whiteIsCpu = vsCpu && col === 'b';
-    const msg = vsCpu ? (whiteIsCpu ? 'Te tocaron ' + art('b') + '. La CPU juega con ' + art('w') + ' y mueve primero.'
-                                     : 'Te tocaron ' + art('w') + '. Movés primero.')
-                      : 'Abajo juegan ' + art(col) + '. Que toquen Comenzar ' + art('w') + '.';
-    showModal('Nueva partida', msg + ' Los relojes arrancan al comenzar.', [
+    const message = () => {
+      const how = vsCpu && colorPref === 'r' ? 'Al azar te tocaron ' : 'Jugás con ';
+      const msg = vsCpu ? (col === 'b' ? how + art('b') + '. La CPU juega con ' + art('w') + ' y mueve primero.'
+                                       : how + art('w') + '. Movés primero.')
+                        : 'Abajo juegan ' + art(col) + '. Que toquen Comenzar ' + art('w') + '.';
+      return msg + ' Los relojes arrancan al comenzar.';
+    };
+    let node = null;
+    if (vsCpu) {
+      node = document.createElement('div');
+      node.className = 'colPick'; node.setAttribute('role', 'group'); node.setAttribute('aria-label', 'Color');
+      const knight = c => '<img src="' + pieceImg(c, 'n') + '" alt="">';
+      const Side = c => sidePl(c).replace(/^./, m => m.toUpperCase());
+      node.innerHTML = '<span class="lbl">Tu color</span>' +
+        '<button data-c="w"><span class="ic">' + knight('w') + '</span>' + Side('w') + '</button>' +
+        '<button data-c="r"><span class="ic rnd">' + knight('w') + knight('b') + '</span>Al azar</button>' +
+        '<button data-c="b"><span class="ic">' + knight('b') + '</span>' + Side('b') + '</button>';
+      const mark = () => node.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === colorPref)));
+      node.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+        colorPref = b.dataset.c;
+        try { localStorage.setItem('chaskiboom.color', colorPref); } catch (_) {}
+        col = colorPref === 'r' ? (Math.random() < 0.5 ? 'w' : 'b') : colorPref;
+        mark(); $('mText').textContent = message();
+      }));
+      mark();
+    }
+    showModal('Nueva partida', message(), [
       { label: 'Comenzar', primary: true, onClick: () => { resetGame(col); startGame(); } },
       { label: 'Cancelar', onClick: () => { if (cpuLevel !== prevLevel) setLevel(prevLevel); if (onCancel) onCancel(); } }
-    ], { levels: vsCpu });
+    ], { levels: vsCpu, node });
   }
   function resetGame(col) {
     chess.reset(); selected = null; targets = []; lastMove = null; ended = null; viewPos = null; viewLast = null;
@@ -2003,7 +2038,7 @@ const SOUNDS = {
     times.w = times.b = 0;
     build2D(); render2D(); drawMarks(); updateStatus(); layout();
     const mine = sidePl(localColor);
-    caption(vsCpu ? 'Sorteo: jugás con las ' + mine + (localColor === 'b' ? '. Empieza la CPU' : '. Te toca empezar')
+    caption(vsCpu ? (colorPref === 'r' ? 'Sorteo: jugás con ' : 'Jugás con ') + art(localColor) + (localColor === 'b' ? '. Empieza la CPU' : '. Te toca empezar')
                   : 'Sorteo: abajo juegan las ' + mine);
   }
   function startGame() {
@@ -3411,7 +3446,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261013011435';
+  const BUILD = '20261013013508';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
