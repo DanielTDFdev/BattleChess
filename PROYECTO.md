@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.26** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.27** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.26 → v1.27…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.27 → v1.28…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -152,7 +152,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Soltar en otro lado la devuelve y queda seleccionada. `#board2d { touch-action: none }`. En 3D no (arrastrar gira la cámara).
 - **Elegir color contra la CPU (v1.26):** el cartel de Nueva partida tiene «Tu color» con tres botones con
   caballos del juego de piezas elegido: blancas, al azar (mitad y mitad) o negras. Se recuerda en localStorage
-  `chaskiboom.color` (`colorPref` = w / r / b). Online y en dos jugadores sigue el sorteo.
+  `chaskiboom.color` (`colorPref` = w / r / b). Online y en dos jugadores sigue el sorteo. Desde v1.27 el cartel
+  contra la CPU no lleva texto (`#mText` se oculta si está vacío); el color al azar se ve recién al comenzar.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
@@ -166,6 +167,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.27:** el cartel de Nueva partida contra la CPU sin texto.
 - **v1.26:** contra la CPU se elige el color (blancas, al azar o negras) con caballos.
 - **v1.25:** arrastrar y soltar piezas en 2D (también para premoves).
 - **v1.24:** meneo suave (rebote sin giro) al aterrizar cuando está activado «Reducir movimiento».
