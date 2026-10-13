@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.27** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.28** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.27 → v1.28…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.28 → v1.29…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -154,6 +154,15 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   caballos del juego de piezas elegido: blancas, al azar (mitad y mitad) o negras. Se recuerda en localStorage
   `chaskiboom.color` (`colorPref` = w / r / b). Online y en dos jugadores sigue el sorteo. Desde v1.27 el cartel
   contra la CPU no lleva texto (`#mText` se oculta si está vacío); el color al azar se ve recién al comenzar.
+- **CPU sin Stockfish (v1.28):** en redes con firewall (p. ej. Fortinet en la oficina de Daniel) el `.wasm` de Stockfish
+  no llega. `sfInit()` hace un `HEAD` aparte al `.wasm`: si falla o no viene con tipo wasm, pasa al motor propio enseguida
+  (antes Stockfish quedaba colgado hasta el tope de 25 s). Sin conexión no se apura, porque puede estar en la caché.
+  El motor propio (`bestAt` + `negamax`, profundidad `fb` del nivel) corre en un Web Worker armado como blob con
+  `Chess.toString()` y esas funciones (`fbWorkerGet`/`fallbackMove`); si no se puede crear, calcula en la página como antes.
+  A profundidad 3 tarda unos 4 s y congelaba la pantalla. Con el motor simple, la barra del rival dice «CPU difícil (simple)».
+- **Reloj exacto (v1.28):** `clockFlush()` asigna el tiempo transcurrido según el estado; se llama en el tic de 200 ms y en
+  cada cambio de estado (empieza/termina de pensar la CPU, empieza/termina una jugada). Antes, si la pantalla se trababa
+  mientras pensaba la CPU, no caía ningún tic adentro y ese tiempo se perdía.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
@@ -167,6 +176,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.28:** CPU sin Stockfish (firewall) sin congelar la pantalla, detección rápida del `.wasm` bloqueado, aviso
+  «(simple)» en el nombre de la CPU y reloj de la CPU exacto.
 - **v1.27:** el cartel de Nueva partida contra la CPU sin texto.
 - **v1.26:** contra la CPU se elige el color (blancas, al azar o negras) con caballos.
 - **v1.25:** arrastrar y soltar piezas en 2D (también para premoves).
