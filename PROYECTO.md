@@ -141,6 +141,10 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   tiene un gráfico de la ventaja con puntos en Y esto?/Ah bue/Calambres; tocarlo lleva a esa jugada.
   El ícono de la clasificación también va sobre la pieza que hizo la jugada, arriba a la derecha (`#clsMark` dentro del
   tablero 2D; `#clsMark3d` proyectado desde la posición del personaje en cada cuadro en 3D, `placeClsMark3d`).
+- **Revisión con sonido y meneo (v1.22, en dev):** al avanzar o retroceder de a una jugada (‹ ›, flechas del teclado)
+  suena la jugada mostrada como en la partida (movimiento, comer, enroque, jaque) y la pieza hace el meneo; los saltos
+  (« », gráfico) van en silencio (`stepReview`). En 2D cada pieza que aterriza hace un meneo corto (`wiggle()`,
+  animación `land` de .38 s; no se hace con «Reducir movimiento»).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 

@@ -69,6 +69,8 @@ __PWA__
     display: grid; place-items: center; font-size: calc(var(--sq) * .24); line-height: 1; border: 2px solid #1e1a16; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
   #clsMark3d { position: fixed; --sq: 52px; transform: translate(-50%, -50%); }
   #clsMark[hidden], #clsMark3d[hidden] { display: none; }
+  .sq2 img.pc.land { animation: land .38s ease-out; transform-origin: 50% 85%; }
+  @keyframes land { 0% { transform: scale(1.08, .9); } 30% { transform: rotate(-7deg) scale(.97, 1.05); } 55% { transform: rotate(5deg); } 78% { transform: rotate(-2deg); } 100% { transform: none; } }
   #best2d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; opacity: .8; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
   #arrow2d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; opacity: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
   .hist { display: flex; align-items: center; gap: 4px; width: 100%; }
@@ -1911,8 +1913,20 @@ const SOUNDS = __SOUNDS__;
     updatePlayers(); updateHist();
   }
   $('hFirst').addEventListener('click', () => viewAt(0));
-  $('hPrev').addEventListener('click', () => viewAt((viewPos ? viewPly : chess.history().length) - 1));
-  $('hNext').addEventListener('click', () => viewAt((viewPos ? viewPly : chess.history().length) + 1));
+  // de a una jugada, la revisión suena y se mueve como en la partida (los saltos «  » y el gráfico, en silencio)
+  function stepReview(d) {
+    if (busy) return;
+    const n = (viewPos ? viewPly : chess.history().length) + d, h = chess.history({ verbose: true });
+    if (n < 0 || n > h.length) return;
+    viewAt(n);
+    if (n === 0) return;
+    const mv = h[n - 1];
+    if (isCastle(mv)) castleSfx(mv); else moveSfx(mv.color, mv);
+    if (/[+#]/.test(mv.san)) sfx('check', 0, { exact: true, delay: 0.12 });
+    wiggle(mv.to);
+  }
+  $('hPrev').addEventListener('click', () => stepReview(-1));
+  $('hNext').addEventListener('click', () => stepReview(1));
   $('hLast').addEventListener('click', () => goLive());
   window.addEventListener('keydown', e => {
     if (!modal.hidden || e.target.closest('input, select, textarea')) return;
@@ -2011,6 +2025,14 @@ const SOUNDS = __SOUNDS__;
     void el.offsetWidth;
     el.style.transform = 'translate(' + (b.offsetLeft - a.offsetLeft) + 'px,' + (b.offsetTop - a.offsetTop) + 'px)';
   }
+  // meneo corto de la pieza al aterrizar en su casilla (2D)
+  function wiggle(sq) {
+    if (!is2D || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const im = board2d.querySelector('[data-sq="' + sq + '"] img.pc');
+    if (!im) return;
+    im.classList.remove('land'); void im.offsetWidth; im.classList.add('land');
+    im.addEventListener('animationend', () => im.classList.remove('land'), { once: true });
+  }
   function move2d(from, to, opt = {}) {
     if (viewPos) goLive();
     const before = new Chess(chess.fen());
@@ -2037,6 +2059,7 @@ const SOUNDS = __SOUNDS__;
         if (im && cell) {
           const old = cell.querySelector('img.pc');
           if (old) old.replaceWith(im); else cell.prepend(im);
+          wiggle(el.dataset.to);
         }
         el.remove();
       });
