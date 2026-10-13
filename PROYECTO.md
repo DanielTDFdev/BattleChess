@@ -103,7 +103,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   `#loading` tiene z-index 60 para tapar la consola, que antes se veía encima.
 - **Actualización automática (v1.15):** la build escribe `version.json` ({version, build}) al lado de cada página
   y mete el mismo código de build (`__BUILD__`, fecha y hora UTC) en la página. `checkUpdate()` lo consulta al abrir,
-  al volver a la página y cada 15 min. Si cambió y no hay partida en curso, recarga sola; si la hay, muestra un cartel
+  al volver a la página o a la ventana, al reconectarse, al terminar una partida y cada 2 min (v1.23; antes 15 min).
+  Si cambió y no se empezó ninguna partida, recarga sola; si hay una en curso o terminada, muestra un cartel
   (`#upd`) con Actualizar / Después. Para no recargar en bucle si la página llega vieja, se intenta una vez cada 10 min
   por versión (sessionStorage `chaskiboom.upd`). El service worker pide lo propio con `cache: 'no-cache'`
   (GitHub Pages deja cachear 10 min). En /dev/ también funciona: cada build nueva cuenta como versión nueva.
