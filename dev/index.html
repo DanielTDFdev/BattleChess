@@ -2961,6 +2961,19 @@ const SOUNDS = {
     me = user.uid;
     db = firebase.database();
     db.ref('.info/serverTimeOffset').on('value', s => { srvOff = s.val() || 0; });
+    // al reconectarse, el servidor ya borró la presencia (onDisconnect): se vuelve a marcar en la partida abierta
+    db.ref('.info/connected').on('value', s => {
+      if (s.val() && online && online.pres) { online.pres.set(true).catch(() => {}); online.pres.onDisconnect().remove(); }
+    });
+  }
+  /* Al arrancar: si hay una sesión de Firebase guardada (ya jugó online en este navegador o esta app), se conecta para
+     vigilar sus partidas aunque no tenga apodo guardado (en el iPhone la app instalada y Safari no comparten el apodo).
+     Sin sesión guardada no se conecta, para no crear un usuario anónimo a quien nunca jugó online. */
+  function fbResume() {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+      const off = firebase.auth().onAuthStateChanged(u => { off(); if (u || getNick()) fbInit().catch(() => {}); });
+    } catch (e) { console.error(e); }
   }
 
   /* --- Cuenta: anónima (solo este navegador) o con Google (las mismas partidas en todos tus dispositivos) --- */
@@ -3400,6 +3413,13 @@ const SOUNDS = {
     if (performance.now() - backAt < 20000) { backAt = -1e9; showNews(text, banner, quiet); }
     else if (opt.sound) sfx('check', 0, { exact: true });
   }
+  /* En el celular, con la app en segundo plano el sistema corta la conexión y Firebase puede seguir creyéndose conectado
+     un buen rato: las escuchas no reciben nada y el aviso de «te toca» no aparecía hasta entrar a Online. Al volver
+     después de más de 10 s se fuerza la reconexión, que vuelve a traer el estado de todas las partidas escuchadas. */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden || !db || performance.now() - hiddenAt < 10000) return;
+    try { db.goOffline(); db.goOnline(); } catch (e) { console.error(e); }
+  });
   function showNews(text, banner, quiet) {
     if (banner) showTaunt({ name: 'ChaskiBoom', text }, { ms: 5000, vol: 1, silent: quiet });
     else if (!quiet) sfx('check', 0, { exact: true });
@@ -3876,7 +3896,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261014010751';
+  const BUILD = '20261014141735';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
@@ -3975,7 +3995,7 @@ const SOUNDS = {
       const code = location.hash.replace('#', '');
       if (code && HAS_FB) enterOnline(code); else chooseMode();
       checkUpdate();
-      if (HAS_FB && getNick()) fbInit().catch(() => {});   // ya jugó online: se vigilan sus partidas aunque juegue contra la CPU
+      if (HAS_FB) fbResume();   // ya jugó online: se vigilan sus partidas aunque juegue contra la CPU
       document.fonts.ready.then(layout);
       window.__game = { chess, units, get online() { return online; }, play_move: (f, t) => play_move(f, t), get busy() { return busy; }, get sounds() { return Object.keys(sbuf).length; } };
     } catch (e) {
