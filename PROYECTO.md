@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.34** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.35** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.34 → v1.35…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.35 → v1.36…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -192,12 +192,12 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   como O-O. Con el análisis hecho muestra la clasificación. Tocar una jugada = `viewAt(n)` (la última, `goLive()`); la que
   se ve queda marcada y a la vista. `renderMoves(n)` se llama desde `updateHist()` y rehace la lista solo si cambian las
   jugadas, el juego de piezas o el análisis.
-- **Aviso fijo de partidas pendientes (v1.35, en dev):** en la pantalla inicial («¿Cómo querés jugar?») un recuadro fijo
+- **Aviso fijo de partidas pendientes (v1.35):** en la pantalla inicial («¿Cómo querés jugar?») un recuadro fijo
   `#pend` («Te toca en la partida contra X · vence en …» o «Te toca en N partidas online»; rojo con menos de 12 h) que abre
   «Mis partidas». En el botón Online de la consola, un número (`#monBadge`) con las partidas en las que te toca.
   `pendingGames()` / `updatePending()` usan las partidas del vigía (no la abierta); se actualizan con cada novedad y cada
   minuto. Con la pantalla inicial a la vista, `turnSummary` no muestra el aviso de arriba (sería repetido).
-- **Premove solo contra la CPU; confirmación en correspondencia (v1.35, en dev):** los premoves funcionan solo contra la
+- **Premove solo contra la CPU; confirmación en correspondencia (v1.35):** los premoves funcionan solo contra la
   CPU (`canPremove`); en todas las online no (más adelante, en las online con reloj corto: 3 min, 10 min, 3+2…). En las
   partidas con plazo (`isCorr()`, `perMove > 0`) cada jugada se confirma: `askConfirm` la muestra en el tablero 2D
   (`render2D({ pos })`; en 3D queda marcada) y abre `#confirm` («¿Confirmás movimiento?» · Sí / Cancelar). Arriba en el
@@ -216,6 +216,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.35:** aviso fijo de partidas pendientes en la pantalla inicial y número en el botón Online; en las partidas con
+  plazo, «¿Confirmás movimiento?» (Sí / Cancelar) antes de enviar cada jugada; premoves solo contra la CPU.
 - **v1.34:** planilla de jugadas con íconos de las piezas en la columna izquierda (solo PC); tocar una jugada lleva a esa posición.
 - **v1.33:** Compartir y Copiar mandan el mensaje del desafío con el plazo y el link; la confirmación del ✕ dice «Quitar ahora».
 - **v1.32:** los desafíos sin aceptar vencen a las 24 h y se borran; ✕ en «Mis partidas» para cancelar desafíos o quitar

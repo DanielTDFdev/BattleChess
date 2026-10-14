@@ -250,6 +250,16 @@
   /* Chat (solo en partidas online) */
   body:not(.online) .onlyonline { display: none !important; }
   #chatBtn { position: relative; margin-left: auto; font-weight: 600; }
+  /* partidas online en las que te toca: número en el botón Online y aviso fijo en la pantalla inicial */
+  #mon { position: relative; }
+  #monBadge { position: absolute; top: -7px; right: -7px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font: 600 12px/18px var(--body); }
+  #monBadge[hidden] { display: none; }
+  #pend { display: flex; align-items: center; gap: 10px; width: 100%; margin: 4px 0 16px; padding: 10px 12px; text-align: left; font: inherit; cursor: pointer;
+    background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; border-radius: 6px; }
+  #pend:hover { background: #f6ead0; }
+  #pend.late { background: #f6d2c8; border-color: #b8382b; }
+  #pend .t { flex: 1; min-width: 0; font-weight: 600; line-height: 1.25; }
+  #pend .go { flex: none; padding: 5px 10px; border-radius: 4px; background: #2a1d10; color: #f0e3c4; white-space: nowrap; }
   #chatBadge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font: 600 12px/18px var(--body); }
   #chat { position: fixed; z-index: 15; right: 16px; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100% - 32px)); height: min(460px, 60vh);
     display: flex; flex-direction: column; background: #221b28; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0,0,0,.5); }
@@ -286,6 +296,18 @@
   #upd button { background: #2a1d10; color: #f0e3c4; border-color: #7a5c43; white-space: nowrap; }
   #upd button.later { background: none; color: #7a5c43; }
   /* Aviso de mensaje del chat (con el chat cerrado): abajo, se toca para abrir el chat */
+  /* Correspondencia: confirmar la jugada antes de enviarla (la jugada se ve en el tablero 2D mientras tanto) */
+  #confirm { position: fixed; z-index: 38; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(460px, calc(100% - 24px));
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 2px;
+    border-radius: 6px; box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+  #confirm[hidden] { display: none; }
+  #confirm .t { flex: 1; min-width: 0; font-weight: 600; line-height: 1.25; }
+  #confirm button { white-space: nowrap; }
+  #confirm .ok { background: #2a1d10; color: #f0e3c4; border-color: #2a1d10; font-weight: 600; }
+  #confirm .no { background: none; color: #2a1d10; border-color: #7a5c43; }
+  body.wide #confirm { left: 12px; top: 12px; transform: none; width: 306px; flex-wrap: wrap; }   /* PC: sobre el logo */
+  body.wide #confirm .t { flex-basis: 100%; text-align: center; }
+  body.wide #confirm button { flex: 1; }
   #chatToast { position: fixed; z-index: 39; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); transform: translate(-50%, 12px); width: min(460px, calc(100% - 24px));
     display: flex; gap: 6px; align-items: baseline; padding: 9px 12px; background: #2b2233; color: var(--ink); border: 1px solid var(--torch); border-radius: 6px;
     box-shadow: 0 12px 30px rgba(0,0,0,.55); cursor: pointer; opacity: 0; transition: opacity .2s, transform .2s; }
@@ -341,7 +363,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.34</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.35</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -360,7 +382,7 @@
   <div class="more" id="more">
   <div class="seg" role="group" aria-label="Modo de juego">
     <button id="mcpu" aria-pressed="true">Contra la CPU</button>
-    <button id="mon" aria-pressed="false">Online</button>
+    <button id="mon" aria-pressed="false">Online<span id="monBadge" hidden></span></button>
   </div>
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
@@ -430,6 +452,7 @@
   </form>
 </section>
 <div id="upd" hidden role="status" aria-live="polite"><span class="txt"></span><button class="go">Actualizar</button><button class="later">Después</button></div>
+<div id="confirm" hidden role="dialog" aria-live="assertive" aria-label="Confirmar la jugada"><span class="t">¿Confirmás movimiento?</span><button class="ok">Sí</button><button class="no">Cancelar</button></div>
 <div id="chatToast" hidden role="status" aria-live="polite"><span class="n"></span><span class="t"></span></div>
 <div id="other" hidden role="status" aria-live="polite"><span class="txt"></span><button class="go">Ver partida</button><button class="x" aria-label="Cerrar">×</button></div>
 <div id="taunt" hidden aria-live="assertive"><span class="who"></span><span class="txt"></span></div>
@@ -1274,7 +1297,10 @@ const SOUNDS = {
      Durante el turno del rival (CPU u online) se puede anotar una jugada: tocar una pieza propia y su destino.
      Las casillas quedan en azul y la jugada se hace sola apenas te toca, si sigue siendo legal.
      Con un premove anotado, cualquier toque (otra casilla o la misma) lo cancela. */
-  const canPremove = () => started && !isOver() && (vsCpu || !!online) && chess.turn() !== localColor;
+  // partida por correspondencia (con plazo por jugada): cada jugada se confirma antes de enviarla.
+  // Premoves solo contra la CPU (más adelante, también en las online con reloj corto).
+  const isCorr = () => !!(online && online.g && online.g.perMove);
+  const canPremove = () => started && !isOver() && vsCpu && !online && chess.turn() !== localColor;
   // la posición actual como si movieras vos (para saber a dónde puede ir cada pieza)
   function premovePos() {
     const f = chess.fen().split(' ');
@@ -1288,6 +1314,7 @@ const SOUNDS = {
     if (had) { if (msg) caption(msg); drawMarks(); }
   }
   function tapSquare(sq) {
+    if (pendingMove) return;   // esperando que confirme la jugada
     if (premove) { clearPremove('Premove cancelado'); return; }
     if (canPremove()) {
       const P = premovePos();
@@ -1303,11 +1330,47 @@ const SOUNDS = {
       drawMarks(); return;
     }
     if (busy || isOver() || notMyTurn()) return;
-    if (sq && selected && targets.some(m => m.to === sq)) { play_move(selected, sq); return; }
+    if (sq && selected && targets.some(m => m.to === sq)) { if (isCorr()) askConfirm(selected, sq); else play_move(selected, sq); return; }
     const pc = sq ? chess.get(sq) : null;
     if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
     else select(null);
   }
+  /* Confirmación (correspondencia): la jugada se muestra en el tablero (2D) y abajo un aviso con Jugar / Cambiar.
+     Jugar la envía; Cambiar (o Esc) la deshace y la pieza queda seleccionada para elegir otro destino. */
+  let pendingMove = null;
+  const confirmEl = $('confirm');
+  function askConfirm(from, to) {
+    const mv = chess.moves({ verbose: true }).find(m => m.from === from && m.to === to && (!m.promotion || m.promotion === 'q'));
+    if (!mv) return;
+    pendingMove = { from, to };
+    dragDrop = false;
+    const tmp = new Chess(chess.fen()); tmp.move({ from, to, promotion: 'q' });
+    if (is2D) { selected = null; targets = []; render2D({ pos: tmp, last: { from, to } }); }
+    else { selected = from; targets = [mv]; drawMarks(); }
+    confirmEl.hidden = false;
+    caption('Jugada: ' + sanEs(mv.san));
+    confirmEl.querySelector('.ok').focus();
+  }
+  function cancelConfirm(keepSel) {
+    if (!pendingMove) return;
+    const from = pendingMove.from;
+    pendingMove = null; confirmEl.hidden = true;
+    if (is2D) render2D();
+    if (keepSel && !isOver() && !notMyTurn()) select(from); else select(null);
+    if (!isOver()) updateStatus();
+  }
+  confirmEl.querySelector('.ok').addEventListener('click', () => {
+    if (!pendingMove) return;
+    const { from, to } = pendingMove;
+    pendingMove = null; confirmEl.hidden = true;
+    if (busy || isOver() || notMyTurn()) { if (is2D) render2D(); return; }
+    dragDrop = true;   // en 2D la pieza ya está en su destino: aterriza sin vuelo
+    play_move(from, to);
+  });
+  // Cancelar: la jugada vuelve atrás y no queda nada seleccionado
+  confirmEl.querySelector('.no').addEventListener('click', () => cancelConfirm(false));
+  window.addEventListener('keydown', e => { if (e.key === 'Escape' && pendingMove) cancelConfirm(false); });
+
   // se llama cuando termina una jugada: si te toca y hay un premove, se juega (o se descarta si ya no es legal)
   function tryPremove() {
     if (busy || viewPos || isOver() || notMyTurn()) return false;
@@ -2068,8 +2131,14 @@ const SOUNDS = {
     showModal('ChaskiBoom Battle Chess', '¿Cómo querés jugar?', [
       { label: 'Contra la CPU', primary: true, onClick: () => { setMode(true); drawColors(chooseMode); } },
       { label: 'Online', onClick: openLobby }
-    ], { logo: true });
+    ], { logo: true, node: pendEl });
+    updatePending();
   }
+  // aviso fijo de la pantalla inicial: lo actualiza updatePending() a medida que llegan las partidas vigiladas
+  const pendEl = document.createElement('button');
+  pendEl.type = 'button'; pendEl.id = 'pend'; pendEl.hidden = true;
+  pendEl.innerHTML = '<span class="t"></span><span class="go">Ver partidas</span>';
+  pendEl.addEventListener('click', () => { closeModal(); openLobby(); });
 
   /* Sorteo de colores al comenzar cada partida.
      El tablero no se toca hasta que se aprieta Comenzar: con Cancelar queda la partida anterior como estaba
@@ -2277,6 +2346,7 @@ const SOUNDS = {
 
   function endGame(result, reason, opt = {}) {
     if (ended) return;
+    cancelConfirm(false);
     ended = { result, reason };
     if (online && !opt.remote) online.ref.child('result').transaction(cur => cur || { winner: result, reason });
     premove = null; preSel = null; preTargets = [];
@@ -2495,6 +2565,7 @@ const SOUNDS = {
   let viewPly = 0;
   function viewAt(n) {
     if (busy) return;
+    cancelConfirm(false);
     const h = chess.history({ verbose: true });
     n = Math.max(0, Math.min(h.length, n));
     if (n === h.length) { goLive(); return; }
@@ -2600,7 +2671,7 @@ const SOUNDS = {
      anotar premoves. Si se suelta en otro lado vuelve a su casilla y queda seleccionada. */
   let drag2 = null, dragDrop = false, dragEnded = false;
   function canDrag(sq) {
-    if (!started || viewPos || premove || isOver()) return false;
+    if (!started || viewPos || premove || pendingMove || isOver()) return false;
     if (canPremove()) { const P = premovePos(), pc = P && P.get(sq); return !!pc && pc.color === localColor; }
     if (busy || notMyTurn()) return false;
     const pc = chess.get(sq); return !!pc && pc.color === chess.turn();
@@ -3098,6 +3169,7 @@ const SOUNDS = {
 
   function leaveOnline() {
     if (!online) return;
+    cancelConfirm(false);
     resetChat();
     online.ref.off();
     online.pres.remove().catch(() => {});
@@ -3339,8 +3411,33 @@ const SOUNDS = {
   /* --- Resumen al abrir la app (o al volver después de un rato): «Te toca en 2 partidas · una vence en 4 h».
      Cuenta las partidas vigiladas (no la abierta) donde te toca mover o comenzar; espera a tenerlas todas leídas.
      «Ver partida» lleva a la que vence primero. En rojo si alguna vence en menos de 12 h. */
+  // partidas vigiladas (no la abierta) en las que te toca mover o comenzar, la que vence primero adelante
+  function pendingGames() {
+    return Object.keys(watch.games).map(id => [id, watch.games[id].prev]).filter(([id, g]) => {
+      if (!g || !g.white || g.result || timeoutResult(g) || (online && online.id === id)) return false;
+      const c = g.white === me ? 'w' : 'b';
+      return g.started ? g.turn === c : c === 'w';
+    }).sort((a, b) => (a[1].deadline || Infinity) - (b[1].deadline || Infinity));
+  }
+  function updatePending() {
+    let L;
+    try { if (!watch.list) return; L = pendingGames(); } catch (_) { return; }   // todavía no arrancó la parte online
+    const bd = $('monBadge'); bd.hidden = !L.length; bd.textContent = L.length;
+    $('mon').title = L.length ? 'Te toca en ' + L.length + (L.length === 1 ? ' partida online' : ' partidas online') : '';
+    pendEl.hidden = !L.length;
+    if (!L.length) return;
+    const [, g] = L[0], left = g.deadline ? g.deadline - srvNow() : null;
+    const rival = (g.host.uid === me ? g.guest && g.guest.name : g.host.name) || 'tu rival';
+    let t = L.length === 1 ? 'Te toca en la partida contra ' + rival : 'Te toca en ' + L.length + ' partidas online';
+    if (left !== null) t += ' · ' + (L.length === 1 ? 'vence' : 'una vence') + ' en ' + leftTxt(left);
+    pendEl.querySelector('.t').textContent = t;
+    pendEl.classList.toggle('late', left !== null && left < 12 * 3600e3);
+  }
+  setInterval(updatePending, 60000);   // el tiempo que queda
+
   let summaryDue = true;
   function turnSummary() {
+    updatePending();
     if (!summaryDue || !watch.list) return;
     const ws = Object.keys(watch.games).map(id => [id, watch.games[id].prev]);
     if (ws.some(([, g]) => !g)) return;   // todavía faltan leer
@@ -3356,6 +3453,7 @@ const SOUNDS = {
     const rival = (g.host.uid === me ? g.guest && g.guest.name : g.host.name) || 'tu rival';
     let t = L.length === 1 ? 'Te toca en la partida contra ' + rival : 'Te toca en ' + L.length + ' partidas';
     if (left !== null) t += ' · ' + (L.length === 1 ? 'vence' : 'una vence') + ' en ' + leftTxt(left);
+    if (pendEl.isConnected && !modal.hidden) return;   // la pantalla inicial ya lo muestra fijo
     showOther(id, t, false, { raw: true, late: left !== null && left < 12 * 3600e3 });
   }
   document.addEventListener('visibilitychange', () => {
@@ -3756,7 +3854,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261013211054';
+  const BUILD = '20261014004810';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
