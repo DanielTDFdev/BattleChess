@@ -64,6 +64,11 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Stockfish: 50 % jugadas al azar y 50 % `pickCpu` (come lo que ve, no deja piezas colgadas a 1 jugada). Fácil: 20 % al azar
   y el resto Stockfish nivel 0 a profundidad 1. Medio, Difícil y Experto sin cambios. En simulación, Muy fácil pierde
   37 de 40 contra un jugador que solo come piezas libres y no deja las suyas colgadas.
+  **Recalibrado (en /dev/, para v1.40):** Medio era Skill 8 a profundidad 6 (≈ 2100 de motor) y Daniel no le ganó
+  en 40 partidas. Ahora: Medio Skill 2, prof. 4, 8 % al azar; Difícil Skill 4, prof. 5, 4 % al azar; Experto Skill 8,
+  prof. 8 (apenas arriba del Medio viejo). Entre motores lo que más pesa es el azar, por eso baja de a poco.
+  Simulación de 40 partidas (`sim.js`, Stockfish lite en node, no está en el repo): Fácil-Medio 3-34, Medio-Difícil 5-33,
+  Difícil-Medio viejo 0-37, Medio viejo-Experto 4-29. Solo confirma el orden; falta calibrar con partidas de Daniel.
 - **Nueva partida (v1.6):** el cartel tiene Comenzar y Cancelar. `drawColors(onCancel)` solo sortea y muestra el cartel;
   el tablero se reinicia recién en Comenzar (`resetGame(col)`). Cancelar deja la partida anterior intacta
   (y restaura el nivel de CPU si se cambió en el cartel); si no había partida empezada, vuelve a `chooseMode()`.
