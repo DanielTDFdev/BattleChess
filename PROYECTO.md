@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.40** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.41** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.40 → v1.41…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.41 → v1.42…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -242,6 +242,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.41:** se pueden crear partidas Blitz y Rápida: desde v1.38 fallaban siempre («No se pudo crear la partida»)
+  porque `createGame` escribía `clock` como objeto y las reglas dan permiso en `clock/w` y `clock/b`, no en `clock`
+  (Firebase no suma los permisos de los hijos). Ahora escribe las dos rutas sueltas. El mock no aplica reglas, por eso no se vio.
 - **v1.40:** niveles de la CPU recalibrados: Medio era Skill 8 a profundidad 6 y no se le podía ganar. Medio Skill 2 prof. 4
   con 8 % al azar, Difícil Skill 4 prof. 5 con 4 %, Experto Skill 8 prof. 8.
 - **v1.39:** en el cartel de Online, «Entrar con Google» con el logo de Google (SVG inline, `G_LOGO`) y el texto
@@ -293,8 +296,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Pendientes / ideas
 
-- **Pegar `database.rules.json` en la consola de Firebase antes de probar Blitz/Rápida** (reglas de `tc`, `clock`,
-  `lastMoveAt` y los nuevos resultados). Probar con dos dispositivos: bandera, anulación a los 30 s, rival que se va.
+- **Probar Blitz/Rápida con dos dispositivos** (las reglas ya están publicadas): bandera, anulación a los 30 s, rival que se va.
 - Bala (1, 1+1, 2+1) y «Más controles de tiempo», después de medir el retraso de la conexión.
 
 - **Pegar `database.rules.json` en la consola de Firebase antes de probar v1.30** (reglas de `perMove`, `deadline` y `result`).
