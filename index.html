@@ -297,7 +297,7 @@
   #upd button.later { background: none; color: #7a5c43; }
   /* Aviso de mensaje del chat (con el chat cerrado): abajo, se toca para abrir el chat */
   /* Correspondencia: confirmar la jugada antes de enviarla (la jugada se ve en el tablero 2D mientras tanto) */
-  #confirm { position: fixed; z-index: 38; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(460px, calc(100% - 24px));
+  #confirm { position: fixed; z-index: 38; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(380px, calc(100% - 24px));
     display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 2px;
     border-radius: 6px; box-shadow: 0 14px 36px rgba(0,0,0,.55); }
   #confirm[hidden] { display: none; }
@@ -305,9 +305,7 @@
   #confirm button { white-space: nowrap; }
   #confirm .ok { background: #2a1d10; color: #f0e3c4; border-color: #2a1d10; font-weight: 600; }
   #confirm .no { background: none; color: #2a1d10; border-color: #7a5c43; }
-  body.wide #confirm { left: 12px; top: 12px; transform: none; width: 306px; flex-wrap: wrap; }   /* PC: sobre el logo */
-  body.wide #confirm .t { flex-basis: 100%; text-align: center; }
-  body.wide #confirm button { flex: 1; }
+  /* va sobre el tablero, en la franja que no tapa ni el origen ni el destino de la jugada (placeConfirm) */
   #chatToast { position: fixed; z-index: 39; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); transform: translate(-50%, 12px); width: min(460px, calc(100% - 24px));
     display: flex; gap: 6px; align-items: baseline; padding: 9px 12px; background: #2b2233; color: var(--ink); border: 1px solid var(--torch); border-radius: 6px;
     box-shadow: 0 12px 30px rgba(0,0,0,.55); cursor: pointer; opacity: 0; transition: opacity .2s, transform .2s; }
@@ -363,7 +361,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.35</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.36</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -1348,9 +1346,33 @@ const SOUNDS = {
     if (is2D) { selected = null; targets = []; render2D({ pos: tmp, last: { from, to } }); }
     else { selected = from; targets = [mv]; drawMarks(); }
     confirmEl.hidden = false;
+    placeConfirm();
     caption('Jugada: ' + sanEs(mv.san));
     confirmEl.querySelector('.ok').focus();
   }
+  // rectángulo en pantalla de una casilla (2D: la celda; 3D: su centro proyectado con la cámara)
+  function sqRect(sq) {
+    if (is2D) { const c = board2d.querySelector('[data-sq="' + sq + '"]'); return c ? c.getBoundingClientRect() : null; }
+    const R = renderer.domElement.getBoundingClientRect(), v = sqPos(sq).project(camera);
+    const x = R.left + (v.x + 1) / 2 * R.width, y = R.top + (1 - v.y) / 2 * R.height, h = 36;
+    return { left: x - h, right: x + h, top: y - h, bottom: y + h };
+  }
+  // ubica el cartel centrado sobre el tablero, a la altura que no se cruce con las casillas de la jugada
+  function placeConfirm() {
+    if (!pendingMove) return;
+    const B = (is2D ? board2d : renderer.domElement).getBoundingClientRect();
+    confirmEl.style.width = Math.min(380, B.width - 24, window.innerWidth - 24) + 'px';
+    const w = confirmEl.offsetWidth, h = confirmEl.offsetHeight, x = B.left + B.width / 2;
+    const sqs = [pendingMove.from, pendingMove.to].map(sqRect).filter(Boolean);
+    const box = y => ({ left: x - w / 2 - 6, right: x + w / 2 + 6, top: y - h / 2 - 6, bottom: y + h / 2 + 6 });
+    const hits = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    const cand = [0.5, 0.375, 0.625, 0.25, 0.75, 0.125, 0.875].map(f => B.top + B.height * f)
+      .map(y => Math.max(h / 2 + 8, Math.min(window.innerHeight - h / 2 - 8, y)));
+    let y = cand.find(c => !sqs.some(r => hits(box(c), r)));
+    if (y === undefined) y = cand.reduce((best, c) => Math.min(...sqs.map(r => Math.abs(c - (r.top + r.bottom) / 2))) > Math.min(...sqs.map(r => Math.abs(best - (r.top + r.bottom) / 2))) ? c : best, cand[0]);
+    confirmEl.style.left = x + 'px'; confirmEl.style.top = y + 'px';
+  }
+  window.addEventListener('resize', () => setTimeout(placeConfirm, 50));
   function cancelConfirm(keepSel) {
     if (!pendingMove) return;
     const from = pendingMove.from;
@@ -3854,7 +3876,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261014004810';
+  const BUILD = '20261014010751';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
