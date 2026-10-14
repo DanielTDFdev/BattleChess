@@ -197,12 +197,12 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   «Mis partidas». En el botón Online de la consola, un número (`#monBadge`) con las partidas en las que te toca.
   `pendingGames()` / `updatePending()` usan las partidas del vigía (no la abierta); se actualizan con cada novedad y cada
   minuto. Con la pantalla inicial a la vista, `turnSummary` no muestra el aviso de arriba (sería repetido).
-- **Correspondencia: sin premove y con confirmación (v1.35, en dev):** en las partidas con plazo (`isCorr()`, `perMove > 0`;
-  las «sin límite» no) no hay premoves (`canPremove` da false) y cada jugada se confirma: `askConfirm` la muestra en el
-  tablero 2D (`render2D({ pos })`; en 3D queda marcada) y abre `#confirm` («¿Jugás Cf3? Se le envía a Ana.» · Jugar /
-  Cambiar). Arriba en el celular, sobre el logo en PC. Jugar la envía (en 2D aterriza sin vuelo, `dragDrop`); Cambiar o Esc
-  la deshace y deja la pieza seleccionada. Se cancela sola al terminar la partida, salir de ella o revisar el historial.
-  Mientras está pendiente no se puede tocar ni arrastrar otra pieza.
+- **Premove solo contra la CPU; confirmación en correspondencia (v1.35, en dev):** los premoves funcionan solo contra la
+  CPU (`canPremove`); en todas las online no (más adelante, en las online con reloj corto: 3 min, 10 min, 3+2…). En las
+  partidas con plazo (`isCorr()`, `perMove > 0`) cada jugada se confirma: `askConfirm` la muestra en el tablero 2D
+  (`render2D({ pos })`; en 3D queda marcada) y abre `#confirm` («¿Confirmás movimiento?» · Sí / Cancelar). Arriba en el
+  celular, sobre el logo en PC. Sí la envía (en 2D aterriza sin vuelo, `dragDrop`); Cancelar o Esc la vuelve atrás sin
+  dejar nada seleccionado. Se cancela sola al terminar la partida, salir de ella o revisar el historial.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
