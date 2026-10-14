@@ -197,6 +197,12 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   «Mis partidas». En el botón Online de la consola, un número (`#monBadge`) con las partidas en las que te toca.
   `pendingGames()` / `updatePending()` usan las partidas del vigía (no la abierta); se actualizan con cada novedad y cada
   minuto. Con la pantalla inicial a la vista, `turnSummary` no muestra el aviso de arriba (sería repetido).
+- **Vigía sin depender del apodo y reconexión al volver (en dev):** el aviso de «te toca» no aparecía hasta entrar a
+  Online. Dos causas posibles, se arreglaron las dos: (1) el vigía arrancaba solo si había apodo en localStorage; ahora
+  `fbResume()` arranca si hay una sesión de Firebase guardada (sin sesión no se conecta, para no crear anónimos).
+  (2) en el celular, con la app en segundo plano la conexión muere y Firebase no se entera: al volver tras más de 10 s se
+  hace `db.goOffline(); db.goOnline()` y llegan las novedades. Con `.info/connected` se vuelve a marcar la presencia en la
+  partida abierta (antes, tras una reconexión el rival te veía desconectado). Probado con el mock; falta probar en el celular.
 - **Premove solo contra la CPU; confirmación en correspondencia (v1.35):** los premoves funcionan solo contra la
   CPU (`canPremove`); en todas las online no (más adelante, en las online con reloj corto: 3 min, 10 min, 3+2…). En las
   partidas con plazo (`isCorr()`, `perMove > 0`) cada jugada se confirma: `askConfirm` la muestra en el tablero 2D
