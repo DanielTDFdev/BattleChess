@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.36** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.37** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.36 → v1.37…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.37 → v1.38…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -197,7 +197,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   «Mis partidas». En el botón Online de la consola, un número (`#monBadge`) con las partidas en las que te toca.
   `pendingGames()` / `updatePending()` usan las partidas del vigía (no la abierta); se actualizan con cada novedad y cada
   minuto. Con la pantalla inicial a la vista, `turnSummary` no muestra el aviso de arriba (sería repetido).
-- **Vigía sin depender del apodo y reconexión al volver (en dev):** el aviso de «te toca» no aparecía hasta entrar a
+- **Vigía sin depender del apodo y reconexión al volver (v1.37):** el aviso de «te toca» no aparecía hasta entrar a
   Online. Dos causas posibles, se arreglaron las dos: (1) el vigía arrancaba solo si había apodo en localStorage; ahora
   `fbResume()` arranca si hay una sesión de Firebase guardada (sin sesión no se conecta, para no crear anónimos).
   (2) en el celular, con la app en segundo plano la conexión muere y Firebase no se entera: al volver tras más de 10 s se
@@ -223,6 +223,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.37:** el aviso de «te toca» aparece en la pantalla inicial sin entrar a Online (vigía con sesión guardada aunque
+  no haya apodo, reconexión forzada al volver a la app) y la presencia se vuelve a marcar tras una reconexión.
 - **v1.36:** la confirmación de jugada sale centrada sobre el tablero, sin tapar el origen ni el destino.
 - **v1.35:** aviso fijo de partidas pendientes en la pantalla inicial y número en el botón Online; en las partidas con
   plazo, «¿Confirmás movimiento?» (Sí / Cancelar) antes de enviar cada jugada; premoves solo contra la CPU.
