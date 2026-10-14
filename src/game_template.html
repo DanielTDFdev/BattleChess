@@ -1440,14 +1440,18 @@ const SOUNDS = __SOUNDS__;
      Stockfish aun en Skill Level 0 juega como un aficionado de club (no regala piezas), así que los dos niveles
      de abajo mezclan jugadas al azar (rnd = probabilidad de jugar cualquier jugada legal):
        Muy fácil: mitad al azar, mitad con el criterio simple de pickCpu (come lo que ve y no deja piezas colgadas a 1 jugada), sin Stockfish.
-       Fácil: una de cada cinco al azar, el resto Stockfish nivel 0 a profundidad 1 (desde v1.12). */
+       Fácil: una de cada cinco al azar, el resto Stockfish nivel 0 a profundidad 1 (desde v1.12).
+     v1.40: Medio era Skill 8 a profundidad 6 (≈ 2100 de motor) y nadie le ganaba; se bajó toda la escalera.
+     Entre motores lo que más pesa es el azar (una pifia cada tantas jugadas), así que baja de a poco:
+     20 % Fácil, 8 % Medio, 4 % Difícil, 0 % Experto. Experto queda apenas arriba del Medio viejo.
+     Simulación (40 partidas): Fácil-Medio 3-34, Medio-Difícil 5-33, Difícil-Medio viejo 0-37, Medio viejo-Experto 4-29. */
   const ENGINE_URL = '__ENGINE__';
   const LEVELS = [
     { name: 'Muy fácil', own: true, rnd: 0.5, fb: 0 },
     { name: 'Fácil', skill: 0, depth: 1, rnd: 0.2, fb: 1 },
-    { name: 'Medio', skill: 8, depth: 6, fb: 2 },
-    { name: 'Difícil', skill: 14, depth: 10, fb: 3 },
-    { name: 'Experto', skill: 20, time: 1000, fb: 3 }
+    { name: 'Medio', skill: 2, depth: 4, rnd: 0.08, fb: 2 },
+    { name: 'Difícil', skill: 4, depth: 5, rnd: 0.04, fb: 3 },
+    { name: 'Experto', skill: 8, depth: 8, fb: 3 }
   ];
   let cpuLevel = 1, gameSerial = 0, sf = null, sfReady = null, sfListener = null, sfFailed = !ENGINE_URL;
   try { const l = Number(localStorage.getItem('chaskiboom.level')); if (l >= 0 && l < LEVELS.length) cpuLevel = l; } catch (_) {}
