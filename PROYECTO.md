@@ -192,6 +192,11 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   como O-O. Con el análisis hecho muestra la clasificación. Tocar una jugada = `viewAt(n)` (la última, `goLive()`); la que
   se ve queda marcada y a la vista. `renderMoves(n)` se llama desde `updateHist()` y rehace la lista solo si cambian las
   jugadas, el juego de piezas o el análisis.
+- **Aviso fijo de partidas pendientes (v1.35, en dev):** en la pantalla inicial («¿Cómo querés jugar?») un recuadro fijo
+  `#pend` («Te toca en la partida contra X · vence en …» o «Te toca en N partidas online»; rojo con menos de 12 h) que abre
+  «Mis partidas». En el botón Online de la consola, un número (`#monBadge`) con las partidas en las que te toca.
+  `pendingGames()` / `updatePending()` usan las partidas del vigía (no la abierta); se actualizan con cada novedad y cada
+  minuto. Con la pantalla inicial a la vista, `turnSummary` no muestra el aviso de arriba (sería repetido).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 

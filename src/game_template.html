@@ -232,6 +232,16 @@ __PWA__
   /* Chat (solo en partidas online) */
   body:not(.online) .onlyonline { display: none !important; }
   #chatBtn { position: relative; margin-left: auto; font-weight: 600; }
+  /* partidas online en las que te toca: número en el botón Online y aviso fijo en la pantalla inicial */
+  #mon { position: relative; }
+  #monBadge { position: absolute; top: -7px; right: -7px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font: 600 12px/18px var(--body); }
+  #monBadge[hidden] { display: none; }
+  #pend { display: flex; align-items: center; gap: 10px; width: 100%; margin: 4px 0 16px; padding: 10px 12px; text-align: left; font: inherit; cursor: pointer;
+    background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; border-radius: 6px; }
+  #pend:hover { background: #f6ead0; }
+  #pend.late { background: #f6d2c8; border-color: #b8382b; }
+  #pend .t { flex: 1; min-width: 0; font-weight: 600; line-height: 1.25; }
+  #pend .go { flex: none; padding: 5px 10px; border-radius: 4px; background: #2a1d10; color: #f0e3c4; white-space: nowrap; }
   #chatBadge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font: 600 12px/18px var(--body); }
   #chat { position: fixed; z-index: 15; right: 16px; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100% - 32px)); height: min(460px, 60vh);
     display: flex; flex-direction: column; background: #221b28; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0,0,0,.5); }
@@ -340,7 +350,7 @@ __PWA__
   <div class="more" id="more">
   <div class="seg" role="group" aria-label="Modo de juego">
     <button id="mcpu" aria-pressed="true">Contra la CPU</button>
-    <button id="mon" aria-pressed="false">Online</button>
+    <button id="mon" aria-pressed="false">Online<span id="monBadge" hidden></span></button>
   </div>
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
@@ -1651,8 +1661,14 @@ const SOUNDS = __SOUNDS__;
     showModal('ChaskiBoom Battle Chess', '¿Cómo querés jugar?', [
       { label: 'Contra la CPU', primary: true, onClick: () => { setMode(true); drawColors(chooseMode); } },
       { label: 'Online', onClick: openLobby }
-    ], { logo: true });
+    ], { logo: true, node: pendEl });
+    updatePending();
   }
+  // aviso fijo de la pantalla inicial: lo actualiza updatePending() a medida que llegan las partidas vigiladas
+  const pendEl = document.createElement('button');
+  pendEl.type = 'button'; pendEl.id = 'pend'; pendEl.hidden = true;
+  pendEl.innerHTML = '<span class="t"></span><span class="go">Ver partidas</span>';
+  pendEl.addEventListener('click', () => { closeModal(); openLobby(); });
 
   /* Sorteo de colores al comenzar cada partida.
      El tablero no se toca hasta que se aprieta Comenzar: con Cancelar queda la partida anterior como estaba
@@ -2922,8 +2938,33 @@ const SOUNDS = __SOUNDS__;
   /* --- Resumen al abrir la app (o al volver después de un rato): «Te toca en 2 partidas · una vence en 4 h».
      Cuenta las partidas vigiladas (no la abierta) donde te toca mover o comenzar; espera a tenerlas todas leídas.
      «Ver partida» lleva a la que vence primero. En rojo si alguna vence en menos de 12 h. */
+  // partidas vigiladas (no la abierta) en las que te toca mover o comenzar, la que vence primero adelante
+  function pendingGames() {
+    return Object.keys(watch.games).map(id => [id, watch.games[id].prev]).filter(([id, g]) => {
+      if (!g || !g.white || g.result || timeoutResult(g) || (online && online.id === id)) return false;
+      const c = g.white === me ? 'w' : 'b';
+      return g.started ? g.turn === c : c === 'w';
+    }).sort((a, b) => (a[1].deadline || Infinity) - (b[1].deadline || Infinity));
+  }
+  function updatePending() {
+    let L;
+    try { if (!watch.list) return; L = pendingGames(); } catch (_) { return; }   // todavía no arrancó la parte online
+    const bd = $('monBadge'); bd.hidden = !L.length; bd.textContent = L.length;
+    $('mon').title = L.length ? 'Te toca en ' + L.length + (L.length === 1 ? ' partida online' : ' partidas online') : '';
+    pendEl.hidden = !L.length;
+    if (!L.length) return;
+    const [, g] = L[0], left = g.deadline ? g.deadline - srvNow() : null;
+    const rival = (g.host.uid === me ? g.guest && g.guest.name : g.host.name) || 'tu rival';
+    let t = L.length === 1 ? 'Te toca en la partida contra ' + rival : 'Te toca en ' + L.length + ' partidas online';
+    if (left !== null) t += ' · ' + (L.length === 1 ? 'vence' : 'una vence') + ' en ' + leftTxt(left);
+    pendEl.querySelector('.t').textContent = t;
+    pendEl.classList.toggle('late', left !== null && left < 12 * 3600e3);
+  }
+  setInterval(updatePending, 60000);   // el tiempo que queda
+
   let summaryDue = true;
   function turnSummary() {
+    updatePending();
     if (!summaryDue || !watch.list) return;
     const ws = Object.keys(watch.games).map(id => [id, watch.games[id].prev]);
     if (ws.some(([, g]) => !g)) return;   // todavía faltan leer
@@ -2939,6 +2980,7 @@ const SOUNDS = __SOUNDS__;
     const rival = (g.host.uid === me ? g.guest && g.guest.name : g.host.name) || 'tu rival';
     let t = L.length === 1 ? 'Te toca en la partida contra ' + rival : 'Te toca en ' + L.length + ' partidas';
     if (left !== null) t += ' · ' + (L.length === 1 ? 'vence' : 'una vence') + ' en ' + leftTxt(left);
+    if (pendEl.isConnected && !modal.hidden) return;   // la pantalla inicial ya lo muestra fijo
     showOther(id, t, false, { raw: true, late: left !== null && left < 12 * 3600e3 });
   }
   document.addEventListener('visibilitychange', () => {
