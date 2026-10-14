@@ -210,6 +210,20 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   tablero, a la altura que no tapa el origen ni el destino (`placeConfirm`, prueba franjas desde el medio; en 3D proyecta
   las casillas con la cámara). Sí la envía (en 2D aterriza sin vuelo, `dragDrop`); Cancelar o Esc la vuelve atrás sin
   dejar nada seleccionado. Se cancela sola al terminar la partida, salir de ella o revisar el historial.
+- **Blitz y Rápida online (en dev):** al desafiar se elige el modo: Blitz 3 min, 3+2, 5 min; Rápida 10 min, 10+5, 15+10;
+  correspondencia 1/3/7 días o sin límite (localStorage `chaskiboom.mode`: `3+2`, `d3`…; migra el viejo `chaskiboom.perMove`).
+  Bala quedó afuera hasta medir cuánto pesa la conexión. En la partida: `tc = { base, inc }` (ms) y `clock = { w, b }`, lo que
+  le quedaba a cada uno en `lastMoveAt` (hora del servidor). Al que le toca se le descuenta lo que pasó desde ahí
+  (`clockLeft`), así los dos ven el mismo reloj. Quien juega escribe en el mismo update su reloj menos lo usado más el
+  incremento. Los relojes arrancan después de la primera jugada de cada uno; si alguno no la hace en 30 s, la partida se
+  anula (`aborted`). La bandera se reclama con `timeoutResult`/`claimTimeout` (en el tic de 200 ms, medio segundo de margen).
+  Con la bandera caída no se puede jugar. Si el rival se desconecta (presencia `online/<uid>`) más de 30 s, cartel «Tu
+  rival se fue» con Reclamar la victoria (`left`) / Esperar (`checkGone`); si vuelve, se cierra. En Blitz no hay peleas 3D
+  (captura rápida); en Rápida sí, y la pelea corre en el reloj del que la mira. Premoves habilitados en las partidas con reloj.
+  El mensaje del desafío dice el modo («…a una partida Blitz (3+2) de ChaskiBoom Battle Chess…», `modeName`); «Mis partidas»
+  muestra la etiqueta (`modeTag`, «3+2»). La revancha hereda el modo (`gameMode`). Reglas nuevas: `tc`, `clock` (no puede
+  subir más que el incremento), `lastMoveAt` (= `now`), y `result` acepta `timeout` con reloj, `aborted` y `left` solo si
+  corresponde. No se pudieron probar las reglas en el emulador (no se puede bajar en la nube). Prueba con mock: `test_tc.py`.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
@@ -266,6 +280,10 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **Pegar `database.rules.json` en la consola de Firebase antes de probar Blitz/Rápida** (reglas de `tc`, `clock`,
+  `lastMoveAt` y los nuevos resultados). Probar con dos dispositivos: bandera, anulación a los 30 s, rival que se va.
+- Bala (1, 1+1, 2+1) y «Más controles de tiempo», después de medir el retraso de la conexión.
 
 - **Pegar `database.rules.json` en la consola de Firebase antes de probar v1.30** (reglas de `perMove`, `deadline` y `result`).
   Sin eso el vencimiento igual se registra, pero sin validar que el plazo haya pasado. Probar con dos dispositivos a 1 día.

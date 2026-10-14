@@ -46,9 +46,23 @@
           ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid) && (!data.exists() || newData.parent().child('ply').val() !== data.parent().child('ply').val())",
           ".validate": "newData.isNumber() && newData.parent().child('perMove').val() > 0 && newData.val() <= now + newData.parent().child('perMove').val() + 300000"
         },
+        "tc": {
+          ".write": "auth != null && !data.exists() && newData.parent().child('host/uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['base', 'inc']) && ((newData.child('base').val() === 180000 && (newData.child('inc').val() === 0 || newData.child('inc').val() === 2000)) || (newData.child('base').val() === 300000 && newData.child('inc').val() === 0) || (newData.child('base').val() === 600000 && (newData.child('inc').val() === 0 || newData.child('inc').val() === 5000)) || (newData.child('base').val() === 900000 && newData.child('inc').val() === 10000))"
+        },
+        "clock": {
+          "$c": {
+            ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid || (!data.exists() && newData.parent().parent().child('host/uid').val() === auth.uid))",
+            ".validate": "($c === 'w' || $c === 'b') && newData.isNumber() && newData.val() >= 0 && ((!data.exists() && newData.val() <= newData.parent().parent().child('tc/base').val()) || (data.exists() && newData.val() <= data.val() + newData.parent().parent().child('tc/inc').val() + 1000))"
+          }
+        },
+        "lastMoveAt": {
+          ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid)",
+          ".validate": "newData.val() === now"
+        },
         "result": {
           ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid) && !data.exists()",
-          ".validate": "newData.hasChildren(['winner', 'reason']) && ((newData.child('reason').val() !== 'timeout' && newData.child('reason').val() !== 'timeoutDraw') || (root.child('games/' + $g + '/deadline').val() < now && ((newData.child('reason').val() === 'timeout' && newData.child('winner').val() !== 'draw' && newData.child('winner').val() !== root.child('games/' + $g + '/turn').val()) || (newData.child('reason').val() === 'timeoutDraw' && newData.child('winner').val() === 'draw'))))"
+          ".validate": "newData.hasChildren(['winner', 'reason']) && ((newData.child('reason').val() !== 'timeout' && newData.child('reason').val() !== 'timeoutDraw' && newData.child('reason').val() !== 'aborted' && newData.child('reason').val() !== 'left') || ((newData.child('reason').val() === 'timeout' || newData.child('reason').val() === 'timeoutDraw') && ((!root.child('games/' + $g + '/tc').exists() && root.child('games/' + $g + '/deadline').val() < now) || (root.child('games/' + $g + '/tc').exists() && root.child('games/' + $g + '/lastMoveAt').val() + root.child('games/' + $g + '/clock/' + root.child('games/' + $g + '/turn').val()).val() < now)) && ((newData.child('reason').val() === 'timeout' && newData.child('winner').val() !== 'draw' && newData.child('winner').val() !== root.child('games/' + $g + '/turn').val()) || (newData.child('reason').val() === 'timeoutDraw' && newData.child('winner').val() === 'draw'))) || (newData.child('reason').val() === 'aborted' && newData.child('winner').val() === 'draw' && root.child('games/' + $g + '/tc').exists() && root.child('games/' + $g + '/ply').val() < 2 && root.child('games/' + $g + '/lastMoveAt').val() < now - 30000) || (newData.child('reason').val() === 'left' && root.child('games/' + $g + '/tc').exists() && ((root.child('games/' + $g + '/white').val() === auth.uid && newData.child('winner').val() === 'w' && !root.child('games/' + $g + '/online/' + root.child('games/' + $g + '/black').val()).exists()) || (root.child('games/' + $g + '/black').val() === auth.uid && newData.child('winner').val() === 'b' && !root.child('games/' + $g + '/online/' + root.child('games/' + $g + '/white').val()).exists()))))"
         },
         "$other": {
           ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid || root.child('games/' + $g + '/host/uid').val() === auth.uid)"
