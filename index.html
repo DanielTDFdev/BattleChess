@@ -179,8 +179,8 @@
   #lbGames .who span.mine { color: var(--torch); }
   #lbGames .who span.late { color: #ff9a8a; }
   #lbGames .tag { flex: none; font-size: 12px; font-weight: 600; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
-  .tPick { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tPick .lbl { width: 100%; font-size: 14px; color: var(--muted); }
+  .tPick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tPick .lbl { width: 100%; font-size: 14px; color: var(--muted); margin-top: 4px; }
   .tPick button { flex: 1; padding: 6px 8px; font-size: 15px; white-space: nowrap; }
   .tPick button[aria-pressed="true"] { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   .pbar .net { width: 8px; height: 8px; border-radius: 50%; background: #6b6375; flex: none; }
@@ -361,7 +361,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.37</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.38</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -421,7 +421,11 @@
       <label class="fld" for="nick">Tu apodo
         <input id="nick" maxlength="20" autocomplete="nickname" placeholder="Por ejemplo, Daniel">
       </label>
-      <div class="tPick" id="tPick" role="group" aria-label="Tiempo por jugada"><span class="lbl">Tiempo por jugada</span><button data-d="1">1 día</button><button data-d="3">3 días</button><button data-d="7">7 días</button><button data-d="0">Sin límite</button></div>
+      <div class="tPick" id="tPick" role="group" aria-label="Tipo de partida">
+        <span class="lbl">⚡ Blitz</span><button data-m="3+0">3 min</button><button data-m="3+2">3 + 2</button><button data-m="5+0">5 min</button>
+        <span class="lbl">⏱ Rápida</span><button data-m="10+0">10 min</button><button data-m="10+5">10 + 5</button><button data-m="15+10">15 + 10</button>
+        <span class="lbl">✉ Por correspondencia</span><button data-m="d1">1 día</button><button data-m="d3">3 días</button><button data-m="d7">7 días</button><button data-m="d0">Sin límite</button>
+      </div>
       <p id="lbTerms" hidden></p>
       <button id="lbCreate" class="primary wide">Desafiar a un amigo</button>
       <h3>Mis partidas</h3>
@@ -1298,7 +1302,7 @@ const SOUNDS = {
   // partida por correspondencia (con plazo por jugada): cada jugada se confirma antes de enviarla.
   // Premoves solo contra la CPU (más adelante, también en las online con reloj corto).
   const isCorr = () => !!(online && online.g && online.g.perMove);
-  const canPremove = () => started && !isOver() && vsCpu && !online && chess.turn() !== localColor;
+  const canPremove = () => started && !isOver() && ((vsCpu && !online) || isTimed()) && chess.turn() !== localColor;
   // la posición actual como si movieras vos (para saber a dónde puede ir cada pieza)
   function premovePos() {
     const f = chess.fen().split(' ');
@@ -1731,6 +1735,8 @@ const SOUNDS = {
   }
 
   async function play_move(from, to, opt = {}) {
+    // con reloj: si se te acabó el tiempo ya no podés jugar (se reclama la derrota)
+    if (!opt.remote && isTimed() && timeoutResult(online.g)) { claimTimeout(online.id, online.g); caption('Se te acabó el tiempo'); select(null); return; }
     clockFlush();   // el tiempo hasta acá es del que mueve
     if (is2D) return move2d(from, to, opt);
     busy = true;
@@ -1752,7 +1758,7 @@ const SOUNDS = {
       delete units[capSq];
       extra.add(D);
       skipping = false;
-      if ($('fights').checked) await fight(A, D); else await quickCapture(A, D);
+      if ($('fights').checked && !(isTimed() && online.g.tc.base < 600000)) await fight(A, D); else await quickCapture(A, D);   // en Blitz, sin peleas
       $('skip').hidden = true;
       timeScale = 1;
       unghostAll();
@@ -2026,8 +2032,10 @@ const SOUNDS = {
     st.classList.toggle('alert', chess.in_check());
     if (ended && ended.reason === 'resign') st.textContent = 'Abandonan ' + art(opp(ended.result)) + '. Ganan ' + art(ended.result);
     else if (ended && ended.reason === 'agreed') st.textContent = 'Tablas de común acuerdo';
-    else if (ended && ended.reason === 'timeout') st.textContent = 'Se venció el plazo de ' + art(opp(ended.result)) + '. Ganan ' + art(ended.result);
-    else if (ended && ended.reason === 'timeoutDraw') st.textContent = 'Tablas: plazo vencido sin material para ganar';
+    else if (ended && ended.reason === 'timeout') st.textContent = (isTimed() ? 'Se acabó el tiempo de ' : 'Se venció el plazo de ') + art(opp(ended.result)) + '. Ganan ' + art(ended.result);
+    else if (ended && ended.reason === 'timeoutDraw') st.textContent = isTimed() ? 'Tablas: se acabó el tiempo sin material para ganar' : 'Tablas: plazo vencido sin material para ganar';
+    else if (ended && ended.reason === 'aborted') st.textContent = 'Partida anulada';
+    else if (ended && ended.reason === 'left') st.textContent = 'Se fueron ' + art(opp(ended.result)) + '. Ganan ' + art(ended.result);
     else if (chess.in_checkmate()) st.textContent = 'Jaque mate. Ganan las ' + other;
     else if (chess.in_stalemate()) st.textContent = 'Tablas por ahogado';
     else if (chess.in_threefold_repetition()) st.textContent = 'Tablas por repetición';
@@ -2241,10 +2249,14 @@ const SOUNDS = {
   setInterval(() => {
     clockFlush();
     const g = online && online.g, pm = g && g.perMove;
+    if (g && g.tc && !ended) { if (timeoutResult(g)) claimTimeout(online.id, g); checkGone(g); }
     [['pBot', localColor], ['pTop', opp(localColor)]].forEach(([id, c]) => {
       const el = $(id).querySelector('.clock');
       let t = fmt(times[c]), late = false, title = '';
-      if (pm) {
+      if (g && g.tc) {
+        const left = g.result && /^timeout/.test(g.result.reason) && g.turn === c ? 0 : clockLeft(g, c);
+        t = fmtClock(left); late = left < 20000 && !g.result && !ended; title = modeTitle(g);
+      } else if (pm) {
         // partida por correspondencia: al que le toca, lo que le queda; al otro, el plazo por jugada
         title = plazoTxt(pm) + ' por jugada';
         if (g.started && !g.result && !ended && g.deadline && g.turn === c) {
@@ -2385,7 +2397,7 @@ const SOUNDS = {
     if (result !== 'draw') sfx((vsCpu || online) && result !== localColor ? 'lose' : 'win', 0, { exact: true, vol: 0.8 });
     const moves = Math.max(1, Math.ceil(chess.history().length / 2));
     const mv = moves + (moves === 1 ? ' movimiento' : ' movimientos');
-    const how = reason === 'mate' ? 'por jaque mate' : reason === 'timeout' ? 'por tiempo' : 'por abandono';
+    const how = reason === 'mate' ? 'por jaque mate' : reason === 'timeout' ? 'por tiempo' : reason === 'left' ? 'porque tu rival se fue' : 'por abandono';
     const oppN = online && online.oppName || 'Tu rival';
     const again = online ? [{ label: 'Revancha', primary: true, onClick: offerRematch }, { label: 'Ver el tablero' }]
                          : [{ label: 'Nueva partida', primary: true, onClick: () => $('newg').click() }, { label: 'Ver el tablero' }];
@@ -2393,13 +2405,16 @@ const SOUNDS = {
     if (result === 'draw') {
       const why = { agreed: 'Los dos jugadores acordaron tablas.', stalemate: 'Tablas por ahogado: el bando que mueve no tiene jugadas legales y no está en jaque.',
                     repetition: 'Tablas por triple repetición de la posición.', material: 'Tablas: no queda material suficiente para dar mate.', rule50: 'Tablas por la regla de los 50 movimientos.',
-                    timeoutDraw: online && online.g && online.g.turn === localColor ? 'Se venció el plazo de tu jugada, pero a ' + oppN + ' solo le queda el rey y no puede darte mate.'
-                                 : 'Se venció el plazo de ' + oppN + ', pero solo te queda el rey y no podés dar mate.' }[reason];
+                    timeoutDraw: online && online.g && online.g.turn === localColor ? (isTimed() ? 'Se te acabó el tiempo' : 'Se venció el plazo de tu jugada') + ', pero a ' + oppN + ' solo le queda el rey y no puede darte mate.'
+                                 : (isTimed() ? 'A ' + oppN + ' se le acabó el tiempo' : 'Se venció el plazo de ' + oppN) + ', pero solo te queda el rey y no podés dar mate.',
+                    aborted: 'Partida anulada: ' + (online && online.g && online.g.turn === localColor ? 'no hiciste' : oppN + ' no hizo') + ' la primera jugada en 30 segundos. No cuenta para nadie.' }[reason];
+      if (reason === 'aborted') { showModal('Partida anulada', why, again); return; }
       showModal('Tablas', why + ' La partida duró ' + mv + '.', again);
     } else if (vsCpu || online) {
       // Cada jugador ve su propio cartel (en el modo online, cada dispositivo mostrará el suyo)
-      if (result === localColor) showModal('¡Felicitaciones!', 'Ganaste ' + how + ' en ' + mv + '.' + (reason === 'timeout' ? ' ' + oppN + ' no jugó dentro del plazo.' : ''), again, { img: 'win' });
-      else showModal('Derrota', 'Perdés esta partida en ' + mv + ' (' + how + ').' + (reason === 'timeout' ? ' Se venció el plazo para tu jugada.' : ''), again, { img: 'lose' });
+      const tm = isTimed();
+      if (result === localColor) showModal('¡Felicitaciones!', 'Ganaste ' + how + ' en ' + mv + '.' + (reason === 'timeout' ? ' ' + oppN + (tm ? ' se quedó sin tiempo.' : ' no jugó dentro del plazo.') : ''), again, { img: 'win' });
+      else showModal('Derrota', 'Perdés esta partida en ' + mv + ' (' + (reason === 'left' ? 'te fuiste de la partida' : how) + ').' + (reason === 'timeout' ? (tm ? ' Se te acabó el tiempo.' : ' Se venció el plazo para tu jugada.') : ''), again, { img: 'lose' });
     } else {
       const W = sidePl(result), L = sidePl(opp(result));
       showModal('¡Felicitaciones, ' + W + '!', 'Ganan ' + how + ' en ' + mv + '. ' + Art(opp(result)) + ' pierden esta partida en ' + mv + '.', again, { img: 'win' });
@@ -2912,13 +2927,53 @@ const SOUNDS = {
     if (h >= 1) return Math.floor(h) + ' h ' + Math.floor(h * 60 % 60) + ' min';
     return Math.max(1, Math.ceil(h * 60)) + ' min';
   }
-  let perMovePref = (() => { try { const v = localStorage.getItem('chaskiboom.perMove'); return v !== null && PLAZOS.includes(+v) ? +v : 0; } catch (_) { return 0; } })();
-  function paintPlazo() { $('tPick').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.d === perMovePref))); }
+  /* --- Modos de juego: Blitz y Rápida con reloj (tc = { base, inc } en ms) o correspondencia (perMove) ---
+     Con reloj: clock = { w, b } es lo que le quedaba a cada uno en lastMoveAt (hora del servidor); al que le toca se le
+     descuenta lo que pasó desde ahí. Los relojes arrancan después de la primera jugada de cada uno; si alguno no la hace
+     en 30 s, la partida se anula. Quien juega descuenta su tiempo y suma el incremento en el mismo update de la jugada. */
+  const TCS = { '3+0': [3, 0], '3+2': [3, 2], '5+0': [5, 0], '10+0': [10, 0], '10+5': [10, 5], '15+10': [15, 10] };
+  const ABORT_MS = 30000, GONE_MS = 30000;
+  const tcCat = tc => tc.base < 600000 ? 'Blitz' : 'Rápida';
+  const tcShort = tc => (tc.base / 60000) + (tc.inc ? '+' + tc.inc / 1000 : ' min');
+  // «Blitz (3+2)», «por correspondencia (3 días por jugada)», «sin límite de tiempo»
+  const modeName = g => g.tc ? tcCat(g.tc) + ' (' + tcShort(g.tc) + ')' : g.perMove ? 'por correspondencia (' + plazoTxt(g.perMove) + ' por jugada)' : 'sin límite de tiempo';
+  const modeTag = g => g.tc ? (g.tc.base / 60000) + '+' + g.tc.inc / 1000 : plazoTag(g.perMove);
+  const modeTitle = g => g.tc ? tcCat(g.tc) + ': ' + (g.tc.base / 60000) + ' min por jugador' + (g.tc.inc ? ' y ' + g.tc.inc / 1000 + ' s más por jugada' : '')
+                               : g.perMove ? plazoTxt(g.perMove) + ' por jugada' : 'Sin límite de tiempo';
+  // lo que se guarda en la partida al crearla (también para la revancha)
+  function modeData(m) {
+    if (m[0] === 'd') return { perMove: (+m.slice(1) || 0) * DAY };
+    const [b, i] = TCS[m], base = b * 60000;
+    return { tc: { base, inc: i * 1000 }, clock: { w: base, b: base } };
+  }
+  const gameMode = g => g.tc ? { tc: g.tc, clock: { w: g.tc.base, b: g.tc.base } } : { perMove: g.perMove || 0 };
+  let modePref = (() => {
+    try {
+      const m = localStorage.getItem('chaskiboom.mode'); if (m && (TCS[m] || /^d[0137]$/.test(m))) return m;
+      const v = localStorage.getItem('chaskiboom.perMove'); if (v !== null && PLAZOS.includes(+v)) return 'd' + v;   // antes solo había plazos
+    } catch (_) {}
+    return 'd0';
+  })();
+  function paintMode() { $('tPick').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === modePref))); }
   $('tPick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-    perMovePref = +b.dataset.d; paintPlazo();
-    try { localStorage.setItem('chaskiboom.perMove', String(perMovePref)); } catch (_) {}
+    modePref = b.dataset.m; paintMode();
+    try { localStorage.setItem('chaskiboom.mode', modePref); } catch (_) {}
   }));
-  paintPlazo();
+  paintMode();
+  const isTimed = () => !!(online && online.g && online.g.tc);
+  // lo que le queda a c (ms) en una partida con reloj, según la hora del servidor
+  function clockLeft(g, c) {
+    const cl = g.clock && typeof g.clock[c] === 'number' ? g.clock[c] : g.tc.base;
+    if (!g.started || g.result || g.turn !== c || (g.ply || 0) < 2 || !g.lastMoveAt) return cl;
+    return cl - (srvNow() - g.lastMoveAt);
+  }
+  // reloj de partida rápida: 2:59, 0:45, y 9.4 en los últimos 10 s
+  function fmtClock(ms) {
+    ms = Math.max(0, ms);
+    if (ms < 10000) return (Math.floor(ms / 100) / 10).toFixed(1);
+    const s = Math.ceil(ms / 1000);
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
   // ¿solo le queda el rey a ese color? (en la posición guardada en la partida)
   function onlyKing(g, c) {
     const board = (g.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR').split(' ')[0];
@@ -2927,6 +2982,13 @@ const SOUNDS = {
   }
   // resultado que corresponde si al que le toca se le venció el plazo (5 s de margen por la diferencia de relojes)
   function timeoutResult(g) {
+    if (g && g.tc) {
+      if (!g.started || g.result || !g.turn || !g.lastMoveAt) return null;
+      if ((g.ply || 0) < 2) return srvNow() - g.lastMoveAt > ABORT_MS + 1000 ? { winner: 'draw', reason: 'aborted' } : null;
+      if (clockLeft(g, g.turn) > -500) return null;   // medio segundo de margen por la diferencia de relojes
+      const w = opp(g.turn);
+      return onlyKing(g, w) ? { winner: 'draw', reason: 'timeoutDraw' } : { winner: w, reason: 'timeout' };
+    }
     if (!g || !g.perMove || !g.started || g.result || !g.deadline || !g.turn || srvNow() < g.deadline + 5000) return null;
     const win = opp(g.turn);
     return onlyKing(g, win) ? { winner: 'draw', reason: 'timeoutDraw' } : { winner: win, reason: 'timeout' };
@@ -2934,7 +2996,7 @@ const SOUNDS = {
   const claimed = {};
   function claimTimeout(id, g) {
     const r = timeoutResult(g);
-    if (!r || !db || (claimed[id] && Date.now() - claimed[id] < 60000)) return r;
+    if (!r || !db || (claimed[id] && Date.now() - claimed[id] < (g.tc ? 2000 : 60000))) return r;
     claimed[id] = Date.now();
     db.ref('games/' + id + '/result').transaction(cur => cur || r).catch(e => console.warn('plazo', e));
     return r;
@@ -3081,9 +3143,9 @@ const SOUNDS = {
         if (g.perMove && g.deadline) { const left = g.deadline - srvNow(); state += ' · ' + (mine ? 'vence en ' : 'tiene ') + leftTxt(left); late = mine && left < 12 * 3600e3; }
       }
       const li = document.createElement('li');
-      li.innerHTML = '<div class="who"><b></b><span></span></div>' + (g.perMove !== undefined ? '<span class="tag"></span>' : '') + '<button>Abrir</button>';
+      li.innerHTML = '<div class="who"><b></b><span></span></div>' + (g.perMove !== undefined || g.tc ? '<span class="tag"></span>' : '') + '<button>Abrir</button>';
       li.querySelector('b').textContent = oppName ? 'Contra ' + oppName : 'Partida ' + id;
-      if (g.perMove !== undefined) { const t = li.querySelector('.tag'); t.textContent = plazoTag(g.perMove); t.title = g.perMove ? plazoTxt(g.perMove) + ' por jugada' : 'Sin límite de tiempo'; }
+      if (g.perMove !== undefined || g.tc) { const t = li.querySelector('.tag'); t.textContent = modeTag(g); t.title = modeTitle(g); }
       const sp = li.querySelector('span'); sp.textContent = state + ' · ' + (g.ply || 0) + (g.ply === 1 ? ' jugada' : ' jugadas'); if (mine) sp.className = late ? 'mine late' : 'mine';
       li.querySelector('button').addEventListener('click', () => { lobby.hidden = true; enterOnline(id); });
       // ✕: cancelar un desafío sin aceptar (se borra) o quitar de tu lista una terminada (al rival le queda). Las en curso, no.
@@ -3124,7 +3186,7 @@ const SOUNDS = {
     const name = askNick(); if (!name) return;
     try {
       await fbInit();
-      const id = await createGame(name, { perMove: perMovePref * DAY });
+      const id = await createGame(name, modeData(modePref));
       enterOnline(id);
     } catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo crear la partida. Intentá de nuevo.'; }
   });
@@ -3140,10 +3202,9 @@ const SOUNDS = {
 
   function showWaiting(id) {
     const url = location.href.split('#')[0] + '#' + id;
-    const pm = online && online.id === id && online.g ? online.g.perMove : undefined;
+    const g = online && online.id === id && online.g;
     // el mensaje va entero en «text» (con el link al final): WhatsApp a veces descarta el texto si el link va aparte
-    const msg = (getNick() || 'Un amigo') + ' te desafía a una partida de ChaskiBoom Battle Chess'
-      + (pm ? ' a ' + plazoTxt(pm) + ' por jugada' : pm === 0 ? ' sin límite de tiempo' : '')
+    const msg = (getNick() || 'Un amigo') + ' te desafía a una partida ' + (g ? modeName(g) + ' ' : '') + 'de ChaskiBoom Battle Chess'
       + '. Aceptá entrando a este link (el desafío vence en 24 h): ' + url;
     $('lbLink').value = url;
     $('lbMain').hidden = true; $('lbWait').hidden = false; $('lbMsg').textContent = '';
@@ -3173,7 +3234,7 @@ const SOUNDS = {
       if (inviteExpired(g)) { showModal('Desafío vencido', 'Este desafío venció: duran 24 horas. Pedile a ' + (g.host.name || 'tu amigo') + ' que te mande uno nuevo.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
       if (g.guest) { showModal('Partida completa', 'Esta partida ya tiene dos jugadores.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
       let name = getNick();
-      if (!name || g.perMove) { name = await promptNick(g.host.name, g.perMove); if (!name) return; }
+      if (!name || g.perMove || g.tc) { name = await promptNick(g.host.name, g); if (!name) return; }
       // el primero que entra se queda con el lugar; el sorteo de colores lo hace quien se une
       const tx = await ref.child('guest').transaction(cur => cur ? undefined : { uid: me, name });
       if (!tx.committed) { showModal('Partida completa', 'Otra persona entró a esta partida antes que vos.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
@@ -3184,13 +3245,15 @@ const SOUNDS = {
     startOnline(id, ref);
   }
 
-  function promptNick(hostName, perMove) {
+  function promptNick(hostName, g) {
+    const terms = g.tc ? 'Partida ' + modeName(g) + ': ' + (g.tc.base / 60000) + ' minutos para cada uno' + (g.tc.inc ? ' y ' + g.tc.inc / 1000 + ' segundos más por jugada' : '') + '. Si se te acaba el tiempo, perdés la partida.'
+                : g.perMove ? 'Partida por correspondencia: ' + plazoTxt(g.perMove) + ' por jugada. Si se te vence el plazo, perdés la partida.' : '';
     return new Promise(res => {
       lbJoining = true;
       $('lbMain').hidden = false; $('lbWait').hidden = true;
       $('tPick').hidden = true;
-      $('lbTerms').hidden = !perMove;
-      $('lbTerms').textContent = perMove ? 'Partida por correspondencia: ' + plazoTxt(perMove) + ' por jugada. Si se te vence el plazo, perdés la partida.' : '';
+      $('lbTerms').hidden = !terms;
+      $('lbTerms').textContent = terms;
       $('lbTitle').textContent = (hostName || 'Un amigo') + ' te desafía';
       $('lbCreate').textContent = 'Aceptar el desafío';
       $('lbGames').parentElement.querySelector('h3').hidden = true; $('lbGames').hidden = true;
@@ -3277,8 +3340,9 @@ const SOUNDS = {
     // Cartel de inicio: lo toca quien juega con blancas
     if (!g.started && !g.result) {
       if (color === 'w' && modal.hidden) showModal('Partida contra ' + online.oppName, 'Te tocaron ' + art('w') + ': movés primero. '
-          + (g.perMove ? 'Cada uno tiene ' + plazoTxt(g.perMove) + ' por jugada; si se vence el plazo, se pierde la partida.' : 'Los relojes arrancan al comenzar.'),
-        [{ label: 'Comenzar', primary: true, onClick: () => { audioInit(); online.ref.update(g.perMove ? { started: true, deadline: srvNow() + g.perMove } : { started: true }); } }]);
+          + (g.tc ? 'Partida ' + modeName(g) + ': ' + (g.tc.base / 60000) + ' min para cada uno' + (g.tc.inc ? ' y ' + g.tc.inc / 1000 + ' s más por jugada' : '') + '. El reloj arranca después de la primera jugada de cada uno; la primera hay que hacerla en 30 s.'
+            : g.perMove ? 'Cada uno tiene ' + plazoTxt(g.perMove) + ' por jugada; si se vence el plazo, se pierde la partida.' : 'Los relojes arrancan al comenzar.'),
+        [{ label: 'Comenzar', primary: true, onClick: () => { audioInit(); online.ref.update(g.tc ? { started: true, lastMoveAt: NOW() } : g.perMove ? { started: true, deadline: srvNow() + g.perMove } : { started: true }); } }]);
       if (color === 'b') caption('Te tocaron ' + art('b') + '. Esperando que ' + online.oppName + ' toque Comenzar');
     }
     if (g.started && !started && online.loaded && color === 'b') news(online.oppName + ' comenzó la partida');
@@ -3335,6 +3399,26 @@ const SOUNDS = {
     notifyTurn();
   }
 
+  /* Con reloj: si el rival se desconecta y no vuelve en 30 s, se puede reclamar la victoria (como en lichess).
+     La conexión es la presencia games/<código>/online/<uid>, que Firebase borra cuando se corta. */
+  function checkGone(g) {
+    if (!online || !g.started || g.result || ended || (g.ply || 0) < 2 || !online.oppUid) return;
+    const on = !!(g.online && g.online[online.oppUid]);
+    if (on) {
+      online.goneAt = 0;
+      if (online.goneAsk) { online.goneAsk = false; if (!modal.hidden && $('mTitle').textContent === 'Tu rival se fue') { closeModal(); caption(online.oppName + ' volvió'); } }
+      return;
+    }
+    if (!online.goneAt) online.goneAt = Date.now();
+    if (online.goneAsk || Date.now() - online.goneAt < GONE_MS || !modal.hidden) return;
+    online.goneAsk = true;
+    news(online.oppName + ' se fue de la partida', { banner: false, sound: true });
+    showModal('Tu rival se fue', online.oppName + ' se desconectó hace más de 30 segundos. Podés reclamar la victoria o esperar a que vuelva.', [
+      { label: 'Reclamar la victoria', primary: true, onClick: () => { if (online && !ended) endGame(localColor, 'left'); } },
+      { label: 'Esperar', onClick: () => { if (online) { online.goneAt = Date.now(); online.goneAsk = false; } } }
+    ]);
+  }
+
   // Reproduce, de a una, las jugadas recibidas (espera a que termine cada animación o pelea)
   function pumpQueue() {
     if (!online || busy || !queue.length) {
@@ -3359,8 +3443,9 @@ const SOUNDS = {
     upd['times/' + mv.color] = Math.round(times[mv.color]);
     upd.lastMoveAt = NOW();
     upd.drawOffer = null;
-    const pm = online.g && online.g.perMove;
+    const pm = online.g && online.g.perMove, G = online.g;
     if (pm) upd.deadline = srvNow() + pm;
+    if (G && G.tc && n >= 2) upd['clock/' + mv.color] = Math.max(0, Math.round(clockLeft(G, mv.color) + G.tc.inc));
     online.ref.update(upd).catch(e => { console.error(e); caption('No se pudo enviar la jugada. Revisá tu conexión.'); });
     if (pm && !chess.game_over()) offerWhatsApp(pm);
   }
@@ -3378,7 +3463,7 @@ const SOUNDS = {
     if (!online) return;
     const prev = online;
     try {
-      const id = await createGame(prev.myName, { perMove: (prev.g && prev.g.perMove) || 0 });
+      const id = await createGame(prev.myName, gameMode(prev.g || {}));
       await prev.ref.update({ rematch: { id, by: me } });
       startOnline(id, db.ref('games/' + id));
       caption('Revancha propuesta. Esperando que ' + prev.oppName + ' acepte');
@@ -3896,7 +3981,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261014142026';
+  const BUILD = '20261014144410';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
