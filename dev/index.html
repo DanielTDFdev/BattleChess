@@ -3201,7 +3201,10 @@ const SOUNDS = {
     const abc = 'abcdefghjkmnpqrstuvwxyz23456789';
     let id = '';
     for (let i = 0; i < 6; i++) id += abc[Math.floor(Math.random() * abc.length)];
-    await db.ref('games/' + id).update(Object.assign({ host: { uid: me, name }, createdAt: NOW() }, extra || {}));
+    const data = Object.assign({ host: { uid: me, name }, createdAt: NOW() }, extra || {});
+    // las reglas dan permiso en clock/w y clock/b, no en clock: escribirlo como objeto daba PERMISSION_DENIED
+    if (data.clock) { data['clock/w'] = data.clock.w; data['clock/b'] = data.clock.b; delete data.clock; }
+    await db.ref('games/' + id).update(data);
     await db.ref('users/' + me + '/games/' + id).set({ updatedAt: NOW() });
     return id;
   }
@@ -3987,7 +3990,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261014214312';
+  const BUILD = '20261014233523';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json

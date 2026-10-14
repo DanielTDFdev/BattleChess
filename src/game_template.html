@@ -2784,7 +2784,10 @@ const SOUNDS = __SOUNDS__;
     const abc = 'abcdefghjkmnpqrstuvwxyz23456789';
     let id = '';
     for (let i = 0; i < 6; i++) id += abc[Math.floor(Math.random() * abc.length)];
-    await db.ref('games/' + id).update(Object.assign({ host: { uid: me, name }, createdAt: NOW() }, extra || {}));
+    const data = Object.assign({ host: { uid: me, name }, createdAt: NOW() }, extra || {});
+    // las reglas dan permiso en clock/w y clock/b, no en clock: escribirlo como objeto daba PERMISSION_DENIED
+    if (data.clock) { data['clock/w'] = data.clock.w; data['clock/b'] = data.clock.b; delete data.clock; }
+    await db.ref('games/' + id).update(data);
     await db.ref('users/' + me + '/games/' + id).set({ updatedAt: NOW() });
     return id;
   }
