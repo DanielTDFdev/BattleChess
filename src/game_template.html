@@ -278,6 +278,18 @@ __PWA__
   #upd button { background: #2a1d10; color: #f0e3c4; border-color: #7a5c43; white-space: nowrap; }
   #upd button.later { background: none; color: #7a5c43; }
   /* Aviso de mensaje del chat (con el chat cerrado): abajo, se toca para abrir el chat */
+  /* Correspondencia: confirmar la jugada antes de enviarla (la jugada se ve en el tablero 2D mientras tanto) */
+  #confirm { position: fixed; z-index: 38; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(460px, calc(100% - 24px));
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 2px;
+    border-radius: 6px; box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+  #confirm[hidden] { display: none; }
+  #confirm .t { flex: 1; min-width: 0; font-weight: 600; line-height: 1.25; }
+  #confirm button { white-space: nowrap; }
+  #confirm .ok { background: #2a1d10; color: #f0e3c4; border-color: #2a1d10; font-weight: 600; }
+  #confirm .no { background: none; color: #2a1d10; border-color: #7a5c43; }
+  body.wide #confirm { left: 12px; top: 12px; transform: none; width: 306px; flex-wrap: wrap; }   /* PC: sobre el logo */
+  body.wide #confirm .t { flex-basis: 100%; }
+  body.wide #confirm button { flex: 1; }
   #chatToast { position: fixed; z-index: 39; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); transform: translate(-50%, 12px); width: min(460px, calc(100% - 24px));
     display: flex; gap: 6px; align-items: baseline; padding: 9px 12px; background: #2b2233; color: var(--ink); border: 1px solid var(--torch); border-radius: 6px;
     box-shadow: 0 12px 30px rgba(0,0,0,.55); cursor: pointer; opacity: 0; transition: opacity .2s, transform .2s; }
@@ -420,6 +432,7 @@ __PWA__
   </form>
 </section>
 <div id="upd" hidden role="status" aria-live="polite"><span class="txt"></span><button class="go">Actualizar</button><button class="later">Después</button></div>
+<div id="confirm" hidden role="dialog" aria-live="assertive" aria-label="Confirmar la jugada"><span class="t"></span><button class="ok">Jugar</button><button class="no">Cambiar</button></div>
 <div id="chatToast" hidden role="status" aria-live="polite"><span class="n"></span><span class="t"></span></div>
 <div id="other" hidden role="status" aria-live="polite"><span class="txt"></span><button class="go">Ver partida</button><button class="x" aria-label="Cerrar">×</button></div>
 <div id="taunt" hidden aria-live="assertive"><span class="who"></span><span class="txt"></span></div>
@@ -867,7 +880,9 @@ const SOUNDS = __SOUNDS__;
      Durante el turno del rival (CPU u online) se puede anotar una jugada: tocar una pieza propia y su destino.
      Las casillas quedan en azul y la jugada se hace sola apenas te toca, si sigue siendo legal.
      Con un premove anotado, cualquier toque (otra casilla o la misma) lo cancela. */
-  const canPremove = () => started && !isOver() && (vsCpu || !!online) && chess.turn() !== localColor;
+  // partida por correspondencia (con plazo por jugada): sin premoves y cada jugada se confirma antes de enviarla
+  const isCorr = () => !!(online && online.g && online.g.perMove);
+  const canPremove = () => started && !isOver() && (vsCpu || !!online) && chess.turn() !== localColor && !isCorr();
   // la posición actual como si movieras vos (para saber a dónde puede ir cada pieza)
   function premovePos() {
     const f = chess.fen().split(' ');
@@ -881,6 +896,7 @@ const SOUNDS = __SOUNDS__;
     if (had) { if (msg) caption(msg); drawMarks(); }
   }
   function tapSquare(sq) {
+    if (pendingMove) return;   // esperando que confirme la jugada
     if (premove) { clearPremove('Premove cancelado'); return; }
     if (canPremove()) {
       const P = premovePos();
@@ -896,11 +912,47 @@ const SOUNDS = __SOUNDS__;
       drawMarks(); return;
     }
     if (busy || isOver() || notMyTurn()) return;
-    if (sq && selected && targets.some(m => m.to === sq)) { play_move(selected, sq); return; }
+    if (sq && selected && targets.some(m => m.to === sq)) { if (isCorr()) askConfirm(selected, sq); else play_move(selected, sq); return; }
     const pc = sq ? chess.get(sq) : null;
     if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
     else select(null);
   }
+  /* Confirmación (correspondencia): la jugada se muestra en el tablero (2D) y abajo un aviso con Jugar / Cambiar.
+     Jugar la envía; Cambiar (o Esc) la deshace y la pieza queda seleccionada para elegir otro destino. */
+  let pendingMove = null;
+  const confirmEl = $('confirm');
+  function askConfirm(from, to) {
+    const mv = chess.moves({ verbose: true }).find(m => m.from === from && m.to === to && (!m.promotion || m.promotion === 'q'));
+    if (!mv) return;
+    pendingMove = { from, to };
+    dragDrop = false;
+    const tmp = new Chess(chess.fen()); tmp.move({ from, to, promotion: 'q' });
+    if (is2D) { selected = null; targets = []; render2D({ pos: tmp, last: { from, to } }); }
+    else { selected = from; targets = [mv]; drawMarks(); }
+    confirmEl.querySelector('.t').textContent = '¿Jugás ' + sanEs(mv.san) + '?' + (online && online.oppName ? ' Se le envía a ' + online.oppName + '.' : '');
+    confirmEl.hidden = false;
+    caption('Confirmá la jugada o tocá Cambiar para elegir otra');
+    confirmEl.querySelector('.ok').focus();
+  }
+  function cancelConfirm(keepSel) {
+    if (!pendingMove) return;
+    const from = pendingMove.from;
+    pendingMove = null; confirmEl.hidden = true;
+    if (is2D) render2D();
+    if (keepSel && !isOver() && !notMyTurn()) select(from); else select(null);
+    if (!isOver()) updateStatus();
+  }
+  confirmEl.querySelector('.ok').addEventListener('click', () => {
+    if (!pendingMove) return;
+    const { from, to } = pendingMove;
+    pendingMove = null; confirmEl.hidden = true;
+    if (busy || isOver() || notMyTurn()) { if (is2D) render2D(); return; }
+    dragDrop = true;   // en 2D la pieza ya está en su destino: aterriza sin vuelo
+    play_move(from, to);
+  });
+  confirmEl.querySelector('.no').addEventListener('click', () => cancelConfirm(true));
+  window.addEventListener('keydown', e => { if (e.key === 'Escape' && pendingMove) cancelConfirm(true); });
+
   // se llama cuando termina una jugada: si te toca y hay un premove, se juega (o se descarta si ya no es legal)
   function tryPremove() {
     if (busy || viewPos || isOver() || notMyTurn()) return false;
@@ -1876,6 +1928,7 @@ const SOUNDS = __SOUNDS__;
 
   function endGame(result, reason, opt = {}) {
     if (ended) return;
+    cancelConfirm(false);
     ended = { result, reason };
     if (online && !opt.remote) online.ref.child('result').transaction(cur => cur || { winner: result, reason });
     premove = null; preSel = null; preTargets = [];
@@ -2094,6 +2147,7 @@ const SOUNDS = __SOUNDS__;
   let viewPly = 0;
   function viewAt(n) {
     if (busy) return;
+    cancelConfirm(false);
     const h = chess.history({ verbose: true });
     n = Math.max(0, Math.min(h.length, n));
     if (n === h.length) { goLive(); return; }
@@ -2199,7 +2253,7 @@ const SOUNDS = __SOUNDS__;
      anotar premoves. Si se suelta en otro lado vuelve a su casilla y queda seleccionada. */
   let drag2 = null, dragDrop = false, dragEnded = false;
   function canDrag(sq) {
-    if (!started || viewPos || premove || isOver()) return false;
+    if (!started || viewPos || premove || pendingMove || isOver()) return false;
     if (canPremove()) { const P = premovePos(), pc = P && P.get(sq); return !!pc && pc.color === localColor; }
     if (busy || notMyTurn()) return false;
     const pc = chess.get(sq); return !!pc && pc.color === chess.turn();
@@ -2697,6 +2751,7 @@ const SOUNDS = __SOUNDS__;
 
   function leaveOnline() {
     if (!online) return;
+    cancelConfirm(false);
     resetChat();
     online.ref.off();
     online.pres.remove().catch(() => {});
