@@ -167,7 +167,8 @@
   #lobby .link input { flex: 1; }
   #lobby .acct { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 3px; font-size: 14px; color: var(--muted); }
   #lobby .acct span { flex: 1; min-width: 0; }
-  #lobby .acct button { flex: none; }
+  #lobby .acct button { flex: none; display: inline-flex; align-items: center; gap: 8px; }
+  #lobby .acct .gLogo { width: 18px; height: 18px; flex: none; }
   #lbGames { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   #lbGames li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
   #lbGames li.empty { color: var(--muted); justify-content: center; }
@@ -361,7 +362,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.38</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.39</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -417,7 +418,7 @@
   <div class="card">
     <h2 id="lbTitle">Jugar online</h2>
     <div id="lbMain">
-      <div class="acct"><span id="acctTxt">Conectando…</span><button id="acctBtn">Entrar con Google</button></div>
+      <div class="acct"><span id="acctTxt">Conectando…</span><button id="acctBtn"><svg class="gLogo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Entrar con Google</button></div>
       <label class="fld" for="nick">Tu apodo
         <input id="nick" maxlength="20" autocomplete="nickname" placeholder="Por ejemplo, Daniel">
       </label>
@@ -3039,12 +3040,13 @@ const SOUNDS = {
   }
 
   /* --- Cuenta: anónima (solo este navegador) o con Google (las mismas partidas en todos tus dispositivos) --- */
+  const G_LOGO = '<svg class="gLogo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
   function acctUI() {
     const u = firebase.auth().currentUser;
     if (!u) return;
     if (u.isAnonymous) {
-      $('acctTxt').textContent = 'Sin cuenta: tus partidas quedan guardadas solo en este navegador.';
-      $('acctBtn').textContent = 'Entrar con Google';
+      $('acctTxt').textContent = 'Sin cuenta: tus partidas quedarán solo en este dispositivo.';
+      $('acctBtn').innerHTML = G_LOGO + 'Entrar con Google';
     } else {
       $('acctTxt').textContent = 'Conectado como ' + (u.displayName || u.email || 'usuario de Google') + '. Tus partidas están en todos tus dispositivos.';
       $('acctBtn').textContent = 'Salir';
@@ -3981,7 +3983,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261014144410';
+  const BUILD = '20261014161005';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
