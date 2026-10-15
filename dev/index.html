@@ -871,6 +871,7 @@ const SOUNDS = {
   "magic2": "../assets/sounds/magic2.mp3",
   "move_b": "../assets/sounds/move_b.mp3",
   "move_w": "../assets/sounds/move_w.mp3",
+  "short_in_time": "../assets/sounds/short_in_time.mp3",
   "sword1": "../assets/sounds/sword1.mp3",
   "sword2": "../assets/sounds/sword2.mp3",
   "sword3": "../assets/sounds/sword3.mp3",
@@ -1604,20 +1605,10 @@ const SOUNDS = {
     s.connect(g).connect(actx.destination);
     s.start(actx.currentTime + (opt.delay || 0));
   }
-  // aviso de poco tiempo en el reloj: dos pitidos cortos (sintetizados) y una vibración
+  // aviso de poco tiempo en el reloj (60 s): sonido short_in_time y vibración
   function lowTimeSfx() {
     try { if (navigator.vibrate) navigator.vibrate([120, 80, 120]); } catch (_) {}
-    if (!actx || !$('sound').checked) return;
-    if (actx.state !== 'running') actx.resume().catch(() => {});
-    keepPlay(false);
-    [0, 0.2].forEach(d => {
-      const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + d;
-      o.type = 'sine'; o.frequency.value = 880;
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(0.5, t0 + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
-      o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + 0.17);
-    });
+    sfx('short_in_time', 0, { exact: true });
   }
   const isKnight = u => u.type === 'n' || u.type === 'k';          // llevan armadura
   const isMale = u => u.type === 'n' || u.type === 'k' || u.type === 'r';
@@ -3378,7 +3369,7 @@ const SOUNDS = {
     const before = online.applied + queue.length;
     for (let i = before; i < moves.length; i++) queue.push(moves[i]);
     // la última jugada es del rival (las jugadas pares son de las blancas)
-    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó', { quiet: true });
+    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó', { quiet: !g.tc });   // con reloj suena el aviso: tu tiempo ya corre
     pumpQueue();
 
     // Ofertas de tablas
@@ -4009,7 +4000,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261015011005';
+  const BUILD = '20261015011330';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json

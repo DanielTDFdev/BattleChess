@@ -1187,20 +1187,10 @@ const SOUNDS = __SOUNDS__;
     s.connect(g).connect(actx.destination);
     s.start(actx.currentTime + (opt.delay || 0));
   }
-  // aviso de poco tiempo en el reloj: dos pitidos cortos (sintetizados) y una vibración
+  // aviso de poco tiempo en el reloj (60 s): sonido short_in_time y vibración
   function lowTimeSfx() {
     try { if (navigator.vibrate) navigator.vibrate([120, 80, 120]); } catch (_) {}
-    if (!actx || !$('sound').checked) return;
-    if (actx.state !== 'running') actx.resume().catch(() => {});
-    keepPlay(false);
-    [0, 0.2].forEach(d => {
-      const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + d;
-      o.type = 'sine'; o.frequency.value = 880;
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(0.5, t0 + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
-      o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + 0.17);
-    });
+    sfx('short_in_time', 0, { exact: true });
   }
   const isKnight = u => u.type === 'n' || u.type === 'k';          // llevan armadura
   const isMale = u => u.type === 'n' || u.type === 'k' || u.type === 'r';
@@ -2961,7 +2951,7 @@ const SOUNDS = __SOUNDS__;
     const before = online.applied + queue.length;
     for (let i = before; i < moves.length; i++) queue.push(moves[i]);
     // la última jugada es del rival (las jugadas pares son de las blancas)
-    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó', { quiet: true });
+    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó', { quiet: !g.tc });   // con reloj suena el aviso: tu tiempo ya corre
     pumpQueue();
 
     // Ofertas de tablas
