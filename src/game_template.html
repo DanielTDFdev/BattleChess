@@ -2961,7 +2961,7 @@ const SOUNDS = __SOUNDS__;
     const before = online.applied + queue.length;
     for (let i = before; i < moves.length; i++) queue.push(moves[i]);
     // la última jugada es del rival (las jugadas pares son de las blancas)
-    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó', { quiet: true, ms: g.tc ? 1500 : 0 });   // con reloj, corto
+    if (moves.length > before && ((moves.length - 1) % 2 === 0 ? 'w' : 'b') !== color && !g.result) news('¡Tu turno! ' + online.oppName + ' ya jugó', { quiet: true });
     pumpQueue();
 
     // Ofertas de tablas
@@ -3103,6 +3103,7 @@ const SOUNDS = __SOUNDS__;
   let awayQuiet = false;
   function news(text, opt = {}) {
     const banner = opt.banner !== false, quiet = !!opt.quiet;
+    if (!opt.ms && isTimed()) opt = Object.assign({}, opt, { ms: 1500 });   // con reloj, el cartel tapa el tablero: corto
     if (document.hidden) { awayNews = text; awayBanner = banner; awayQuiet = quiet; awayMs = opt.ms || 0; notifyTurn(); if (!quiet) sfx('check', 0, { exact: true }); return; }
     if (performance.now() - backAt < 20000) { backAt = -1e9; showNews(text, banner, quiet, opt.ms); }
     else if (opt.sound) sfx('check', 0, { exact: true });
@@ -3114,7 +3115,7 @@ const SOUNDS = __SOUNDS__;
     if (document.hidden || !db || performance.now() - hiddenAt < 10000) return;
     try { db.goOffline(); db.goOnline(); } catch (e) { console.error(e); }
   });
-  // ms: cuánto dura el cartel (5 s; en las partidas con reloj, la jugada del rival 1,5 s)
+  // ms: cuánto dura el cartel (5 s; en las partidas con reloj, 1,5 s)
   function showNews(text, banner, quiet, ms) {
     if (banner) showTaunt({ name: 'ChaskiBoom', text }, { ms: ms || 5000, vol: 1, silent: quiet });
     else if (!quiet) sfx('check', 0, { exact: true });
