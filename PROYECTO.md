@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.42** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.43** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.42 → v1.43…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.43 → v1.44…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -224,8 +224,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   anula (`aborted`). La bandera se reclama con `timeoutResult`/`claimTimeout` (en el tic de 200 ms, medio segundo de margen).
   Con la bandera caída no se puede jugar. Si el rival se desconecta (presencia `online/<uid>`) más de 40 s, pierde solo, como en chess.com (desde v1.42;
   antes, cartel «Tu rival se fue» a los 30 s con Reclamar / Esperar): `checkGone` registra `left` y avisa abajo mientras cuenta.
-  Minimizar el navegador en el celular cuenta como irse. Reloj en rojo y dos pitidos con vibración al bajar de 60 s
-  (`LOW_MS`, `lowTimeSfx`, una vez por partida; antes rojo con 20 s). En Blitz no hay peleas 3D
+  Minimizar el navegador en el celular cuenta como irse. Reloj en rojo con menos de 60 s y, al cruzarlos con tu reloj corriendo, sonido `short_in_time` con vibración
+  (`LOW_MS`, `lowTimeSfx`, una vez por partida; antes rojo con 20 s). Con reloj, los carteles de aviso (`news`) duran 1,5 s
+  (tapan el tablero) y la jugada del rival suena con el aviso (`check`) si no estás mirando (v1.43). En Blitz no hay peleas 3D
   (captura rápida); en Rápida sí, y la pelea corre en el reloj del que la mira. Premoves habilitados en las partidas con reloj.
   El mensaje del desafío dice el modo («…a una partida Blitz (3+2) de ChaskiBoom Battle Chess…», `modeName`); «Mis partidas»
   muestra la etiqueta (`modeTag`, «3+2»). La revancha hereda el modo (`gameMode`). Reglas nuevas: `tc`, `clock` (no puede
@@ -244,6 +245,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.43:** con reloj: sonido `short_in_time` al quedar 60 s, carteles de aviso de 1,5 s (antes 5 s) y aviso sonoro
+  cuando el rival juega y no estás mirando.
 - **v1.42:** online con reloj: quien se desconecta más de 40 s pierde automáticamente (sin cartel de reclamar) y el
   reloj se pone rojo y suena dos pitidos con vibración al quedar 60 s.
 - **v1.41:** se pueden crear partidas Blitz y Rápida: desde v1.38 fallaban siempre («No se pudo crear la partida»)
