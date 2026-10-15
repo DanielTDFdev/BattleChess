@@ -203,7 +203,7 @@ __PWA__
   .taken .grp img + img { margin-left: -12px; }
   .pbar .clock { font-family: var(--display); font-weight: 600; font-variant-numeric: tabular-nums; font-size: 15px; padding: 2px 8px; border-radius: 3px; background: rgba(0,0,0,.35); color: var(--muted); min-width: 58px; text-align: right; }
   .pbar.turn .clock { background: var(--ink); color: #1d140c; }
-  .pbar .clock.late { color: #ff9a8a; }                              /* correspondencia: quedan menos de 12 h */
+  .pbar .clock.late { color: #ff9a8a; }                              /* reloj: menos de 60 s; correspondencia: menos de 12 h */
   .pbar.turn .clock.late { background: #b8382b; color: #fff; }
   .pbar .adv { margin-left: auto; padding-left: 8px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
   body:not(.mode2d) .only2d { display: none; }
@@ -1187,6 +1187,21 @@ const SOUNDS = __SOUNDS__;
     s.connect(g).connect(actx.destination);
     s.start(actx.currentTime + (opt.delay || 0));
   }
+  // aviso de poco tiempo en el reloj: dos pitidos cortos (sintetizados) y una vibración
+  function lowTimeSfx() {
+    try { if (navigator.vibrate) navigator.vibrate([120, 80, 120]); } catch (_) {}
+    if (!actx || !$('sound').checked) return;
+    if (actx.state !== 'running') actx.resume().catch(() => {});
+    keepPlay(false);
+    [0, 0.2].forEach(d => {
+      const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + d;
+      o.type = 'sine'; o.frequency.value = 880;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.5, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
+      o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + 0.17);
+    });
+  }
   const isKnight = u => u.type === 'n' || u.type === 'k';          // llevan armadura
   const isMale = u => u.type === 'n' || u.type === 'k' || u.type === 'r';
   // golpe del arma del atacante
@@ -1843,7 +1858,9 @@ const SOUNDS = __SOUNDS__;
       let t = fmt(times[c]), late = false, title = '';
       if (g && g.tc) {
         const left = g.result && /^timeout/.test(g.result.reason) && g.turn === c ? 0 : clockLeft(g, c);
-        t = fmtClock(left); late = left < 20000 && !g.result && !ended; title = modeTitle(g);
+        t = fmtClock(left); late = left < LOW_MS && !g.result && !ended; title = modeTitle(g);
+        // aviso de poco tiempo: una vez por partida, cuando tu reloj corriendo baja de 60 s
+        if (c === localColor && late && g.turn === c && (g.ply || 0) >= 2 && g.tc.base > LOW_MS && !online.lowWarned) { online.lowWarned = true; lowTimeSfx(); }
       } else if (pm) {
         // partida por correspondencia: al que le toca, lo que le queda; al otro, el plazo por jugada
         title = plazoTxt(pm) + ' por jugada';
@@ -2520,7 +2537,7 @@ const SOUNDS = __SOUNDS__;
      descuenta lo que pasó desde ahí. Los relojes arrancan después de la primera jugada de cada uno; si alguno no la hace
      en 30 s, la partida se anula. Quien juega descuenta su tiempo y suma el incremento en el mismo update de la jugada. */
   const TCS = { '3+0': [3, 0], '3+2': [3, 2], '5+0': [5, 0], '10+0': [10, 0], '10+5': [10, 5], '15+10': [15, 10] };
-  const ABORT_MS = 30000, GONE_MS = 30000;
+  const ABORT_MS = 30000, GONE_MS = 40000, LOW_MS = 60000;
   const tcCat = tc => tc.base < 600000 ? 'Blitz' : 'Rápida';
   const tcShort = tc => (tc.base / 60000) + (tc.inc ? '+' + tc.inc / 1000 : ' min');
   // «Blitz (3+2)», «por correspondencia (3 días por jugada)», «sin límite de tiempo»
@@ -2991,24 +3008,24 @@ const SOUNDS = __SOUNDS__;
     notifyTurn();
   }
 
-  /* Con reloj: si el rival se desconecta y no vuelve en 30 s, se puede reclamar la victoria (como en lichess).
-     La conexión es la presencia games/<código>/online/<uid>, que Firebase borra cuando se corta. */
+  /* Con reloj: si el rival se desconecta y no vuelve en 40 s, pierde (como en chess.com): la victoria se registra sola.
+     La conexión es la presencia games/<código>/online/<uid>, que Firebase borra cuando se corta (también al minimizar
+     el navegador en el celular). Si vuelve antes, no pasa nada. */
   function checkGone(g) {
     if (!online || !g.started || g.result || ended || (g.ply || 0) < 2 || !online.oppUid) return;
     const on = !!(g.online && g.online[online.oppUid]);
     if (on) {
-      online.goneAt = 0;
-      if (online.goneAsk) { online.goneAsk = false; if (!modal.hidden && $('mTitle').textContent === 'Tu rival se fue') { closeModal(); caption(online.oppName + ' volvió'); } }
+      if (online.goneAt) { online.goneAt = 0; caption(online.oppName + ' volvió'); }
       return;
     }
-    if (!online.goneAt) online.goneAt = Date.now();
-    if (online.goneAsk || Date.now() - online.goneAt < GONE_MS || !modal.hidden) return;
-    online.goneAsk = true;
-    news(online.oppName + ' se fue de la partida', { banner: false, sound: true });
-    showModal('Tu rival se fue', online.oppName + ' se desconectó hace más de 30 segundos. Podés reclamar la victoria o esperar a que vuelva.', [
-      { label: 'Reclamar la victoria', primary: true, onClick: () => { if (online && !ended) endGame(localColor, 'left'); } },
-      { label: 'Esperar', onClick: () => { if (online) { online.goneAt = Date.now(); online.goneAsk = false; } } }
-    ]);
+    if (!online.goneAt) {
+      online.goneAt = Date.now();
+      caption(online.oppName + ' se desconectó: si no vuelve en ' + GONE_MS / 1000 + ' s, ganás la partida');
+      return;
+    }
+    if (Date.now() - online.goneAt < GONE_MS) return;
+    online.goneAt = 0;
+    endGame(localColor, 'left');
   }
 
   // Reproduce, de a una, las jugadas recibidas (espera a que termine cada animación o pelea)
