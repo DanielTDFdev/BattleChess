@@ -182,17 +182,34 @@ __PWA__
   #lobby .acct .gLogo { width: 18px; height: 18px; flex: none; }
   .gBtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
   .gBtn .gLogo { width: 18px; height: 18px; flex: none; }
-  #lbGames { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  #lbGames li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
-  #lbGames li.empty { color: var(--muted); justify-content: center; }
-  #lbGames .del { flex: none; background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 6px; }
-  #lbGames .del.sure { background: #b8382b; color: #fff; border-radius: 3px; font-size: 14px; padding: 6px 10px; }
-  #lbGames .who { flex: 1; min-width: 0; }
-  #lbGames .who b { display: block; font-weight: 600; }
-  #lbGames .who span { font-size: 14px; color: var(--muted); }
-  #lbGames .who span.mine { color: var(--torch); }
-  #lbGames .who span.late { color: #ff9a8a; }
-  #lbGames .tag { flex: none; font-size: 12px; font-weight: 600; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
+  #lbGames, #lbPastList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  /* partidas en curso: punto verde que late; desafío sin aceptar: punto gris quieto (v1.47) */
+  #lbGames .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #4caf50; animation: livePulse 1.6s ease-out infinite; }
+  #lbGames .dot.wait { background: #6b6a64; animation: none; }
+  @keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(76,175,80,.65); } 70% { box-shadow: 0 0 0 8px rgba(76,175,80,0); } 100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); } }
+  @media (prefers-reduced-motion: reduce) { #lbGames .dot { animation: none; } }
+  /* terminadas: plegadas y en renglones más chicos */
+  #lbPast { border: 1px solid var(--line); border-radius: 3px; }
+  #lbPast summary { cursor: pointer; padding: 8px 10px; color: var(--muted); font-size: 15px; list-style: none; display: flex; align-items: center; gap: 8px; }
+  #lbPast summary::-webkit-details-marker { display: none; }
+  #lbPast summary::before { content: "▸"; transition: transform .2s; }
+  #lbPast[open] summary::before { transform: rotate(90deg); }
+  #lbPast[hidden] { display: none; }
+  #lbPastList { padding: 0 6px 6px; }
+  #lbPastList li { padding: 5px 8px; gap: 8px; }
+  #lbPastList .who b { font-size: 15px; font-weight: 600; }
+  #lbPastList .who span { font-size: 13px; }
+  #lbPastList button:not(.del) { padding: 4px 10px; font-size: 14px; }
+  :is(#lbGames, #lbPastList) li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
+  :is(#lbGames, #lbPastList) li.empty { color: var(--muted); justify-content: center; }
+  :is(#lbGames, #lbPastList) .del { flex: none; background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 6px; }
+  :is(#lbGames, #lbPastList) .del.sure { background: #b8382b; color: #fff; border-radius: 3px; font-size: 14px; padding: 6px 10px; }
+  :is(#lbGames, #lbPastList) .who { flex: 1; min-width: 0; }
+  :is(#lbGames, #lbPastList) .who b { display: block; font-weight: 600; }
+  :is(#lbGames, #lbPastList) .who span { font-size: 14px; color: var(--muted); }
+  :is(#lbGames, #lbPastList) .who span.mine { color: var(--torch); }
+  :is(#lbGames, #lbPastList) .who span.late { color: #ff9a8a; }
+  :is(#lbGames, #lbPastList) .tag { flex: none; font-size: 12px; font-weight: 600; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
   .tPick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .tPick .lbl { width: 100%; font-size: 14px; color: var(--muted); margin-top: 4px; }
   .tPick button { flex: 1; padding: 6px 8px; font-size: 15px; white-space: nowrap; }
@@ -442,6 +459,7 @@ __PWA__
       <button id="lbCreate" class="primary wide">Desafiar a un amigo</button>
       <h3>Mis partidas</h3>
       <ul id="lbGames"><li class="empty">Cargando…</li></ul>
+      <details id="lbPast" hidden><summary><span>Partidas terminadas (<span id="lbPastN">0</span>)</span></summary><ul id="lbPastList"></ul></details>
     </div>
     <div id="lbWait" hidden>
       <p>Mandale este link a tu amigo. Cuando entre, se sortean los colores y empieza la partida.</p>
@@ -2822,7 +2840,10 @@ const SOUNDS = __SOUNDS__;
       else if (inviteExpired(g) && g.host.uid === me) dropGame(id, true);   // desafío vencido
     });
     const games = all.filter(([, g]) => g && g.host && !inviteExpired(g));
-    if (!games.length) { ul.innerHTML = '<li class="empty">Todavía no tenés partidas online</li>'; return; }
+    const past = $('lbPastList'), EMPTY = '<li class="empty">No tenés partidas en curso</li>';
+    past.innerHTML = '';
+    const pastCount = () => { const n = past.children.length; $('lbPastN').textContent = n; $('lbPast').hidden = !n; };
+    if (!games.length) { ul.innerHTML = '<li class="empty">Todavía no tenés partidas online</li>'; pastCount(); return; }
     const myTurn = g => { const c = g.white === me ? 'w' : g.black === me ? 'b' : null; return !!g.white && !g.result && !timeoutResult(g) && (g.started ? g.turn === c : c === 'w'); };
     // primero las que te tocan (las que vencen antes, arriba); el resto como venía, por la última novedad
     games.sort((a, b) => (myTurn(b[1]) - myTurn(a[1])) || (myTurn(a[1]) ? (a[1].deadline || Infinity) - (b[1].deadline || Infinity) : 0));
@@ -2841,7 +2862,7 @@ const SOUNDS = __SOUNDS__;
         if (g.perMove && g.deadline) { const left = g.deadline - srvNow(); state += ' · ' + (mine ? 'vence en ' : 'tiene ') + leftTxt(left); late = mine && left < 12 * 3600e3; }
       }
       const li = document.createElement('li');
-      li.innerHTML = '<div class="who"><b></b><span></span></div>' + (g.perMove !== undefined || g.tc ? '<span class="tag"></span>' : '') + '<button>Abrir</button>';
+      li.innerHTML = (res ? '' : '<span class="dot' + (g.guest ? '' : ' wait') + '" title="' + (g.guest ? 'En curso' : 'Esperando a tu amigo') + '"></span>') + '<div class="who"><b></b><span></span></div>' + (g.perMove !== undefined || g.tc ? '<span class="tag"></span>' : '') + '<button>Abrir</button>';
       li.querySelector('b').textContent = oppName ? 'Contra ' + oppName : 'Partida ' + id;
       if (g.perMove !== undefined || g.tc) { const t = li.querySelector('.tag'); t.textContent = modeTag(g); t.title = modeTitle(g); }
       const sp = li.querySelector('span'); sp.textContent = state + ' · ' + (g.ply || 0) + (g.ply === 1 ? ' jugada' : ' jugadas'); if (mine) sp.className = late ? 'mine late' : 'mine';
@@ -2862,14 +2883,17 @@ const SOUNDS = __SOUNDS__;
           clearTimeout(t);
           dropGame(id, !g.guest && g.host.uid === me).then(() => {
             li.remove();
-            if (!ul.children.length) ul.innerHTML = '<li class="empty">Todavía no tenés partidas online</li>';
+            if (!ul.children.length) ul.innerHTML = EMPTY;
+            pastCount();
           }).catch(e => { console.error(e); $('lbMsg').textContent = 'No se pudo borrar. Intentá de nuevo.'; });
           if (online && online.id === id) leaveOnline();
         });
         li.appendChild(x);
       }
-      ul.appendChild(li);
+      (res ? past : ul).appendChild(li);
     });
+    if (!ul.children.length) ul.innerHTML = EMPTY;
+    pastCount();
   }
 
   function askNick() {
@@ -2958,7 +2982,7 @@ const SOUNDS = __SOUNDS__;
       $('lbTerms').textContent = terms;
       $('lbTitle').textContent = (hostName || 'Un amigo') + ' te desafía';
       $('lbCreate').textContent = 'Aceptar el desafío';
-      $('lbGames').parentElement.querySelector('h3').hidden = true; $('lbGames').hidden = true;
+      $('lbGames').parentElement.querySelector('h3').hidden = true; $('lbGames').hidden = true; $('lbPast').hidden = true;
       $('nick').value = getNick(); $('lbMsg').textContent = '';
       lobby.hidden = false;
       const restore = () => { lbJoining = false; $('tPick').hidden = false; $('lbTerms').hidden = true; $('lbTitle').textContent = 'Jugar online'; $('lbCreate').textContent = 'Desafiar a un amigo'; $('lbGames').parentElement.querySelector('h3').hidden = false; $('lbGames').hidden = false; $('lbCreate').onclick = null; };
