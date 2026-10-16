@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.48** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.49** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -59,6 +59,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Sonidos:** de batalla solo en peleas 3D; espadas/hachas/armaduras/quejidos al azar sin repetir;
   quejidos femeninos para dama, peón y alfil; magia para dama y alfil; enroque, jaque, ganador/perdedor.
   Al apoyar la pieza: `move_w`/`move_b`, o `come` si capturó. El enroque suena al arrancar (`castleSfx`), no al apoyar.
+  Movida ilegal (v1.49): `deny` (`denySfx()`, de `denyerror.wav` subido 10 dB) al tocar o soltar una pieza elegida en un destino
+  al que no puede ir, al elegir un destino imposible para un premove y cuando un premove ya no es legal.
 - **CPU:** Stockfish 18 lite en Web Worker, 5 niveles (Muy fácil … Experto) elegidos en el cartel de nueva partida.
   Stockfish en Skill Level 0 sigue siendo demasiado fuerte para principiantes, así que (desde v1.12) Muy fácil no usa
   Stockfish: 50 % jugadas al azar y 50 % `pickCpu` (come lo que ve, no deja piezas colgadas a 1 jugada). Fácil: 20 % al azar
@@ -266,6 +268,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.49:** sonido de error al intentar una movida ilegal (tocar o soltar en un destino imposible, premove inválido).
 - **v1.48:** en «Mis partidas» el estado («Le toca a tu rival…») se escribía dentro del punto verde y salía en columna.
 - **v1.47:** «Mis partidas» con las en curso arriba (punto verde que late) y las terminadas plegadas.
 - **v1.46:** al terminar la partida, copa sobre el rey ganador y el perdedor tumbado con estrellitas (mate, tiempo o

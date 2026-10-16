@@ -410,7 +410,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.48</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.49</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -906,6 +906,7 @@ const SOUNDS = {
   "castle": "assets/sounds/castle.mp3",
   "check": "assets/sounds/check.mp3",
   "come": "assets/sounds/come.mp3",
+  "deny": "assets/sounds/deny.mp3",
   "grunt_m1": "assets/sounds/grunt_m1.mp3",
   "grunt_m2": "assets/sounds/grunt_m2.mp3",
   "grunt_m3": "assets/sounds/grunt_m3.mp3",
@@ -1379,15 +1380,17 @@ const SOUNDS = {
       }
       const pc = P && sq ? P.get(sq) : null;
       if (pc && pc.color === localColor && sq !== preSel) { preSel = sq; preTargets = P.moves({ square: sq, verbose: true }); }
-      else { preSel = null; preTargets = []; }
+      else { if (preSel && sq && sq !== preSel) denySfx(); preSel = null; preTargets = []; }
       drawMarks(); return;
     }
     if (busy || isOver() || notMyTurn()) return;
     if (sq && selected && targets.some(m => m.to === sq)) { if (isCorr()) askConfirm(selected, sq); else play_move(selected, sq); return; }
     const pc = sq ? chess.get(sq) : null;
     if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
-    else select(null);
+    else { if (selected && sq) denySfx(); select(null); }   // con una pieza elegida, un destino al que no puede ir
   }
+  // movida ilegal (destino al que la pieza elegida no puede ir, soltarla donde no puede o un premove que ya no vale)
+  function denySfx() { sfx('deny', 0, { exact: true, vol: 0.8 }); }
   /* Confirmación (correspondencia): la jugada se muestra en el tablero (2D) y abajo un aviso con Jugar / Cambiar.
      Jugar la envía; Cambiar (o Esc) la deshace y la pieza queda seleccionada para elegir otro destino. */
   let pendingMove = null;
@@ -1455,7 +1458,7 @@ const SOUNDS = {
     if (!premove) return false;
     const pm = premove; premove = null;
     const ok = chess.moves({ verbose: true }).some(m => m.from === pm.from && m.to === pm.to);
-    if (!ok) { caption('El premove ' + pm.from + ' → ' + pm.to + ' ya no es válido: se canceló'); drawMarks(); return false; }
+    if (!ok) { caption('El premove ' + pm.from + ' → ' + pm.to + ' ya no es válido: se canceló'); denySfx(); drawMarks(); return false; }
     setTimeout(() => { if (!busy && !notMyTurn() && !isOver()) play_move(pm.from, pm.to, { promo: 'q' }); }, 80);
     return true;
   }
@@ -2845,7 +2848,7 @@ const SOUNDS = {
     const to = e.type === 'pointerup' ? d.over : null;
     if (!to || to === d.from) return;   // vuelve a su casilla y queda seleccionada
     const legal = (selected === d.from && targets.some(m => m.to === to)) || (preSel === d.from && preTargets.some(m => m.to === to));
-    if (!legal) return;
+    if (!legal) { denySfx(); return; }   // vuelve a su casilla y queda seleccionada
     dragDrop = selected === d.from;   // las jugadas reales aterrizan sin vuelo; un premove solo se anota
     tapSquare(to);
     dragDrop = false;
@@ -4231,7 +4234,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261016172148';
+  const BUILD = '20261016174117';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
