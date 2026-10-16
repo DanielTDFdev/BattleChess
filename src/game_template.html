@@ -69,6 +69,35 @@ __PWA__
     display: grid; place-items: center; font-size: calc(var(--sq) * .24); line-height: 1; border: 2px solid #1e1a16; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
   #clsMark3d { position: fixed; --sq: 52px; transform: translate(-50%, -50%); }
   #clsMark[hidden], #clsMark3d[hidden] { display: none; }
+  /* fin de partida (v1.46): copa sobre el rey ganador, rey perdedor tumbado con estrellitas; en tablas, apretón de manos en los dos */
+  .endMark { position: absolute; z-index: 7; pointer-events: none; width: calc(var(--sq) * .42); height: calc(var(--sq) * .42);
+    transform: translate(-75%, -25%); border-radius: 50%; display: grid; place-items: center; color: #fff;
+    border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  .endMark svg { width: 64%; height: 64%; }
+  .endMark.win { background: #4f9a2a; } .endMark.draw { background: #6b6a64; }
+  .endMark.pop { animation: endPop .4s ease-out; }
+  @keyframes endPop { 0% { scale: 0; } 70% { scale: 1.2; } 100% { scale: 1; } }
+  .endStars { position: absolute; z-index: 7; pointer-events: none; width: calc(var(--sq) * .76); height: calc(var(--sq) * .36); transform: translate(-50%, -50%); }
+  .endStars svg { position: absolute; width: calc(var(--sq) * .28); height: calc(var(--sq) * .28); scale: .55; animation: starPulse 1s ease-in-out infinite;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.45)); }
+  .endStars svg:nth-child(1) { left: 0; top: 30%; }
+  .endStars svg:nth-child(2) { left: 32%; top: 0; animation-delay: .33s; }
+  .endStars svg:nth-child(3) { left: 64%; top: 30%; animation-delay: .66s; }
+  .endStars.late { animation: starsIn .3s .8s both; }
+  @keyframes starPulse { 0%, 100% { scale: .55; } 50% { scale: 1.15; } }
+  @keyframes starsIn { from { opacity: 0; } to { opacity: 1; } }
+  .end3d { position: fixed; --sq: 52px; z-index: 7; }
+  .endStars.end3d { --sq: 84px; }
+  .endMark.end3d { transform: translate(-50%, -50%); }
+  .endMark[hidden], .endStars[hidden] { display: none; }
+  .sq2 img.pc.fallen { transform: rotate(90deg); transform-origin: 50% 55%; }   /* gira sobre su centro: tumbado entra en la casilla */
+  .sq2 img.pc.fallen.falling { animation: kingFall .9s ease-in; }
+  .sq2 img.pc.cheer { animation: kingHop .6s ease-out 2; }
+  @keyframes kingFall { 0% { transform: rotate(0); } 65% { transform: rotate(100deg); } 82% { transform: rotate(84deg); } 100% { transform: rotate(90deg); } }
+  @keyframes kingHop { 0%, 100% { transform: none; } 40% { transform: translateY(-14%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .endStars svg, .endStars.late, .endMark.pop, .sq2 img.pc.fallen.falling, .sq2 img.pc.cheer { animation: none; }
+  }
   #board2d { touch-action: none; }   /* que arrastrar una pieza no desplace la página en el celular */
   .dragGhost { position: fixed; z-index: 50; pointer-events: none; transform: translate(-50%, -55%); filter: drop-shadow(0 8px 10px rgba(0,0,0,.45)); }
   .sq2.hover { box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .55); }
@@ -344,7 +373,7 @@ __PWA__
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="__LOGO__" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.45</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.46</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -2014,6 +2043,7 @@ const SOUNDS = __SOUNDS__;
     select(null);
     updateStatus();
     caption('');
+    refreshEndMarks();
     showResult();
   }
 
@@ -2236,7 +2266,7 @@ const SOUNDS = __SOUNDS__;
     viewPos = tmp; viewPly = n;
     viewLast = n ? { from: h[n - 1].from, to: h[n - 1].to } : null;
     selected = null; targets = [];
-    if (is2D) render2D(); else { setupBoard(tmp); drawMarks(); }
+    if (is2D) render2D(); else { setupBoard(tmp); drawMarks(); refreshEndMarks(); }
     if (viewLast) showArrow(viewLast.from, viewLast.to); else hideArrows();
     const bm = analysis && analysis.done && n > 0 && analysis.cls[n - 1] !== 'best' && analysis.best[n - 1];
     if (bm) showBest(bm.slice(0, 2), bm.slice(2, 4)); else hideBest();
@@ -2247,7 +2277,7 @@ const SOUNDS = __SOUNDS__;
   function goLive(silent) {
     if (!viewPos) return;
     viewPos = null; viewLast = null;
-    if (is2D) { render2D(); dirty3d = true; } else { setupBoard(); drawMarks(); }
+    if (is2D) { render2D(); dirty3d = true; } else { setupBoard(); drawMarks(); refreshEndMarks(); }
     hideArrows(); hideBest(); setClsMark(null);
     if (!silent) updateStatus();
     updatePlayers(); updateHist();
@@ -2406,6 +2436,7 @@ const SOUNDS = __SOUNDS__;
       if (mk.className !== cls) mk.className = cls;
       mk.hidden = !m;
     });
+    refreshEndMarks();
   }
   function kingSquare2d(P, color) {
     const b = P.board();
@@ -2493,6 +2524,7 @@ const SOUNDS = __SOUNDS__;
     select(null);
     if (!is2D && dirty3d) { setupBoard(); dirty3d = false; drawMarks(); }
     updateStatus(); layout();
+    refreshEndMarks();
   }
   $('skip').addEventListener('click', () => { skipping = true; timeScale = 6; });
   // Menú plegable del celular: se cierra al tocar una acción o fuera de él
@@ -3612,6 +3644,110 @@ const SOUNDS = __SOUNDS__;
     const col = localColor === 'w' ? f : 7 - f, row = localColor === 'w' ? 7 - r : r;
     Object.assign($('clsMark').style, { left: ((col + 1) / 8 * 100) + '%', top: (row / 8 * 100) + '%' });
   }
+  /* --- Fin de partida sobre el tablero (v1.46): mate, tiempo o abandono → copa verde sobre el rey ganador (salta dos veces)
+     y el perdedor se cae 90° con tres estrellitas amarillas que laten; tablas → apretón de manos en los dos reyes.
+     Solo en la posición final (no al revisar). Partida anulada: nada. En 3D el rey perdedor hace la animación de muerte y
+     el ganador festeja; las medallas se proyectan desde el personaje como el ícono del análisis.
+     Íconos de copa y apretón de manos: Lucide (licencia ISC). --- */
+  const END_ICON = {
+    win: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>',
+    draw: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg>'
+  };
+  const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#f2b52e" stroke="#7a4a08" stroke-width="1.2" stroke-linejoin="round" d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z"/></svg>';
+  function makeEndSet(parent, d3) {
+    const mk = () => { const e = document.createElement('span'); e.className = 'endMark' + (d3 ? ' end3d' : ''); e.hidden = true; parent.appendChild(e); return e; };
+    const st = document.createElement('span');
+    st.className = 'endStars' + (d3 ? ' end3d' : ''); st.hidden = true; st.innerHTML = STAR_SVG + STAR_SVG + STAR_SVG;
+    parent.appendChild(st);
+    return { a: mk(), b: mk(), stars: st };
+  }
+  const end2d = makeEndSet(board2d, false), end3d = makeEndSet(document.body, true);
+  let endCur = null, endFxFor = null;   // endCur: lo que se muestra ahora; endFxFor: el final que ya se animó
+  function endInfo() {
+    if (!ended || ended.reason === 'aborted' || viewPos) return null;
+    const w = kingSquare2d(chess, 'w'), b = kingSquare2d(chess, 'b');
+    if (!w || !b) return null;
+    if (ended.result === 'draw') return { draw: true, a: w, b };
+    return { a: ended.result === 'w' ? w : b, lose: ended.result === 'w' ? b : w };
+  }
+  function restartCls(el, c) { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); }
+  function refreshEndMarks() {
+    const E = endInfo(), fresh = !!E && endFxFor !== ended;
+    if (E) endFxFor = ended;
+    endCur = E;
+    const anim = fresh && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // 2D: la imagen del rey perdedor se tumba; la del ganador salta
+    board2d.querySelectorAll('.sq2').forEach(cell => {
+      const im = cell.querySelector('img.pc'), sq = cell.dataset.sq;
+      if (!im) return;
+      if (E && E.lose === sq) {
+        if (!im.classList.contains('fallen')) {
+          im.classList.add('fallen');
+          if (anim && is2D) { im.classList.add('falling'); im.addEventListener('animationend', () => im.classList.remove('falling'), { once: true }); }
+        }
+      } else im.classList.remove('fallen', 'falling');
+      if (anim && is2D && E && !E.draw && E.a === sq) { restartCls(im, 'cheer'); im.addEventListener('animationend', () => im.classList.remove('cheer'), { once: true }); }
+    });
+    // medallas y estrellitas (las de 2D van dentro del tablero; las de 3D, encima de la página)
+    [[end2d, is2D], [end3d, !is2D]].forEach(([S, on]) => {
+      const kind = E && (E.draw ? 'draw' : 'win');
+      [S.a, S.b].forEach((el, i) => {
+        el.hidden = !on || !E || (i === 1 && !E.draw);
+        if (el.hidden) return;
+        el.className = 'endMark ' + kind + (S === end3d ? ' end3d' : '');
+        el.innerHTML = END_ICON[kind];
+        el.title = E.draw ? 'Tablas' : 'Ganador';
+        if (anim) restartCls(el, 'pop');
+      });
+      S.stars.hidden = !on || !E || !E.lose;
+      if (!S.stars.hidden && anim) restartCls(S.stars, 'late');
+    });
+    if (E && is2D) {
+      const pos = (el, sq, dx, dy) => {
+        const f = FILES.indexOf(sq[0]), r = Number(sq[1]) - 1;
+        const col = localColor === 'w' ? f : 7 - f, row = localColor === 'w' ? 7 - r : r;
+        Object.assign(el.style, { left: ((col + dx) / 8 * 100) + '%', top: ((row + dy) / 8 * 100) + '%' });
+      };
+      pos(end2d.a, E.a, 1, 0);
+      if (E.draw) pos(end2d.b, E.b, 1, 0);
+      if (E.lose) pos(end2d.stars, E.lose, 0.5, 0.22);
+    }
+    // 3D: el rey perdedor muere (si no es la primera vez, queda tirado sin repetir la animación) y el ganador festeja
+    if (E && !E.draw && !dirty3d) {
+      const L = units[E.lose], W = units[E.a];
+      if (L && L.type === 'k' && L.endPose !== 'dead') {
+        L.endPose = 'dead';
+        const death = PIECES.k.death;
+        play(L, death, { once: true, fade: 0.1 });
+        if (!(fresh && !is2D)) { L.current.time = dur(death); L.mixer.update(0); }
+      }
+      if (W && W.type === 'k' && fresh && !is2D) {
+        play(W, 'Cheering', { once: true, fade: 0.3 });
+        setTimeout(() => { if (units[E.a] === W && W.current === W.actions.Cheering) play(W, 'Idle_A', { fade: 0.3 }); }, dur('Cheering') * 1000);
+      }
+    }
+  }
+  const endV = new THREE.Vector3(), endOff = new THREE.Vector3();
+  function placeEndMarks3d() {
+    if (!endCur || is2D) return;
+    const r = renderer.domElement.getBoundingClientRect();
+    const put = (el, sq, x, y) => {
+      if (el.hidden) return;
+      endV.copy(sqPos(sq)).add(endOff.set(x, y, 0)).project(camera);
+      el.style.left = (r.left + (endV.x + 1) / 2 * r.width) + 'px';
+      el.style.top = (r.top + (1 - endV.y) / 2 * r.height) + 'px';
+    };
+    put(end3d.a, endCur.a, TS * 0.35, 1.7);
+    if (endCur.draw) put(end3d.b, endCur.b, TS * 0.35, 1.7);
+    if (endCur.lose && !end3d.stars.hidden) {
+      // las estrellitas van sobre la cabeza del rey tirado (el hueso «head» del modelo), no sobre el centro de la casilla
+      const L = units[endCur.lose], head = L && (L.headBone || (L.headBone = L.root.getObjectByName('head')));
+      if (head) { head.getWorldPosition(endV); endV.y += 0.8; endV.project(camera); }
+      else endV.copy(sqPos(endCur.lose)).add(endOff.set(0, 0.75, 0)).project(camera);
+      end3d.stars.style.left = (r.left + (endV.x + 1) / 2 * r.width) + 'px';
+      end3d.stars.style.top = (r.top + (1 - endV.y) / 2 * r.height) + 'px';
+    }
+  }
   // en 3D se ubica cada cuadro proyectando un punto arriba y a la derecha del personaje
   const clsV = new THREE.Vector3();
   function placeClsMark3d() {
@@ -3830,7 +3966,7 @@ const SOUNDS = __SOUNDS__;
     // la niebla acompaña a la cámara: con zoom lejano (sobre todo en el celular) no tiene que oscurecer el tablero
     const camDist = camera.position.distanceTo(cam.look);
     scene.fog.near = camDist + 8; scene.fog.far = camDist + 40;
-    if (!is2D) { renderer.render(scene, camera); placeClsMark3d(); }
+    if (!is2D) { renderer.render(scene, camera); placeClsMark3d(); placeEndMarks3d(); }
   }
   tick();
 })();

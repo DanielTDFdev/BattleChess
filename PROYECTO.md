@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.45** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.46** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -250,11 +250,21 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   **Rescate manual** de una partida de alguien que cambió de `uid`: en la consola, reemplazar el `uid` viejo por el nuevo
   (Authentication → Users) en `games/<código>/guest/uid` (o `host/uid`) y en `white`/`black`, y crear
   `users/<uid nuevo>/games/<código>/updatedAt` (número).
+- **Fin de partida en el tablero (v1.46):** con mate, tiempo o abandono (también `left`), medalla verde con copa sobre el rey
+  ganador (salta dos veces) y el perdedor tumbado 90° con tres estrellitas amarillas que laten en cadena; en tablas, medalla
+  gris con apretón de manos en los dos reyes; partida anulada, nada. Solo en la posición final (al revisar se ocultan).
+  `refreshEndMarks()` (se llama desde `render2D`, `endGame`, `setView`, `viewAt`/`goLive` en 3D) y `placeEndMarks3d()` en cada
+  cuadro. 2D: clases `fallen`/`falling`/`cheer` en la `img.pc` y medallas `.endMark` dentro de `#board2d` (mismo lugar que
+  `#clsMark`). 3D: el rey perdedor hace `Death_B` y queda tirado (`endPose`; sin repetir la animación si se reconstruye el
+  tablero), el ganador `Cheering`; medallas proyectadas como `#clsMark3d` y estrellitas sobre el hueso `head`. Se anima solo la
+  primera vez (`endFxFor`); con «Reducir movimiento», todo quieto. Íconos de copa y apretón de manos de Lucide (ISC).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Historial reciente
 
+- **v1.46:** al terminar la partida, copa sobre el rey ganador y el perdedor tumbado con estrellitas (mate, tiempo o
+  abandono); en tablas, apretón de manos sobre los dos reyes. En 2D y 3D.
 - **v1.45:** las partidas online exigen entrar con Google (la sesión anónima se vincula y conserva sus partidas);
   aviso para abrir el link en Chrome o Safari desde Instagram o Facebook.
 - **v1.5:** el cartel de las frases para el rival dura 3 s (antes 1 s).
