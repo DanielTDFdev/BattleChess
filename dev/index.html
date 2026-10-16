@@ -276,7 +276,12 @@
   .pbar.turn .clock { background: var(--ink); color: #1d140c; }
   .pbar .clock.late { color: #ff9a8a; }                              /* reloj: menos de 60 s; correspondencia: menos de 12 h */
   .pbar.turn .clock.late { background: #b8382b; color: #fff; }
-  .pbar .adv { margin-left: auto; padding-left: 8px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+  .pbar .adv { flex: none; margin-left: -4px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }   /* pegado a las piezas capturadas (v1.52) */
+  .pbar .adv:empty { display: none; }
+  .pbar .clock { margin-left: auto; }
+  button.ico { display: inline-flex; align-items: center; gap: 7px; }   /* botones con ícono de Lucide (ISC) a la izquierda (v1.52) */
+  button.ico .bIco { width: 17px; height: 17px; flex: none; }
+  body.corr #confirmLbl { display: none; }   /* en correspondencia siempre se confirma: el interruptor no aplica */
   body:not(.mode2d) .only2d { display: none; }
   body.online .onlycpu { display: none; }
   body.mode2d .hint, body.mode2d #resetv, body.mode2d label[for-3d] { display: none; }
@@ -439,6 +444,7 @@
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
   <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
+  <label class="chk" id="confirmLbl"><input type="checkbox" id="confirmMv"> Confirmar jugadas</label>
   <button id="view2d" aria-pressed="false">Vista 2D</button>
   <label class="chk only2d" for="pset">Piezas
     <select id="pset">
@@ -448,9 +454,9 @@
     </select>
   </label>
   <button id="resetv">Vista inicial</button>
-  <button id="drawoffer">Ofrecer tablas</button>
-  <button id="resign">Abandonar</button>
-  <button id="newg">Nueva partida</button>
+  <button id="drawoffer" class="ico"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg>Ofrecer tablas</button>
+  <button id="resign" class="ico"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="#fbf7ee" fill-opacity=".9"/><path d="M4 22v-7"/></svg>Abandonar</button>
+  <button id="newg" class="ico"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Nueva partida</button>
   <button id="anaBtn" hidden>Analizar partida</button>
   <div class="caps">
     <span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span>
@@ -1359,6 +1365,28 @@ const SOUNDS = {
   // partida por correspondencia (con plazo por jugada): cada jugada se confirma antes de enviarla.
   // Premoves solo contra la CPU (más adelante, también en las online con reloj corto).
   const isCorr = () => !!(online && online.g && online.g.perMove);
+  /* Confirmar jugadas (v1.52): en correspondencia siempre; en el resto (CPU, Blitz, Rápida, dos jugadores) según el interruptor
+     del Menú. Arranca apagado; se recuerda en el dispositivo (localStorage) y, si entró con Google, en su cuenta
+     (users/<uid>/prefs/confirm), así lo tiene igual en todos sus dispositivos. Un premove que se ejecuta solo no pide confirmación. */
+  let confirmPref = false;
+  try { confirmPref = localStorage.getItem('chaskiboom.confirm') === '1'; } catch (_) {}
+  $('confirmMv').checked = confirmPref;
+  const needConfirm = () => isCorr() || confirmPref;
+  function setConfirmPref(v, fromAccount) {
+    confirmPref = !!v; $('confirmMv').checked = confirmPref;
+    try { localStorage.setItem('chaskiboom.confirm', confirmPref ? '1' : '0'); } catch (_) {}
+    if (!fromAccount && db && me && googleUser())
+      db.ref('users/' + me + '/prefs/confirm').set(confirmPref).catch(e => console.warn('pref', e));
+  }
+  $('confirmMv').addEventListener('change', e => setConfirmPref(e.target.checked));
+  // al conectarse con la cuenta de Google se trae la preferencia guardada (si la hay, manda la de la cuenta)
+  function loadAccountPrefs() {
+    if (!db || !me || !googleUser()) return;
+    db.ref('users/' + me + '/prefs/confirm').once('value').then(s => {
+      if (s.exists()) setConfirmPref(s.val(), true);
+      else if (confirmPref) db.ref('users/' + me + '/prefs/confirm').set(true).catch(() => {});   // la del dispositivo pasa a la cuenta
+    }).catch(() => {});
+  }
   const canPremove = () => started && !isOver() && ((vsCpu && !online) || isTimed()) && chess.turn() !== localColor;
   // la posición actual como si movieras vos (para saber a dónde puede ir cada pieza)
   function premovePos() {
@@ -1389,7 +1417,7 @@ const SOUNDS = {
       drawMarks(); return;
     }
     if (busy || isOver() || notMyTurn()) return;
-    if (sq && selected && targets.some(m => m.to === sq)) { if (isCorr()) askConfirm(selected, sq); else play_move(selected, sq); return; }
+    if (sq && selected && targets.some(m => m.to === sq)) { if (needConfirm()) askConfirm(selected, sq); else play_move(selected, sq); return; }
     const pc = sq ? chess.get(sq) : null;
     if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
     else { if (selected && sq) denySfx(); select(null); }   // con una pieza elegida, un destino al que no puede ir
@@ -2127,6 +2155,7 @@ const SOUNDS = {
   }
   function updateStatus(moving) {
     lockGameButtons();
+    document.body.classList.toggle('corr', isCorr());
     const st = $('status');
     const turn = chess.turn(), side = sidePl(turn), other = sidePl(turn === 'w' ? 'b' : 'w');
     st.className = turn === 'w' ? '' : 'b';
@@ -3121,7 +3150,7 @@ const SOUNDS = {
   let fbP = null;
   // una sola conexión aunque se llame varias veces a la vez (si no, podían crearse dos usuarios anónimos)
   function fbInit() {
-    if (!fbP) fbP = fbConnect().then(watchAll).catch(e => { fbP = null; throw e; });
+    if (!fbP) fbP = fbConnect().then(() => { watchAll(); loadAccountPrefs(); }).catch(e => { fbP = null; throw e; });
     return fbP;
   }
   async function fbConnect() {
@@ -3183,7 +3212,7 @@ const SOUNDS = {
     me = auth.currentUser.uid;
     const n = auth.currentUser.displayName;
     if (!getNick() && n) setNick(n.split(' ')[0].slice(0, 20));
-    watchAll();
+    watchAll(); loadAccountPrefs();
     return lost;
   }
   // antes de cualquier cosa online: si no entró con Google, cartel que lo pide. Resuelve true si ya puede jugar.
@@ -4250,7 +4279,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261016175614';
+  const BUILD = '20261016234942';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
