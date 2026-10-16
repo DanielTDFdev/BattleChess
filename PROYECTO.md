@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.50** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.51** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -265,11 +265,17 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **«Mis partidas» compacta (v1.47):** en el celular se veía muy cargada. Arriba solo las en curso (punto verde que late,
   `.dot`) y los desafíos sin aceptar (punto gris quieto); las terminadas van plegadas en `<details id="lbPast">`
   («Partidas terminadas (N)», lista `#lbPastList` con renglones más chicos). Si no hay terminadas, no aparece.
+- **Sombra de las piezas 2D (v1.51):** mancha de contacto ovalada bajo la base (`<span class="sh">` en cada casilla y en la
+  pieza que vuela, `z-index: -1` con `isolation: isolate` en `.sq2`/`.fly`) más `drop-shadow(0 2px 2px rgba(0,0,0,.3))` en la
+  `img.pc`. Sin mancha en casillas vacías (`.np`), mientras se arrastra (`.drg`) y bajo el rey tumbado (`.fallenSq`).
+- **Build visible en /dev/ (v1.51):** como todas las builds de prueba dicen la misma versión, en `/dev/` el pie muestra además
+  «· dev 16/10 14:51:55» (el `BUILD` en hora local).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Historial reciente
 
+- **v1.51:** sombra en las piezas 2D (mancha de contacto + sombra suave); en /dev/ se ve el código de build.
 - **v1.50:** en las partidas con confirmación, la jugada suena al apoyar la pieza (2D) y no al tocar Sí.
 - **v1.49:** sonido de error al intentar una movida ilegal (tocar o soltar en un destino imposible, premove inválido).
 - **v1.48:** en «Mis partidas» el estado («Le toca a tu rival…») se escribía dentro del punto verde y salía en columna.

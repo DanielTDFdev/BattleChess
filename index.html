@@ -238,7 +238,12 @@
   #stage.off { visibility: hidden; }
   #board2d { position: fixed; --sq: 60px; box-sizing: border-box; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); border: 6px solid #3a2a1e; box-shadow: 0 0 0 2px #5a4330, 0 18px 40px rgba(0,0,0,.5); user-select: none; }
   #board2d[hidden] { display: none; }
-  .sq2 { position: relative; display: grid; place-items: center; cursor: pointer; min-width: 0; min-height: 0; overflow: hidden; }
+  .sq2 { position: relative; display: grid; place-items: center; cursor: pointer; min-width: 0; min-height: 0; overflow: hidden; isolation: isolate; }
+  /* sombra de las piezas en 2D (v1.51): mancha de contacto bajo la base (.sh, detrás de todo dentro de la casilla) + sombra suave */
+  .sq2 .sh, .fly .sh { position: absolute; left: 18%; right: 18%; bottom: 5%; height: 16%; border-radius: 50%; z-index: -1; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(0,0,0,.5), rgba(0,0,0,0)); }
+  .sq2.np .sh, .sq2.drg .sh, .sq2.fallenSq .sh { display: none; }
+  .fly { isolation: isolate; }
   .sq2.l { background: #cdb98f; } .sq2.d { background: #7a5c43; }
   .sq2.last::before, .sq2.sel::before, .sq2.chk::before, .sq2.pre::before { content: ""; position: absolute; inset: 0; }
   .sq2.pre::before { background: rgba(74, 132, 222, .5); }
@@ -246,7 +251,7 @@
   .sq2.sel::before { background: rgba(227, 162, 70, .6); }
   .sq2.chk::before { background: radial-gradient(circle, rgba(212, 85, 63, .85) 0 35%, rgba(212, 85, 63, .25) 70%); }
   .fly { position: absolute; display: grid; place-items: center; z-index: 4; pointer-events: none; transition: transform .35s cubic-bezier(.45, 0, .2, 1); }
-  .sq2 img.pc, .fly img.pc { position: relative; width: 92%; height: 92%; user-select: none; -webkit-user-drag: none; }
+  .sq2 img.pc, .fly img.pc { position: relative; width: 92%; height: 92%; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
   .sq2 .pc, .fly .pc { position: relative; font-family: var(--glyph); font-size: calc(var(--sq) * .82); line-height: 1; }
   .sq2 .pc.w, .fly .pc.w, .taken .w { color: #fbf7ee; -webkit-text-stroke: 1.2px #1b1712; }
   .sq2 .pc.b, .fly .pc.b, .taken .b { color: #1e1a16; -webkit-text-stroke: 1px #000; }
@@ -410,7 +415,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.50</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.51</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -2786,7 +2791,8 @@ const SOUNDS = {
     // contenido fijo de cada casilla: la pieza, la marca de jugada posible y las coordenadas del borde.
     // render2D solo cambia lo que difiere (recrear las imágenes en cada jugada hacía parpadear el tablero en iPhone)
     const bottomRank = localColor === 'w' ? '1' : '8', leftFile = localColor === 'w' ? 'a' : 'h';
-    d.innerHTML = '<img class="pc" alt="" decoding="sync" hidden><span class="mk" hidden></span>'
+    d.className += ' np';
+    d.innerHTML = '<img class="pc" alt="" decoding="sync" hidden><span class="sh"></span><span class="mk" hidden></span>'
       + (sq[1] === bottomRank ? '<span class="co f">' + sq[0] + '</span>' : '')
       + (sq[0] === leftFile ? '<span class="co r">' + sq[1] + '</span>' : '');
     board2d.appendChild(d);
@@ -2831,7 +2837,7 @@ const SOUNDS = {
       g.className = 'dragGhost'; g.removeAttribute('hidden');
       Object.assign(g.style, { width: r.width * 1.15 + 'px', height: r.height * 1.15 + 'px' });
       document.body.appendChild(g);
-      drag2.ghost = g; drag2.img.style.visibility = 'hidden';
+      drag2.ghost = g; drag2.img.style.visibility = 'hidden'; drag2.img.parentElement.classList.add('drg');
     }
     const g = drag2.ghost;
     g.style.left = e.clientX + 'px'; g.style.top = e.clientY + 'px';
@@ -2847,7 +2853,7 @@ const SOUNDS = {
     if (!drag2 || e.pointerId !== drag2.id) return;
     const d = drag2; drag2 = null;
     if (!d.ghost) return;   // no se movió: fue un toque normal (lo maneja el click)
-    d.ghost.remove(); d.img.style.visibility = '';
+    d.ghost.remove(); d.img.style.visibility = ''; board2d.querySelectorAll('.sq2.drg').forEach(c => c.classList.remove('drg'));
     board2d.querySelectorAll('.sq2.hover').forEach(c => c.classList.remove('hover'));
     dragEnded = true; setTimeout(() => { dragEnded = false; }, 400);
     const to = e.type === 'pointerup' ? d.over : null;
@@ -2876,6 +2882,7 @@ const SOUNDS = {
       const src = p ? pieceImg(p.color, p.type) : '';
       if (img.dataset.src !== src) { img.dataset.src = src; if (src) img.src = src; }
       img.hidden = !src;
+      cell.classList.toggle('np', !src);   // sin pieza, sin sombra
       const mk = cell.querySelector('.mk'), cls = m ? (m.captured ? 'mk ring' : 'mk dot') : 'mk';
       if (mk.className !== cls) mk.className = cls;
       mk.hidden = !m;
@@ -2896,6 +2903,7 @@ const SOUNDS = {
     const own = a.querySelector('img.pc');
     if (own && !own.hidden && own.dataset.src === pieceImg(color, type)) el.appendChild(own);   // se mueve la imagen ya dibujada
     else { const im = new Image(); im.className = 'pc'; im.alt = ''; im.decoding = 'sync'; im.src = im.dataset.src = pieceImg(color, type); el.appendChild(im); }
+    el.insertAdjacentHTML('beforeend', '<span class="sh"></span>');
     el.dataset.to = to;
     if (instant) el.style.transition = 'none';
     board2d.appendChild(el);
@@ -4132,6 +4140,7 @@ const SOUNDS = {
     board2d.querySelectorAll('.sq2').forEach(cell => {
       const im = cell.querySelector('img.pc'), sq = cell.dataset.sq;
       if (!im) return;
+      cell.classList.toggle('fallenSq', !!E && E.lose === sq);
       if (E && E.lose === sq) {
         if (!im.classList.contains('fallen')) {
           im.classList.add('fallen');
@@ -4241,7 +4250,13 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261016174346';
+  const BUILD = '20261016175614';
+  // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
+  if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
+    const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
+    const two = n => String(n).padStart(2, '0');
+    $('ver').textContent += ' · dev ' + two(d.getDate()) + '/' + two(d.getMonth() + 1) + ' ' + two(d.getHours()) + ':' + two(d.getMinutes()) + ':' + two(d.getSeconds());
+  }
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
