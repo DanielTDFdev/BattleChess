@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.46** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.47** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -258,11 +258,15 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   `#clsMark`). 3D: el rey perdedor hace `Death_B` y queda tirado (`endPose`; sin repetir la animación si se reconstruye el
   tablero), el ganador `Cheering`; medallas proyectadas como `#clsMark3d` y estrellitas sobre el hueso `head`. Se anima solo la
   primera vez (`endFxFor`); con «Reducir movimiento», todo quieto. Íconos de copa y apretón de manos de Lucide (ISC).
+- **«Mis partidas» compacta (v1.47):** en el celular se veía muy cargada. Arriba solo las en curso (punto verde que late,
+  `.dot`) y los desafíos sin aceptar (punto gris quieto); las terminadas van plegadas en `<details id="lbPast">`
+  («Partidas terminadas (N)», lista `#lbPastList` con renglones más chicos). Si no hay terminadas, no aparece.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Historial reciente
 
+- **v1.47:** «Mis partidas» con las en curso arriba (punto verde que late) y las terminadas plegadas.
 - **v1.46:** al terminar la partida, copa sobre el rey ganador y el perdedor tumbado con estrellitas (mate, tiempo o
   abandono); en tablas, apretón de manos sobre los dos reyes. En 2D y 3D.
 - **v1.45:** las partidas online exigen entrar con Google (la sesión anónima se vincula y conserva sus partidas);
