@@ -1401,7 +1401,12 @@ const SOUNDS = {
     pendingMove = { from, to };
     dragDrop = false;
     const tmp = new Chess(chess.fen()); tmp.move({ from, to, promotion: 'q' });
-    if (is2D) { selected = null; targets = []; render2D({ pos: tmp, last: { from, to } }); }
+    if (is2D) {
+      selected = null; targets = []; render2D({ pos: tmp, last: { from, to } });
+      // en 2D la pieza ya quedó en su destino: suena ahora (al confirmar no se repite; en 3D suena al moverse de verdad)
+      if (isCastle(mv)) castleSfx(mv); else moveSfx(mv.color, mv);
+      if (tmp.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
+    }
     else { selected = from; targets = [mv]; drawMarks(); }
     confirmEl.hidden = false;
     placeConfirm();
@@ -1445,7 +1450,7 @@ const SOUNDS = {
     pendingMove = null; confirmEl.hidden = true;
     if (busy || isOver() || notMyTurn()) { if (is2D) render2D(); return; }
     dragDrop = true;   // en 2D la pieza ya está en su destino: aterriza sin vuelo
-    play_move(from, to);
+    play_move(from, to, { quiet: is2D });   // el sonido ya sonó al apoyarla (askConfirm)
   });
   // Cancelar: la jugada vuelve atrás y no queda nada seleccionado
   confirmEl.querySelector('.no').addEventListener('click', () => cancelConfirm(false));
@@ -2925,7 +2930,7 @@ const SOUNDS = {
     // se muestra la posición previa sin las piezas que viajan (la capturada sigue en su casilla hasta que llega el atacante)
     flights.forEach((f, i) => fly(...f, drop && i === 0));
     render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
-    castleSfx(mv);
+    if (!opt.quiet) castleSfx(mv);
     setTimeout(() => {
       // la imagen que viajó se queda en la casilla de destino (reemplaza a la que había, vacía o la pieza comida):
       // cambiarle el src a la de destino obligaba a Safari a redibujar el SVG y la pieza desaparecía un instante
@@ -2940,8 +2945,10 @@ const SOUNDS = {
       });
       clockFlush();
       busy = false;
-      moveSfx(mv.color, mv);
-      if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
+      if (!opt.quiet) {
+        moveSfx(mv.color, mv);
+        if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
+      }
       updateStatus(); render2D(); checkEnd();
       if (mv.captured) caption(nameOf(mv.piece, mv.color) + ' captura ' + lc(nameOf(mv.captured, opp(mv.color))));
       afterMove();
@@ -4234,7 +4241,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261016174117';
+  const BUILD = '20261016174316';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json
