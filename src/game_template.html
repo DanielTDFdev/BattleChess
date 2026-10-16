@@ -1082,9 +1082,14 @@ const SOUNDS = __SOUNDS__;
   // y con eso también suena el Web Audio del juego. Se pausa al salir de la página.
   const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   let iosKeep = null;
+  // Safari 16.4+ tiene la Audio Session API: con type 'playback' el Web Audio suena con el interruptor de silencio
+  // sin necesidad del <audio> en bucle, que iOS publica como «música» en la pantalla bloqueada. El truco viejo queda
+  // solo para iOS anteriores (o forzado con ?keep, para comparar).
+  const HAS_SESSION = !!navigator.audioSession && !/[?&]keep\b/.test(location.search);
+  function setSession(t) { try { if (navigator.audioSession && navigator.audioSession.type !== t) navigator.audioSession.type = t; } catch (_) {} }
   const audioDiag = { keepCuts: 0, states: [], tries: 0, lastErr: '', recreated: 0 };
   function iosAudioSession() {
-    if (!IOS || !$('sound').checked) return;
+    if (!IOS || HAS_SESSION || !$('sound').checked) return;
     if (!iosKeep) {
       iosKeep = document.createElement('audio');
       iosKeep.src = 'data:audio/wav;base64,UklGRsQPAABXQVZFZm10IBAAAAABAAEAoA8AAKAPAAABAAgAZGF0YaAPAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
@@ -1107,7 +1112,29 @@ const SOUNDS = __SOUNDS__;
       if (gesture && iosKeep === el) { try { el.removeAttribute('src'); el.load(); } catch (_) {} iosKeep = null; audioDiag.recreated++; }
     });
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden && iosKeep) iosKeep.pause(); });
+  // al salir de la página no alcanza con pausar: iOS deja el reproductor pausado en la pantalla bloqueada hasta que el
+  // <audio> se destruye. Se descarta (el próximo toque crea otro), se limpia la sesión de medios y se suelta la de audio.
+  function iosAudioOff() {
+    if (iosKeep) {
+      const el = iosKeep; iosKeep = null;
+      try { el.pause(); el.removeAttribute('src'); el.load(); el.remove(); } catch (_) {}
+    }
+    try {
+      if ('mediaSession' in navigator) { navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = 'none'; }
+    } catch (_) {}
+  }
+  function audioAway() {
+    iosAudioOff();
+    if (IOS) {
+      setSession('auto');
+      if (actx && actx.state === 'running') actx.suspend().catch(() => {});
+    }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) audioAway();
+    else if ($('sound').checked) { setSession('playback'); if (actx && actx.state === 'suspended') actx.resume().catch(() => {}); }
+  });
+  addEventListener('pagehide', audioAway);
   // Diagnóstico de sonido: agregar ?diag a la dirección muestra el estado del audio en una esquina
   if (/[?&]diag\b/.test(location.search)) {
     const box = document.createElement('pre');
@@ -1116,6 +1143,7 @@ const SOUNDS = __SOUNDS__;
     setInterval(() => {
       box.textContent = 'iOS: ' + IOS + ' · app instalada: ' + (matchMedia('(display-mode: standalone)').matches || !!navigator.standalone)
         + '\naudioSession: ' + (navigator.audioSession ? navigator.audioSession.type : 'no existe')
+        + ' · método: ' + (!IOS ? '—' : HAS_SESSION ? 'audioSession' : 'audio de silencio')
         + '\nAudioContext: ' + (actx ? actx.state : 'sin crear (tocá la pantalla)') + ' · unlocked: ' + unlocked
         + '\nsonidos cargados: ' + Object.keys(sbuf).length + '/' + Object.keys(SOUNDS).length
         + '\naudio silencio: ' + (iosKeep ? (iosKeep.paused ? 'pausado' : 'sonando') + (iosKeep.error ? ' error ' + iosKeep.error.code : '') : '—')
@@ -1129,7 +1157,7 @@ const SOUNDS = __SOUNDS__;
   }
   function audioInit() {
     // iPhone: que el juego suene aunque el interruptor de silencio esté activado (Safari 16.4+)
-    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+    if ($('sound').checked) setSession('playback');
     iosAudioSession();
     if (!actx) {
       try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { return; }
@@ -1164,7 +1192,7 @@ const SOUNDS = __SOUNDS__;
   try { if (localStorage.getItem('chaskiboom.sound') === '0') $('sound').checked = false; } catch (_) {}
   $('sound').addEventListener('change', e => {
     try { localStorage.setItem('chaskiboom.sound', e.target.checked ? '1' : '0'); } catch (_) {}
-    if (!e.target.checked && iosKeep) iosKeep.pause();
+    if (!e.target.checked) { iosAudioOff(); if (IOS) setSession('auto'); }
   });
 
   // sfx('sword', 3) elige una de sword1..sword3 al azar, sin repetir la última
