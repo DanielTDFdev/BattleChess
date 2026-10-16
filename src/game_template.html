@@ -961,15 +961,17 @@ const SOUNDS = __SOUNDS__;
       }
       const pc = P && sq ? P.get(sq) : null;
       if (pc && pc.color === localColor && sq !== preSel) { preSel = sq; preTargets = P.moves({ square: sq, verbose: true }); }
-      else { preSel = null; preTargets = []; }
+      else { if (preSel && sq && sq !== preSel) denySfx(); preSel = null; preTargets = []; }
       drawMarks(); return;
     }
     if (busy || isOver() || notMyTurn()) return;
     if (sq && selected && targets.some(m => m.to === sq)) { if (isCorr()) askConfirm(selected, sq); else play_move(selected, sq); return; }
     const pc = sq ? chess.get(sq) : null;
     if (pc && pc.color === chess.turn()) select(sq === selected ? null : sq);
-    else select(null);
+    else { if (selected && sq) denySfx(); select(null); }   // con una pieza elegida, un destino al que no puede ir
   }
+  // movida ilegal (destino al que la pieza elegida no puede ir, soltarla donde no puede o un premove que ya no vale)
+  function denySfx() { sfx('deny', 0, { exact: true, vol: 0.8 }); }
   /* Confirmación (correspondencia): la jugada se muestra en el tablero (2D) y abajo un aviso con Jugar / Cambiar.
      Jugar la envía; Cambiar (o Esc) la deshace y la pieza queda seleccionada para elegir otro destino. */
   let pendingMove = null;
@@ -1037,7 +1039,7 @@ const SOUNDS = __SOUNDS__;
     if (!premove) return false;
     const pm = premove; premove = null;
     const ok = chess.moves({ verbose: true }).some(m => m.from === pm.from && m.to === pm.to);
-    if (!ok) { caption('El premove ' + pm.from + ' → ' + pm.to + ' ya no es válido: se canceló'); drawMarks(); return false; }
+    if (!ok) { caption('El premove ' + pm.from + ' → ' + pm.to + ' ya no es válido: se canceló'); denySfx(); drawMarks(); return false; }
     setTimeout(() => { if (!busy && !notMyTurn() && !isOver()) play_move(pm.from, pm.to, { promo: 'q' }); }, 80);
     return true;
   }
@@ -2427,7 +2429,7 @@ const SOUNDS = __SOUNDS__;
     const to = e.type === 'pointerup' ? d.over : null;
     if (!to || to === d.from) return;   // vuelve a su casilla y queda seleccionada
     const legal = (selected === d.from && targets.some(m => m.to === to)) || (preSel === d.from && preTargets.some(m => m.to === to));
-    if (!legal) return;
+    if (!legal) { denySfx(); return; }   // vuelve a su casilla y queda seleccionada
     dragDrop = selected === d.from;   // las jugadas reales aterrizan sin vuelo; un premove solo se anota
     tapSquare(to);
     dragDrop = false;
