@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.43** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.44** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -36,7 +36,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 1. Se itera viendo el juego como artifact en el chat (`python tools/build.py artifact` → `build/artifact.html`).
    El artifact no puede conectarse a internet: no tiene Firebase ni Stockfish (usa el motor propio de respaldo).
 2. Los cambios se suben a `/dev/` (`python tools/build.py dev`) para probar en el celular y el online.
-3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.43 → v1.44…; v2.0 para saltos grandes),
+3. Cuando Daniel dice **"publicar"** (o "subilo a producción"): subir la versión en el template (v1.44 → v1.45…; v2.0 para saltos grandes),
    regenerar `index.html` y `dev/index.html`, probar, y commitear con el número de versión en el mensaje.
 4. El repo principal no se toca hasta que Daniel lo indica.
 5. Pruebas automáticas en la nube: el entorno bloquea las CDN (jsdelivr, Google Fonts). Para levantar el juego con
@@ -98,6 +98,13 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Sonido en iPhone (v1.12):** Web Audio queda mudo con el interruptor de silencio. En iOS se reproduce en bucle
   un `<audio>` HTML con silencio (`iosAudioSession()`), que pasa la sesión a «reproducción». Se pausa al ocultar la página
   o al apagar el sonido. No se pudo probar en Safari real desde la nube (no hay WebKit).
+  **Desde v1.44** ese `<audio>` aparecía como reproductor «ChaskiBoom Battle Chess» en la pantalla bloqueada al minimizar
+  (pausarlo no alcanza: iOS lo deja hasta que el elemento se destruye). Ahora con `navigator.audioSession` (iOS 16.4+,
+  `HAS_SESSION`) no se crea el `<audio>`: la sesión `playback` sola hace sonar el Web Audio con el interruptor en silencio.
+  El truco viejo queda para iOS anteriores o forzado con `?keep`. Al ocultar la página (`visibilitychange` y `pagehide`,
+  `audioAway()`): se destruye el `<audio>` si existe (`iosAudioOff()`), se limpia `mediaSession`, la sesión pasa a `'auto'`
+  y se suspende el `AudioContext`; al volver, `'playback'` y `resume()`. `?diag` muestra `método: audioSession / audio de silencio`.
+  Falta confirmar en el iPhone que suena con el interruptor en silencio sin el `<audio>`.
 - **Confeti y «Reducir movimiento» (v1.12):** con la opción de accesibilidad activada sale una versión suave
   (menos papelitos, sin giros, caen despacio desde arriba del cartel, 1,4 s). Daniel tiene la opción activada en su iPhone.
 - **Diagnóstico de sonido:** agregar `?diag` a la dirección muestra el estado del audio (iOS, AudioContext, sonidos cargados,
@@ -245,6 +252,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.9:** sonido `come` al capturar (reemplaza al de movimiento), el swoosh del enroque suena al empezar el movimiento
   y la traslación en 2D es más rápida (0,35 s en vez de 0,5 s).
 - **v1.10:** retratos `winner` / `loser` a la izquierda en los carteles de fin de partida.
+- **v1.44:** en iPhone ya no queda el reproductor «ChaskiBoom Battle Chess» en la pantalla bloqueada al minimizar
+  (Audio Session API en vez del audio de silencio en bucle; todo el audio se suelta al ocultar la página).
 - **v1.43:** con reloj: sonido `short_in_time` al quedar 60 s, carteles de aviso de 1,5 s (antes 5 s) y aviso sonoro
   cuando el rival juega y no estás mirando.
 - **v1.42:** online con reloj: quien se desconecta más de 40 s pierde automáticamente (sin cartel de reclamar) y el
@@ -302,6 +311,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **Probar v1.44 en el iPhone** (`?diag` debe decir `método: audioSession`): que suene con el interruptor en silencio y que
+  al bloquear no aparezca el reproductor. Si no suena, volver al `<audio>` de silencio pero destruyéndolo al minimizar.
 
 - **Probar Blitz/Rápida con dos dispositivos** (las reglas ya están publicadas): bandera, anulación a los 30 s, rival que se va.
 - Bala (1, 1+1, 2+1) y «Más controles de tiempo», después de medir el retraso de la conexión.
