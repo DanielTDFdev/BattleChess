@@ -410,7 +410,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="../assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.47</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.48</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -3283,7 +3283,7 @@ const SOUNDS = {
       li.innerHTML = (res ? '' : '<span class="dot' + (g.guest ? '' : ' wait') + '" title="' + (g.guest ? 'En curso' : 'Esperando a tu amigo') + '"></span>') + '<div class="who"><b></b><span></span></div>' + (g.perMove !== undefined || g.tc ? '<span class="tag"></span>' : '') + '<button>Abrir</button>';
       li.querySelector('b').textContent = oppName ? 'Contra ' + oppName : 'Partida ' + id;
       if (g.perMove !== undefined || g.tc) { const t = li.querySelector('.tag'); t.textContent = modeTag(g); t.title = modeTitle(g); }
-      const sp = li.querySelector('span'); sp.textContent = state + ' · ' + (g.ply || 0) + (g.ply === 1 ? ' jugada' : ' jugadas'); if (mine) sp.className = late ? 'mine late' : 'mine';
+      const sp = li.querySelector('.who span'); sp.textContent = state + ' · ' + (g.ply || 0) + (g.ply === 1 ? ' jugada' : ' jugadas'); if (mine) sp.className = late ? 'mine late' : 'mine';
       li.querySelector('button').addEventListener('click', () => { lobby.hidden = true; enterOnline(id); });
       // ✕: cancelar un desafío sin aceptar (se borra) o quitar de tu lista una terminada (al rival le queda). Las en curso, no.
       if (!g.guest || res) {
@@ -4231,7 +4231,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261016171937';
+  const BUILD = '20261016172148';
   let updLater = null;   // build que el jugador dejó para «después»
   async function checkUpdate() {
     if (!/^\d{8,}$/.test(BUILD)) return;   // artifact o vista previa: sin version.json

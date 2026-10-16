@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.47** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.48** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -266,6 +266,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.48:** en «Mis partidas» el estado («Le toca a tu rival…») se escribía dentro del punto verde y salía en columna.
 - **v1.47:** «Mis partidas» con las en curso arriba (punto verde que late) y las terminadas plegadas.
 - **v1.46:** al terminar la partida, copa sobre el rey ganador y el perdedor tumbado con estrellitas (mate, tiempo o
   abandono); en tablas, apretón de manos sobre los dos reyes. En 2D y 3D.
