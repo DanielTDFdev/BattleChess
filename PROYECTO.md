@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.49** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.50** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -224,6 +224,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   tablero, a la altura que no tapa el origen ni el destino (`placeConfirm`, prueba franjas desde el medio; en 3D proyecta
   las casillas con la cámara). Sí la envía (en 2D aterriza sin vuelo, `dragDrop`); Cancelar o Esc la vuelve atrás sin
   dejar nada seleccionado. Se cancela sola al terminar la partida, salir de ella o revisar el historial.
+  Desde v1.50, en 2D el sonido de la jugada (mover, comer, enroque, jaque) suena en `askConfirm`, al apoyar la pieza; al
+  confirmar, `play_move(..., { quiet: true })` no lo repite. En 3D suena al moverse de verdad, después de confirmar.
 - **Blitz y Rápida online (v1.38):** al desafiar se elige el modo: Blitz 3 min, 3+2, 5 min; Rápida 10 min, 10+5, 15+10;
   correspondencia 1/3/7 días o sin límite (localStorage `chaskiboom.mode`: `3+2`, `d3`…; migra el viejo `chaskiboom.perMove`).
   Bala quedó afuera hasta medir cuánto pesa la conexión. En la partida: `tc = { base, inc }` (ms) y `clock = { w, b }`, lo que
@@ -268,6 +270,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.50:** en las partidas con confirmación, la jugada suena al apoyar la pieza (2D) y no al tocar Sí.
 - **v1.49:** sonido de error al intentar una movida ilegal (tocar o soltar en un destino imposible, premove inválido).
 - **v1.48:** en «Mis partidas» el estado («Le toca a tu rival…») se escribía dentro del punto verde y salía en columna.
 - **v1.47:** «Mis partidas» con las en curso arriba (punto verde que late) y las terminadas plegadas.
