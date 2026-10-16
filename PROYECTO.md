@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.44** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.45** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -239,11 +239,24 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   muestra la etiqueta (`modeTag`, «3+2»). La revancha hereda el modo (`gameMode`). Reglas nuevas: `tc`, `clock` (no puede
   subir más que el incremento), `lastMoveAt` (= `now`), y `result` acepta `timeout` con reloj, `aborted` y `left` solo si
   corresponde. No se pudieron probar las reglas en el emulador (no se puede bajar en la nube). Prueba con mock: `test_tc.py`.
+- **Online solo con Google (v1.45):** las sesiones anónimas se perdían (cambio de celular o de navegador, app instalada
+  vs Safari, Safari borra los datos tras 7 días sin abrir el sitio) y la partida quedaba a nombre del `uid` viejo.
+  Ahora Online, «Ver partida» y los links de desafío pasan por `needGoogle()`: cartel «Entrar con Google» / Cancelar
+  (contra la CPU sin cuenta). `googleSignIn()`: si hay sesión anónima, `linkWithPopup` (conserva el `uid`); si esa cuenta de
+  Google ya existía, entra con ella y avisa cuántas partidas anónimas quedaron afuera. `fbConnect` ya no crea anónimos
+  (`me` puede ser `null`); `fbResume` solo arranca con sesión guardada. En navegadores internos (Instagram, Facebook,
+  Messenger: `IN_APP`) Google no deja entrar: cartel «Abrilo en Chrome o Safari» con Copiar link. Salir cierra sesión y
+  corta el vigía (`stopWatch`). El proveedor anónimo sigue activo en Firebase para que los viejos puedan vincular.
+  **Rescate manual** de una partida de alguien que cambió de `uid`: en la consola, reemplazar el `uid` viejo por el nuevo
+  (Authentication → Users) en `games/<código>/guest/uid` (o `host/uid`) y en `white`/`black`, y crear
+  `users/<uid nuevo>/games/<código>/updatedAt` (número).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Historial reciente
 
+- **v1.45:** las partidas online exigen entrar con Google (la sesión anónima se vincula y conserva sus partidas);
+  aviso para abrir el link en Chrome o Safari desde Instagram o Facebook.
 - **v1.5:** el cartel de las frases para el rival dura 3 s (antes 1 s).
 - **v1.6:** botón Cancelar en el cartel de Nueva partida contra la CPU.
 - **v1.7:** instalable como app en el celular (PWA, íconos de `icono_chaskiboom.png`) y arranque en vista 2D.
@@ -311,6 +324,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **Probar v1.45:** cartel de Google al entrar a Online y desde un link de desafío sin sesión; vincular una sesión
+  anónima con partidas; ventana de Google en la app instalada del iPhone.
 
 - **Probar v1.44 en el iPhone** (`?diag` debe decir `método: audioSession`): que suene con el interruptor en silencio y que
   al bloquear no aparezca el reproductor. Si no suena, volver al `<audio>` de silencio pero destruyéndolo al minimizar.
