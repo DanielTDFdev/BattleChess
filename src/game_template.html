@@ -151,6 +151,8 @@ __PWA__
   #lobby .acct span { flex: 1; min-width: 0; }
   #lobby .acct button { flex: none; display: inline-flex; align-items: center; gap: 8px; }
   #lobby .acct .gLogo { width: 18px; height: 18px; flex: none; }
+  .gBtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .gBtn .gLogo { width: 18px; height: 18px; flex: none; }
   #lbGames { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   #lbGames li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
   #lbGames li.empty { color: var(--muted); justify-content: center; }
@@ -398,7 +400,7 @@ __PWA__
   <div class="card">
     <h2 id="lbTitle">Jugar online</h2>
     <div id="lbMain">
-      <div class="acct"><span id="acctTxt">Conectando…</span><button id="acctBtn"><svg class="gLogo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Entrar con Google</button></div>
+      <div class="acct"><span id="acctTxt">Conectando…</span><button id="acctBtn">Salir</button></div>
       <label class="fld" for="nick">Tu apodo
         <input id="nick" maxlength="20" autocomplete="nickname" placeholder="Por ejemplo, Daniel">
       </label>
@@ -2640,10 +2642,10 @@ const SOUNDS = __SOUNDS__;
     if (db) return;
     if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
     const auth = firebase.auth();
-    // hay que esperar a que Firebase restaure la sesión guardada; si no hay ninguna, se entra como anónimo
-    let user = await new Promise(res => { const off = auth.onAuthStateChanged(u => { off(); res(u); }); });
-    if (!user) user = (await auth.signInAnonymously()).user;
-    me = user.uid;
+    // hay que esperar a que Firebase restaure la sesión guardada. Desde v1.45 no se crean usuarios anónimos: para jugar
+    // online hay que entrar con Google (needGoogle). Los anónimos viejos siguen andando hasta que vinculan su cuenta.
+    const user = await new Promise(res => { const off = auth.onAuthStateChanged(u => { off(); res(u); }); });
+    me = user ? user.uid : null;
     db = firebase.database();
     db.ref('.info/serverTimeOffset').on('value', s => { srvOff = s.val() || 0; });
     // al reconectarse, el servidor ya borró la presencia (onDisconnect): se vuelve a marcar en la partida abierta
@@ -2653,61 +2655,97 @@ const SOUNDS = __SOUNDS__;
   }
   /* Al arrancar: si hay una sesión de Firebase guardada (ya jugó online en este navegador o esta app), se conecta para
      vigilar sus partidas aunque no tenga apodo guardado (en el iPhone la app instalada y Safari no comparten el apodo).
-     Sin sesión guardada no se conecta, para no crear un usuario anónimo a quien nunca jugó online. */
+     Sin sesión guardada no hay nada que vigilar. */
   function fbResume() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
-      const off = firebase.auth().onAuthStateChanged(u => { off(); if (u || getNick()) fbInit().catch(() => {}); });
+      const off = firebase.auth().onAuthStateChanged(u => { off(); if (u) fbInit().catch(() => {}); });
     } catch (e) { console.error(e); }
   }
 
-  /* --- Cuenta: anónima (solo este navegador) o con Google (las mismas partidas en todos tus dispositivos) --- */
+  /* --- Cuenta: para jugar online hay que entrar con Google (desde v1.45). Las sesiones anónimas se perdían al cambiar
+     de celular, de navegador o de la app instalada a Safari, y Safari borra los datos de un sitio tras 7 días sin abrirlo.
+     Quien ya jugaba como anónimo vincula su cuenta (linkWithPopup) y conserva el uid y sus partidas. --- */
   const G_LOGO = '<svg class="gLogo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+  // navegadores dentro de otras apps (Instagram, Facebook, Messenger…): Google no deja entrar desde ahí (disallowed_useragent)
+  const IN_APP = /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Messenger|Line\/|Snapchat|musical_ly|BytedanceWebview|TikTok/i.test(navigator.userAgent);
+  const googleUser = () => { const u = firebase.auth().currentUser; return u && !u.isAnonymous ? u : null; };
+  function authError(e) {
+    console.error(e);
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request' || e.code === 'auth/user-cancelled') return;
+    showModal('No se pudo entrar', e.code === 'auth/popup-blocked' ? 'El navegador bloqueó la ventana de Google. Permití las ventanas emergentes para este sitio e intentá de nuevo.'
+      : e.code === 'auth/network-request-failed' ? 'No hay conexión. Revisá tu conexión e intentá de nuevo.'
+      : e.code === 'auth/operation-not-allowed' ? 'El inicio de sesión con Google no está activado en Firebase.'
+      : 'No se pudo iniciar sesión con Google (' + (e.code || e.message) + ').', [{ label: 'Entendido', primary: true, onClick: backHome }]);
+  }
+  async function googleSignIn() {
+    const auth = firebase.auth(), u = auth.currentUser, prov = new firebase.auth.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: 'select_account' });
+    let lost = 0;
+    if (u && u.isAnonymous) {
+      try {
+        await u.linkWithPopup(prov);   // conserva el uid: sus partidas siguen siendo suyas
+      } catch (e) {
+        if (e.code !== 'auth/credential-already-in-use' && e.code !== 'auth/email-already-in-use') throw e;
+        // esa cuenta de Google ya jugaba en otro dispositivo: se entra con ella y las partidas anónimas de acá quedan afuera
+        try { lost = Object.keys((await db.ref('users/' + u.uid + '/games').once('value')).val() || {}).length; } catch (_) {}
+        const cred = e.credential || (firebase.auth.GoogleAuthProvider.credentialFromError && firebase.auth.GoogleAuthProvider.credentialFromError(e));
+        if (cred) await auth.signInWithCredential(cred); else await auth.signInWithPopup(prov);
+        if (online) leaveOnline();
+      }
+    } else await auth.signInWithPopup(prov);
+    me = auth.currentUser.uid;
+    const n = auth.currentUser.displayName;
+    if (!getNick() && n) setNick(n.split(' ')[0].slice(0, 20));
+    watchAll();
+    return lost;
+  }
+  // antes de cualquier cosa online: si no entró con Google, cartel que lo pide. Resuelve true si ya puede jugar.
+  async function needGoogle() {
+    if (googleUser()) return true;
+    return new Promise(res => {
+      if (IN_APP) {
+        const url = location.href;
+        showModal('Abrilo en Chrome o Safari', 'Para jugar online tenés que entrar con tu cuenta de Google, y Google no deja hacerlo desde el navegador de esta app. Tocá el menú (⋯) y elegí «Abrir en el navegador», o copiá el link y pegalo en Chrome o Safari.',
+          [{ label: 'Copiar link', primary: true, onClick: () => { try { navigator.clipboard.writeText(url); } catch (_) {} res(false); } },
+           { label: 'Cancelar', onClick: () => res(false) }]);
+        return;
+      }
+      showModal('Entrar con Google', 'Para jugar online necesitás entrar con tu cuenta de Google. Así tus partidas quedan guardadas aunque cambies de celular o de navegador. Contra la CPU se juega sin cuenta.',
+        [{ label: 'Cancelar', onClick: () => res(false) }]);
+      const b = document.createElement('button');
+      b.className = 'primary gBtn'; b.innerHTML = G_LOGO + 'Entrar con Google';
+      // la ventana de Google se abre en el mismo toque (si no, el navegador la bloquea)
+      b.addEventListener('click', () => {
+        closeModal();
+        googleSignIn().then(lost => {
+          if (!lost) { res(true); return; }
+          showModal('Entraste con tu cuenta de Google', 'Esa cuenta ya se usaba en otro dispositivo. ' + (lost === 1 ? 'La partida que tenías' : 'Las ' + lost + ' partidas que tenías') + ' sin cuenta en este dispositivo no se pueden pasar solas a tu cuenta.',
+            [{ label: 'Entendido', primary: true, onClick: () => res(true) }]);
+        }, e => { authError(e); res(false); });
+      });
+      $('mBtns').prepend(b); b.focus();
+    });
+  }
+  function stopWatch() {
+    if (watch.idx) watch.idx.off();
+    Object.keys(watch.games).forEach(unwatchGame);
+    watch.idx = null; watch.uid = null; watch.done.clear(); watch.list = {};
+    try { updatePending(); } catch (_) {}
+    watch.list = null;
+  }
   function acctUI() {
-    const u = firebase.auth().currentUser;
-    if (!u) return;
-    if (u.isAnonymous) {
-      $('acctTxt').textContent = 'Sin cuenta: tus partidas quedarán solo en este dispositivo.';
-      $('acctBtn').innerHTML = G_LOGO + 'Entrar con Google';
-    } else {
-      $('acctTxt').textContent = 'Conectado como ' + (u.displayName || u.email || 'usuario de Google') + '. Tus partidas están en todos tus dispositivos.';
-      $('acctBtn').textContent = 'Salir';
-    }
+    const u = googleUser();
+    $('acctTxt').textContent = u ? 'Conectado como ' + (u.displayName || u.email || 'usuario de Google') + '.' : '';
   }
   $('acctBtn').addEventListener('click', async () => {
-    const auth = firebase.auth(), u = auth.currentUser;
-    if (!u) return;
-    $('lbMsg').textContent = '';
     try {
-      if (u.isAnonymous) {
-        const prov = new firebase.auth.GoogleAuthProvider();
-        try {
-          // se vincula la cuenta anónima con Google: el jugador conserva su identidad y sus partidas
-          await u.linkWithPopup(prov);
-        } catch (e) {
-          if (e.code !== 'auth/credential-already-in-use' && e.code !== 'auth/email-already-in-use') throw e;
-          // esa cuenta de Google ya juega en otro dispositivo: se entra con ella
-          const cred = e.credential || (firebase.auth.GoogleAuthProvider.credentialFromError && firebase.auth.GoogleAuthProvider.credentialFromError(e));
-          if (cred) await auth.signInWithCredential(cred); else await auth.signInWithPopup(prov);
-          if (online) leaveOnline();
-          $('lbMsg').textContent = 'Entraste con tu cuenta de Google. Las partidas que jugaste sin cuenta en este navegador quedaron con la identidad anterior.';
-        }
-        const n = auth.currentUser.displayName;
-        if (!getNick() && n) { setNick(n.split(' ')[0].slice(0, 20)); $('nick').value = getNick(); }
-      } else {
-        if (online) leaveOnline();
-        await auth.signOut();
-        await auth.signInAnonymously();
-      }
-      me = auth.currentUser.uid;
-      acctUI(); listGames(); watchAll();
-    } catch (e) {
-      console.error(e);
-      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
-      $('lbMsg').textContent = e.code === 'auth/popup-blocked' ? 'El navegador bloqueó la ventana de Google. Permití las ventanas emergentes para este sitio e intentá de nuevo.'
-        : e.code === 'auth/operation-not-allowed' ? 'El inicio de sesión con Google todavía no está activado en Firebase.'
-        : 'No se pudo iniciar sesión (' + (e.code || e.message) + ').';
-    }
+      if (online) leaveOnline();
+      await firebase.auth().signOut();
+      me = null; stopWatch();
+      lobby.hidden = true;
+      if (!online && !started && !ended && modal.hidden) chooseMode();
+    } catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo cerrar la sesión.'; }
   });
 
   /* --- Sala de espera: apodo, desafío y «Mis partidas» --- */
@@ -2720,12 +2758,16 @@ const SOUNDS = __SOUNDS__;
         showModal('Modo online', 'El juego online funciona en la versión publicada en GitHub Pages; esta vista previa no puede conectarse a internet.', [{ label: 'Entendido', primary: true }]);
       return;
     }
+    try { await fbInit(); }
+    catch (e) { console.error(e); showModal('Sin conexión', 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.', [{ label: 'Entendido', primary: true, onClick: backHome }]); return; }
+    if (!(await needGoogle())) { backHome(); return; }
     $('nick').value = getNick();
     $('lbMain').hidden = false; $('lbWait').hidden = true; $('lbMsg').textContent = '';
     lobby.hidden = false;
-    try { await fbInit(); acctUI(); listGames(); }
-    catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.'; }
+    acctUI(); listGames();
   }
+  // si se canceló la entrada a online y no hay partida, vuelve a la elección inicial
+  function backHome() { if (!online && !started && !ended && modal.hidden && lobby.hidden) chooseMode(); }
   $('lbClose').addEventListener('click', () => {
     lobby.hidden = true;
     if (!online && !started && !ended && modal.hidden) chooseMode();   // si todavía no hay partida, vuelve a la elección inicial
@@ -2852,7 +2894,8 @@ const SOUNDS = __SOUNDS__;
   async function enterOnline(id) {
     await waitIdle();   // si hay una animación en curso, se espera a que termine
     try { await fbInit(); }
-    catch (e) { console.error(e); showModal('Sin conexión', 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.', [{ label: 'Entendido', primary: true }]); return; }
+    catch (e) { console.error(e); showModal('Sin conexión', 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.', [{ label: 'Entendido', primary: true, onClick: backHome }]); return; }
+    if (!(await needGoogle())) { backHome(); return; }
     const ref = db.ref('games/' + id);
     const g = (await ref.once('value')).val();
     if (!g || !g.host) { showModal('Partida no encontrada', 'El link no corresponde a ninguna partida. Pedile a tu amigo que te lo mande de nuevo.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
