@@ -3062,6 +3062,51 @@ const SOUNDS = {
       afterMove();
     }, drop && flights.length === 1 ? 30 : 370);
   }
+  /* Correspondencia (2D): al entrar a la partida, o al volver a la página si el rival jugó mientras estaba oculta,
+     se repite la última jugada (propia o del rival) con el vuelo y su sonido, para ver qué fue lo último que pasó.
+     Es solo visual: la posición ya está jugada en `chess`; se dibuja la previa y la pieza vuela a su casilla. */
+  function replayLast(delay = 450) {
+    if (!online || !isCorr() || !is2D) return;
+    const h = chess.history({ verbose: true });
+    if (!h.length) return;
+    const serial = gameSerial, id = online.id, mv = h[h.length - 1];
+    const before = new Chess();
+    h.slice(0, -1).forEach(m => before.move({ from: m.from, to: m.to, promotion: m.promotion || 'q' }));
+    const flights = [[mv.from, mv.to, mv.color, mv.piece]];
+    if (mv.flags.includes('k') || mv.flags.includes('q')) {
+      const rank = mv.from[1];
+      flights.push(mv.flags.includes('k') ? ['h' + rank, 'f' + rank, mv.color, 'r'] : ['a' + rank, 'd' + rank, mv.color, 'r']);
+    }
+    const same = () => online && online.id === id && serial === gameSerial && is2D && chess.history().length === h.length;
+    let tries = 0;
+    (function claim() {
+      if (!same()) return;
+      if (busy || viewPos || !$('loading').hidden) { if (++tries < 200) setTimeout(claim, 300); return; }   // espera a que termine lo que se esté animando (o la carga)
+      busy = true;   // el tablero queda quieto (y el cartel de fin espera) hasta que termine la repetición
+      selected = null; targets = [];
+      render2D({ pos: before, last: null });   // mientras espera, la posición previa
+      setTimeout(go, delay);
+    })();
+    function done() { clockFlush(); busy = false; if (online && online.id === id) { updateStatus(); render2D(); afterMove(); } }
+    function go() {
+      if (!same()) return done();
+      flights.forEach(f => fly(...f));
+      render2D({ pos: before, hide: new Set(flights.map(f => f[0])), last: null });
+      castleSfx(mv);
+      setTimeout(() => {
+        board2d.querySelectorAll('.fly').forEach(el => {
+          const im = el.querySelector('img.pc'), cell = board2d.querySelector('[data-sq="' + el.dataset.to + '"]');
+          if (im && cell) { const old = cell.querySelector('img.pc'); if (old) old.replaceWith(im); else cell.prepend(im); wiggle(el.dataset.to); }
+          el.remove();
+        });
+        if (same()) {
+          moveSfx(mv.color, mv);
+          if (chess.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
+        }
+        done();   // después siguen las jugadas que hayan llegado mientras tanto, o el resultado de la partida
+      }, 370);
+    }
+  }
   $('view2d').addEventListener('click', () => {
     if (busy) return;
     if (viewPos) goLive(true);
@@ -3611,6 +3656,7 @@ const SOUNDS = {
       build2D(); setupBoard(); dirty3d = false;
       if (is2D) render2D();
       drawMarks(); updateHist(); updateStatus(); layout();
+      replayLast();   // correspondencia: se repite la última jugada para ver qué fue lo último
       if (!started) caption(color === 'w' ? 'Te tocaron ' + art('w') + '. Tocá Comenzar' : 'Te tocaron ' + art('b') + '. Esperando que ' + online.oppName + ' comience');
     }
 
@@ -3704,9 +3750,17 @@ const SOUNDS = {
     }
     const m = queue.shift();
     online.applied++;
+    online.replayOnShow = document.hidden && isCorr();   // jugó con la página oculta: se repite al volver
     if (online.g && online.g.times) times[opp(localColor)] = online.g.times[opp(localColor)] || times[opp(localColor)];
     play_move(m.from, m.to, { remote: true });
   }
+
+  // Correspondencia: si el rival jugó mientras la página estaba oculta, al volver se repite su jugada
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden || !online || !online.replayOnShow) return;
+    online.replayOnShow = false;
+    replayLast(700);
+  });
 
   function sendMove(mv) {
     if (!online) return;
@@ -4365,7 +4419,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261017012433';
+  const BUILD = '20261017124453';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
