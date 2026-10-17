@@ -2153,6 +2153,7 @@ const SOUNDS = __SOUNDS__;
   $('resign').addEventListener('click', () => {
     if (!started || busy || isOver()) return;
     const who = (vsCpu || online) ? localColor : chess.turn();
+    sfx('prompt', 0, { exact: true });   // pregunta antes de abandonar (v1.54)
     showModal('¿Abandonar la partida?', ((vsCpu || online) ? 'Vas a perder' : Art(who) + ' van a perder') + ' por abandono. No se puede deshacer.', [
       { label: 'Abandonar', primary: true, onClick: () => endGame(opp(who), 'resign') },
       { label: 'Seguir jugando' }
