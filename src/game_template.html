@@ -980,6 +980,13 @@ const SOUNDS = __SOUNDS__;
   // al conectarse con la cuenta de Google se trae la preferencia guardada (si la hay, manda la de la cuenta)
   function loadAccountPrefs() {
     if (!db || !me || !googleUser()) return;
+    // apodo: manda el de la cuenta; si la cuenta no tiene, sube el del dispositivo o, si tampoco hay, el nombre de Google
+    db.ref('users/' + me + '/prefs/nick').once('value').then(s => {
+      const acc = s.val();
+      if (typeof acc === 'string' && acc.trim()) setNick(acc.trim().slice(0, 20), true);
+      else { const n = getNick() || (gName(firebase.auth().currentUser).split(' ')[0] || '').slice(0, 20); if (n) setNick(n); }
+      const f = $('nick'); if (f && !f.value.trim()) f.value = getNick();
+    }).catch(() => {});
     db.ref('users/' + me + '/prefs/confirm').once('value').then(s => {
       if (s.exists()) setConfirmPref(s.val(), true);
       else if (confirmPref) db.ref('users/' + me + '/prefs/confirm').set(true).catch(() => {});   // la del dispositivo pasa a la cuenta
@@ -2685,7 +2692,12 @@ const SOUNDS = __SOUNDS__;
   const queue = [];
   const NOW = () => firebase.database.ServerValue.TIMESTAMP;
   const getNick = () => { try { return localStorage.getItem('chaskiboom.nick') || ''; } catch (_) { return ''; } };
-  const setNick = n => { try { localStorage.setItem('chaskiboom.nick', n); } catch (_) {} };
+  /* El apodo se guarda en el dispositivo y, con cuenta de Google, en users/<uid>/prefs/nick (v1.56): así aparece ya escrito
+     en cualquier dispositivo. Se puede cambiar en la sala cuando quieras (se guarda al salir del campo). */
+  const setNick = (n, fromAccount) => {
+    try { localStorage.setItem('chaskiboom.nick', n); } catch (_) {}
+    if (!fromAccount && n && db && me && googleUser()) db.ref('users/' + me + '/prefs/nick').set(n).catch(e => console.warn('nick', e));
+  };
 
   /* --- Correspondencia: plazo por jugada (1, 3 o 7 días, o sin límite) ---
      games/<código>/perMove = ms (0 = sin límite; las partidas viejas no lo tienen) y deadline = hasta cuándo puede jugar
@@ -2858,8 +2870,6 @@ const SOUNDS = __SOUNDS__;
       }
     } else await auth.signInWithPopup(prov);
     me = auth.currentUser.uid;
-    const n = gName(auth.currentUser);
-    if (!getNick() && n) setNick(n.split(' ')[0].slice(0, 20));
     googleProfile();
     watchAll(); loadAccountPrefs();
     return lost;
@@ -3013,6 +3023,8 @@ const SOUNDS = __SOUNDS__;
     pastCount();
   }
 
+  // el apodo se guarda al editarlo (no hace falta crear una partida)
+  $('nick').addEventListener('change', () => { const n = $('nick').value.trim().slice(0, 20); if (n) setNick(n); });
   function askNick() {
     const n = $('nick').value.trim().slice(0, 20);
     if (!n) { $('lbMsg').textContent = 'Escribí un apodo para que tu rival sepa quién sos.'; $('nick').focus(); return null; }
