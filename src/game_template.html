@@ -43,7 +43,7 @@ __PWA__
   button:focus-visible, input:focus-visible { outline: 2px solid var(--torch); outline-offset: 2px; }
   .seg button[aria-pressed="true"] { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   label.chk { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
-  /* interruptor (v1.52): «Confirmar jugadas» es un switch en vez de una casilla */
+  /* interruptores (switch) del Menú: Peleas, Cámara lenta, Sonido y Confirmar jugadas (v1.52-v1.53) */
   label.sw input { appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative; width: 38px; height: 22px; border-radius: 11px;
     background: #3a3140; border: 1px solid var(--line); cursor: pointer; transition: background .2s, border-color .2s; }
   label.sw input::before { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #cfc3ad;
@@ -430,9 +430,9 @@ __PWA__
     <button id="mcpu" aria-pressed="true">Contra la CPU</button>
     <button id="mon" aria-pressed="false">Online<span id="monBadge" hidden></span></button>
   </div>
-  <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
-  <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
-  <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
+  <label class="chk sw"><input type="checkbox" role="switch" id="fights" checked> Peleas</label>
+  <label class="chk sw"><input type="checkbox" role="switch" id="slow" checked> Cámara lenta</label>
+  <label class="chk sw"><input type="checkbox" role="switch" id="sound" checked> Sonido</label>
   <label class="chk sw" id="confirmLbl"><input type="checkbox" role="switch" id="confirmMv"> Confirmar jugadas</label>
   <button id="view2d" aria-pressed="false">Vista 2D</button>
   <label class="chk only2d" for="pset">Piezas

@@ -61,7 +61,7 @@
   button:focus-visible, input:focus-visible { outline: 2px solid var(--torch); outline-offset: 2px; }
   .seg button[aria-pressed="true"] { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   label.chk { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
-  /* interruptor (v1.52): «Confirmar jugadas» es un switch en vez de una casilla */
+  /* interruptores (switch) del Menú: Peleas, Cámara lenta, Sonido y Confirmar jugadas (v1.52-v1.53) */
   label.sw input { appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative; width: 38px; height: 22px; border-radius: 11px;
     background: #3a3140; border: 1px solid var(--line); cursor: pointer; transition: background .2s, border-color .2s; }
   label.sw input::before { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #cfc3ad;
@@ -450,9 +450,9 @@
     <button id="mcpu" aria-pressed="true">Contra la CPU</button>
     <button id="mon" aria-pressed="false">Online<span id="monBadge" hidden></span></button>
   </div>
-  <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
-  <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
-  <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
+  <label class="chk sw"><input type="checkbox" role="switch" id="fights" checked> Peleas</label>
+  <label class="chk sw"><input type="checkbox" role="switch" id="slow" checked> Cámara lenta</label>
+  <label class="chk sw"><input type="checkbox" role="switch" id="sound" checked> Sonido</label>
   <label class="chk sw" id="confirmLbl"><input type="checkbox" role="switch" id="confirmMv"> Confirmar jugadas</label>
   <button id="view2d" aria-pressed="false">Vista 2D</button>
   <label class="chk only2d" for="pset">Piezas
@@ -4288,7 +4288,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261017000557';
+  const BUILD = '20261017001013';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
