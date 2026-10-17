@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.54** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.55** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -228,6 +228,10 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   dejar nada seleccionado. Se cancela sola al terminar la partida, salir de ella o revisar el historial.
   Desde v1.50, en 2D el sonido de la jugada (mover, comer, enroque, jaque) suena en `askConfirm`, al apoyar la pieza; al
   confirmar, `play_move(..., { quiet: true })` no lo repite. En 3D suena al moverse de verdad, después de confirmar.
+- **Correspondencia de 1 hora (v1.55):** los plazos son 1 hora, 1 día, 3 días o sin límite (modo `h1`, `perMove` 3600000);
+  7 días ya no se ofrece, pero las partidas viejas y sus revanchas siguen andando (las reglas aceptan 0, 1 h, 1, 3 y 7 días).
+  `plazoTxt`/`plazoTag` muestran horas («1 hora», «1h»); `lateMs()` pone en rojo con menos de 12 h, o de un cuarto del plazo si
+  es de menos de un día (1 hora → 15 min). Sigue siendo correspondencia: confirma siempre.
 - **Blitz y Rápida online (v1.38):** al desafiar se elige el modo: Blitz 3 min, 3+2, 5 min; Rápida 10 min, 10+5, 15+10;
   correspondencia 1/3/7 días o sin límite (localStorage `chaskiboom.mode`: `3+2`, `d3`…; migra el viejo `chaskiboom.perMove`).
   Bala quedó afuera hasta medir cuánto pesa la conexión. En la partida: `tc = { base, inc }` (ms) y `clock = { w, b }`, lo que
@@ -286,6 +290,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.55:** correspondencia de 1 hora por jugada en lugar de 7 días. Reglas nuevas (`perMove` acepta 3600000).
 - **v1.54:** sonido al preguntar si abandona y el sonido de victoria más corto (7 s).
 - **v1.53:** Peleas, Cámara lenta y Sonido pasan a ser interruptores, como Confirmar jugadas.
 - **v1.52:** interruptor «Confirmar jugadas» (CPU, Blitz, Rápida; en correspondencia siempre), el +N junto a las piezas
@@ -366,6 +371,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **Pegar `database.rules.json` en la consola de Firebase (v1.55)**: sin eso no se pueden crear partidas de 1 hora.
 
 - **Probar v1.45:** cartel de Google al entrar a Online y desde un link de desafío sin sesión; vincular una sesión
   anónima con partidas; ventana de Google en la app instalada del iPhone.

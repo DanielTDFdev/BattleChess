@@ -1,7 +1,7 @@
 // Service worker de ChaskiBoom Battle Chess (generado por tools/build.py; editar src/sw.js).
 // Estrategia "red primero": siempre se baja la última versión del juego y la copia en caché
 // solo se usa si no hay conexión. Así una publicación nueva se ve en la próxima apertura.
-const CACHE = 'chaskiboom-v1.54';
+const CACHE = 'chaskiboom-v1.55';
 const CDN = ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com', 'www.gstatic.com'];
 
 // El service worker nuevo NO reemplaza al viejo apenas se instala: en iPhone eso cortaba las descargas
