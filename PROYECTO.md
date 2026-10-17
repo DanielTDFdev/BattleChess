@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.52** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.53** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -275,6 +275,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   según el interruptor: `needConfirm() = isCorr() || confirmPref`. Arranca apagado; se guarda en localStorage
   `chaskiboom.confirm` y, con cuenta de Google, en `users/<uid>/prefs/confirm` (`loadAccountPrefs()` al conectar o entrar con
   Google: manda la de la cuenta; si la cuenta no tiene y el dispositivo sí, sube la del dispositivo). Los premoves no confirman.
+- **Interruptores (v1.53):** Peleas, Cámara lenta, Sonido y Confirmar jugadas son switches (`label.chk.sw`, `role="switch"`).
 - **Barra de jugador (v1.52):** el «+N» de ventaja de material va pegado a las piezas capturadas; el reloj al extremo.
 - **Íconos en botones (v1.52):** Ofrecer tablas (apretón de manos), Abandonar (bandera blanca), Nueva partida (flecha circular),
   SVG de Lucide inline (`button.ico`, `.bIco`).
@@ -283,6 +284,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.53:** Peleas, Cámara lenta y Sonido pasan a ser interruptores, como Confirmar jugadas.
 - **v1.52:** interruptor «Confirmar jugadas» (CPU, Blitz, Rápida; en correspondencia siempre), el +N junto a las piezas
   capturadas e íconos en Ofrecer tablas, Abandonar y Nueva partida.
 - **v1.51:** sombra en las piezas 2D (mancha de contacto + sombra suave); en /dev/ se ve el código de build.
