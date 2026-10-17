@@ -43,6 +43,15 @@ __PWA__
   button:focus-visible, input:focus-visible { outline: 2px solid var(--torch); outline-offset: 2px; }
   .seg button[aria-pressed="true"] { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   label.chk { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  /* interruptor (v1.52): «Confirmar jugadas» es un switch en vez de una casilla */
+  label.sw input { appearance: none; -webkit-appearance: none; margin: 0; flex: none; position: relative; width: 38px; height: 22px; border-radius: 11px;
+    background: #3a3140; border: 1px solid var(--line); cursor: pointer; transition: background .2s, border-color .2s; }
+  label.sw input::before { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #cfc3ad;
+    box-shadow: 0 1px 2px rgba(0,0,0,.5); transition: transform .2s, background .2s; }
+  label.sw input:checked { background: var(--torch); border-color: var(--torch); }
+  label.sw input:checked::before { transform: translateX(16px); background: #fff; }
+  label.sw input:focus-visible { outline: 2px solid var(--torch); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { label.sw input, label.sw input::before { transition: none; } }
   input[type=checkbox] { accent-color: var(--torch); width: 17px; height: 17px; }
   #skip { margin-left: auto; }
   .more { display: contents; }
@@ -400,7 +409,7 @@ __PWA__
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="__LOGO__" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.51</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.52</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -424,7 +433,7 @@ __PWA__
   <label class="chk"><input type="checkbox" id="fights" checked> Peleas</label>
   <label class="chk"><input type="checkbox" id="slow" checked> Cámara lenta</label>
   <label class="chk"><input type="checkbox" id="sound" checked> Sonido</label>
-  <label class="chk" id="confirmLbl"><input type="checkbox" id="confirmMv"> Confirmar jugadas</label>
+  <label class="chk sw" id="confirmLbl"><input type="checkbox" role="switch" id="confirmMv"> Confirmar jugadas</label>
   <button id="view2d" aria-pressed="false">Vista 2D</button>
   <label class="chk only2d" for="pset">Piezas
     <select id="pset">

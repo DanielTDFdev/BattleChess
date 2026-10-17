@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.51** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.52** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -270,11 +270,21 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   `img.pc`. Sin mancha en casillas vacías (`.np`), mientras se arrastra (`.drg`) y bajo el rey tumbado (`.fallenSq`).
 - **Build visible en /dev/ (v1.51):** como todas las builds de prueba dicen la misma versión, en `/dev/` el pie muestra además
   «· dev 16/10 14:51:55» (el `BUILD` en hora local).
+- **Confirmar jugadas opcional (v1.52):** interruptor (switch, `label.sw`) «Confirmar jugadas» en el Menú. En correspondencia
+  siempre se confirma (`isCorr()`, el interruptor se oculta con `body.corr`); en el resto (CPU, Blitz, Rápida, dos jugadores)
+  según el interruptor: `needConfirm() = isCorr() || confirmPref`. Arranca apagado; se guarda en localStorage
+  `chaskiboom.confirm` y, con cuenta de Google, en `users/<uid>/prefs/confirm` (`loadAccountPrefs()` al conectar o entrar con
+  Google: manda la de la cuenta; si la cuenta no tiene y el dispositivo sí, sube la del dispositivo). Los premoves no confirman.
+- **Barra de jugador (v1.52):** el «+N» de ventaja de material va pegado a las piezas capturadas; el reloj al extremo.
+- **Íconos en botones (v1.52):** Ofrecer tablas (apretón de manos), Abandonar (bandera blanca), Nueva partida (flecha circular),
+  SVG de Lucide inline (`button.ico`, `.bIco`).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Historial reciente
 
+- **v1.52:** interruptor «Confirmar jugadas» (CPU, Blitz, Rápida; en correspondencia siempre), el +N junto a las piezas
+  capturadas e íconos en Ofrecer tablas, Abandonar y Nueva partida.
 - **v1.51:** sombra en las piezas 2D (mancha de contacto + sombra suave); en /dev/ se ve el código de build.
 - **v1.50:** en las partidas con confirmación, la jugada suena al apoyar la pieza (2D) y no al tocar Sí.
 - **v1.49:** sonido de error al intentar una movida ilegal (tocar o soltar en un destino imposible, premove inválido).
