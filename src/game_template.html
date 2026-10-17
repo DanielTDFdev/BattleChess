@@ -1789,12 +1789,24 @@ const SOUNDS = __SOUNDS__;
      googleusercontent.com (también lo validan las reglas). Sin foto: la inicial del apodo. */
   const okPhoto = u => typeof u === 'string' && /^https:\/\/lh\d\.googleusercontent\.com\//.test(u) && u.length < 500;
   const sizedPhoto = u => u.replace(/=s\d+(-c)?$/, '') + '=s96-c';
+  /* Quien vinculó su cuenta anónima con Google (linkWithPopup) queda sin nombre ni foto arriba: Firebase los deja solo en
+     providerData. Se leen de ahí y, la primera vez, se copian al perfil (googleProfile). */
+  const gData = u => u && (u.providerData || []).find(p => p && p.providerId === 'google.com') || {};
+  const gName = u => u ? u.displayName || gData(u).displayName || '' : '';
   function myPhoto() {
     try {
       if (typeof firebase === 'undefined' || !firebase.apps.length) return null;
       const u = firebase.auth().currentUser;
-      return u && !u.isAnonymous && okPhoto(u.photoURL) ? sizedPhoto(u.photoURL) : null;
+      const url = u && !u.isAnonymous && (u.photoURL || gData(u).photoURL);
+      return okPhoto(url) ? sizedPhoto(url) : null;
     } catch (_) { return null; }
+  }
+  function googleProfile() {
+    try {
+      const u = firebase.auth().currentUser, d = gData(u);
+      if (u && !u.isAnonymous && ((!u.displayName && d.displayName) || (!u.photoURL && d.photoURL)))
+        u.updateProfile({ displayName: u.displayName || d.displayName || null, photoURL: u.photoURL || d.photoURL || null }).catch(() => {});
+    } catch (_) {}
   }
   // pone en el span .av la foto (o la inicial); show = false lo oculta
   function setAvatar(el, photo, name, show = true) {
@@ -2846,8 +2858,9 @@ const SOUNDS = __SOUNDS__;
       }
     } else await auth.signInWithPopup(prov);
     me = auth.currentUser.uid;
-    const n = auth.currentUser.displayName;
+    const n = gName(auth.currentUser);
     if (!getNick() && n) setNick(n.split(' ')[0].slice(0, 20));
+    googleProfile();
     watchAll(); loadAccountPrefs();
     return lost;
   }
@@ -2887,8 +2900,9 @@ const SOUNDS = __SOUNDS__;
   }
   function acctUI() {
     const u = googleUser();
-    $('acctTxt').textContent = u ? 'Conectado como ' + (u.displayName || u.email || 'usuario de Google') + '.' : '';
-    setAvatar($('acctAv'), myPhoto(), u && (u.displayName || u.email), !!u);
+    $('acctTxt').textContent = u ? 'Conectado como ' + (gName(u) || u.email || 'usuario de Google') + '.' : '';
+    setAvatar($('acctAv'), myPhoto(), u && (gName(u) || u.email), !!u);
+    googleProfile();
   }
   $('acctBtn').addEventListener('click', async () => {
     try {
