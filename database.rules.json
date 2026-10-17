@@ -40,7 +40,7 @@
         },
         "perMove": {
           ".write": "auth != null && !data.exists() && newData.parent().child('host/uid').val() === auth.uid",
-          ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 86400000 || newData.val() === 259200000 || newData.val() === 604800000)"
+          ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 3600000 || newData.val() === 86400000 || newData.val() === 259200000 || newData.val() === 604800000)"
         },
         "deadline": {
           ".write": "auth != null && (root.child('games/' + $g + '/white').val() === auth.uid || root.child('games/' + $g + '/black').val() === auth.uid) && (!data.exists() || newData.parent().child('ply').val() !== data.parent().child('ply').val())",

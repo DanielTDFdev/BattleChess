@@ -493,7 +493,7 @@
       <div class="tPick" id="tPick" role="group" aria-label="Tipo de partida">
         <span class="lbl">⚡ Blitz</span><button data-m="3+0">3 min</button><button data-m="3+2">3 + 2</button><button data-m="5+0">5 min</button>
         <span class="lbl">⏱ Rápida</span><button data-m="10+0">10 min</button><button data-m="10+5">10 + 5</button><button data-m="15+10">15 + 10</button>
-        <span class="lbl">✉ Por correspondencia</span><button data-m="d1">1 día</button><button data-m="d3">3 días</button><button data-m="d7">7 días</button><button data-m="d0">Sin límite</button>
+        <span class="lbl">✉ Por correspondencia</span><button data-m="h1">1 hora</button><button data-m="d1">1 día</button><button data-m="d3">3 días</button><button data-m="d0">Sin límite</button>
       </div>
       <p id="lbTerms" hidden></p>
       <button id="lbCreate" class="primary wide">Desafiar a un amigo</button>
@@ -2403,7 +2403,7 @@ const SOUNDS = {
         title = plazoTxt(pm) + ' por jugada';
         if (g.started && !g.result && !ended && g.deadline && g.turn === c) {
           const left = g.deadline - srvNow();
-          t = fmtLeft(left); late = left < 12 * 3600e3; title = 'Tiempo que queda para jugar (' + title + ')';
+          t = fmtLeft(left); late = left < lateMs(pm); title = 'Tiempo que queda para jugar (' + title + ')';
         } else t = plazoTag(pm);
       }
       if (el.textContent !== t) el.textContent = t;
@@ -3062,8 +3062,11 @@ const SOUNDS = {
   const DAY = 86400e3, PLAZOS = [1, 3, 7, 0];
   let srvOff = 0;
   const srvNow = () => Date.now() + srvOff;
-  const plazoTxt = ms => { const d = Math.round(ms / DAY); return d === 1 ? '1 día' : d + ' días'; };
-  const plazoTag = ms => ms ? Math.round(ms / DAY) + 'd' : '∞';
+  // desde v1.55 el plazo puede ser de horas (1 hora); las partidas viejas de 7 días siguen andando
+  const plazoTxt = ms => { if (ms < DAY) { const h = Math.round(ms / 3600e3); return h === 1 ? '1 hora' : h + ' horas'; } const d = Math.round(ms / DAY); return d === 1 ? '1 día' : d + ' días'; };
+  const plazoTag = ms => !ms ? '∞' : ms < DAY ? Math.round(ms / 3600e3) + 'h' : Math.round(ms / DAY) + 'd';
+  // cuándo se pone en rojo lo que queda: con menos de 12 h, o de un cuarto del plazo si es de menos de un día (1 hora → 15 min)
+  const lateMs = pm => pm && pm < DAY ? pm / 4 : 12 * 3600e3;
   function fmtLeft(ms) {
     const s = Math.max(0, Math.floor(ms / 1000)), d = Math.floor(s / 86400), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60;
     if (d) return d + 'd ' + h + 'h';
@@ -3094,14 +3097,15 @@ const SOUNDS = {
   // lo que se guarda en la partida al crearla (también para la revancha)
   function modeData(m) {
     if (m[0] === 'd') return { perMove: (+m.slice(1) || 0) * DAY };
+    if (m[0] === 'h') return { perMove: (+m.slice(1) || 1) * 3600e3 };
     const [b, i] = TCS[m], base = b * 60000;
     return { tc: { base, inc: i * 1000 }, clock: { w: base, b: base } };
   }
   const gameMode = g => g.tc ? { tc: g.tc, clock: { w: g.tc.base, b: g.tc.base } } : { perMove: g.perMove || 0 };
   let modePref = (() => {
     try {
-      const m = localStorage.getItem('chaskiboom.mode'); if (m && (TCS[m] || /^d[0137]$/.test(m))) return m;
-      const v = localStorage.getItem('chaskiboom.perMove'); if (v !== null && PLAZOS.includes(+v)) return 'd' + v;   // antes solo había plazos
+      const m = localStorage.getItem('chaskiboom.mode'); if (m && (TCS[m] || /^(d[013]|h1)$/.test(m))) return m;   // 7 días ya no se ofrece
+      const v = localStorage.getItem('chaskiboom.perMove'); if (v !== null && [0, 1, 3].includes(+v)) return 'd' + v;   // antes solo había plazos
     } catch (_) {}
     return 'd0';
   })();
@@ -3335,7 +3339,7 @@ const SOUNDS = {
       else if (!g.started) { mine = myColor === 'w'; state = mine ? 'Te toca comenzar' : 'Sin comenzar'; }
       else {
         mine = g.turn === myColor; state = mine ? 'Te toca mover' : 'Le toca a tu rival';
-        if (g.perMove && g.deadline) { const left = g.deadline - srvNow(); state += ' · ' + (mine ? 'vence en ' : 'tiene ') + leftTxt(left); late = mine && left < 12 * 3600e3; }
+        if (g.perMove && g.deadline) { const left = g.deadline - srvNow(); state += ' · ' + (mine ? 'vence en ' : 'tiene ') + leftTxt(left); late = mine && left < lateMs(g.perMove); }
       }
       const li = document.createElement('li');
       li.innerHTML = (res ? '' : '<span class="dot' + (g.guest ? '' : ' wait') + '" title="' + (g.guest ? 'En curso' : 'Esperando a tu amigo') + '"></span>') + '<div class="who"><b></b><span></span></div>' + (g.perMove !== undefined || g.tc ? '<span class="tag"></span>' : '') + '<button>Abrir</button>';
@@ -3762,7 +3766,7 @@ const SOUNDS = {
     let t = L.length === 1 ? 'Te toca en la partida contra ' + rival : 'Te toca en ' + L.length + ' partidas online';
     if (left !== null) t += ' · ' + (L.length === 1 ? 'vence' : 'una vence') + ' en ' + leftTxt(left);
     pendEl.querySelector('.t').textContent = t;
-    pendEl.classList.toggle('late', left !== null && left < 12 * 3600e3);
+    pendEl.classList.toggle('late', left !== null && left < lateMs(g.perMove));
   }
   setInterval(updatePending, 60000);   // el tiempo que queda
 
@@ -3785,7 +3789,7 @@ const SOUNDS = {
     let t = L.length === 1 ? 'Te toca en la partida contra ' + rival : 'Te toca en ' + L.length + ' partidas';
     if (left !== null) t += ' · ' + (L.length === 1 ? 'vence' : 'una vence') + ' en ' + leftTxt(left);
     if (pendEl.isConnected && !modal.hidden) return;   // la pantalla inicial ya lo muestra fijo
-    showOther(id, t, false, { raw: true, late: left !== null && left < 12 * 3600e3 });
+    showOther(id, t, false, { raw: true, late: left !== null && left < lateMs(g.perMove) });
   }
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
@@ -4290,7 +4294,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261017005841';
+  const BUILD = '20261017010638';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
