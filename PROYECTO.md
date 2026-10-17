@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.56** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.57** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -236,6 +236,11 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Apodo en la cuenta (v1.56):** `setNick` guarda en localStorage y, con Google, en `users/<uid>/prefs/nick`;
   `loadAccountPrefs()` lo trae (manda el de la cuenta; si no hay, sube el del dispositivo o el primer nombre de Google).
   Se guarda también al editar el campo (`change`).
+- **Repetición de la última jugada en correspondencia (v1.57, solo 2D):** al entrar a la partida (Ver partida, Mis partidas,
+  link) se dibuja la posición previa y la última jugada (propia o del rival) vuela a su casilla con su sonido (`replayLast()`,
+  solo visual: `chess` ya tiene la jugada). Espera a la pantalla de carga y a otras animaciones; tiene `busy` mientras tanto,
+  así el cartel de fin sale después. Si el rival juega con la página oculta (`online.replayOnShow` en `pumpQueue`), se repite
+  al volver. En el celular la jugada suele llegar recién al reconectar y se anima normal.
 - **Correspondencia de 1 hora (v1.55):** los plazos son 1 hora, 1 día, 3 días o sin límite (modo `h1`, `perMove` 3600000);
   7 días ya no se ofrece, pero las partidas viejas y sus revanchas siguen andando (las reglas aceptan 0, 1 h, 1, 3 y 7 días).
   `plazoTxt`/`plazoTag` muestran horas («1 hora», «1h»); `lateMs()` pone en rojo con menos de 12 h, o de un cuarto del plazo si
@@ -298,6 +303,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.57:** en correspondencia (2D), al entrar a la partida o al volver a la página se repite la última jugada con su animación y sonido.
 - **v1.56:** fotos de la cuenta de Google (sala, barras de jugador y «Mis partidas») y el apodo guardado en la cuenta.
   Reglas nuevas (validación de `host/photo` y `guest/photo`).
 - **v1.55:** correspondencia de 1 hora por jugada en lugar de 7 días. Reglas nuevas (`perMove` acepta 3600000).
