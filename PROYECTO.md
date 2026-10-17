@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.53** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.54** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -61,6 +61,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Al apoyar la pieza: `move_w`/`move_b`, o `come` si capturó. El enroque suena al arrancar (`castleSfx`), no al apoyar.
   Movida ilegal (v1.49): `deny` (`denySfx()`, de `denyerror.wav` subido 10 dB) al tocar o soltar una pieza elegida en un destino
   al que no puede ir, al elegir un destino imposible para un premove y cuando un premove ya no es legal.
+  Desde v1.54: `prompt` (de `prompt.wav`) al abrir «¿Abandonar la partida?», y `win` recortado a 7 s desde
+  `game over ganador.wav` (se apaga en el último segundo).
 - **CPU:** Stockfish 18 lite en Web Worker, 5 niveles (Muy fácil … Experto) elegidos en el cartel de nueva partida.
   Stockfish en Skill Level 0 sigue siendo demasiado fuerte para principiantes, así que (desde v1.12) Muy fácil no usa
   Stockfish: 50 % jugadas al azar y 50 % `pickCpu` (come lo que ve, no deja piezas colgadas a 1 jugada). Fácil: 20 % al azar
@@ -284,6 +286,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.54:** sonido al preguntar si abandona y el sonido de victoria más corto (7 s).
 - **v1.53:** Peleas, Cámara lenta y Sonido pasan a ser interruptores, como Confirmar jugadas.
 - **v1.52:** interruptor «Confirmar jugadas» (CPU, Blitz, Rápida; en correspondencia siempre), el +N junto a las piezas
   capturadas e íconos en Ofrecer tablas, Abandonar y Nueva partida.

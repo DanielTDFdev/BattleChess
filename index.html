@@ -429,7 +429,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.53</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.54</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -941,6 +941,7 @@ const SOUNDS = {
   "magic2": "assets/sounds/magic2.mp3",
   "move_b": "assets/sounds/move_b.mp3",
   "move_w": "assets/sounds/move_w.mp3",
+  "prompt": "assets/sounds/prompt.mp3",
   "short_in_time": "assets/sounds/short_in_time.mp3",
   "sword1": "assets/sounds/sword1.mp3",
   "sword2": "assets/sounds/sword2.mp3",
@@ -2572,6 +2573,7 @@ const SOUNDS = {
   $('resign').addEventListener('click', () => {
     if (!started || busy || isOver()) return;
     const who = (vsCpu || online) ? localColor : chess.turn();
+    sfx('prompt', 0, { exact: true });   // pregunta antes de abandonar (v1.54)
     showModal('¿Abandonar la partida?', ((vsCpu || online) ? 'Vas a perder' : Art(who) + ' van a perder') + ' por abandono. No se puede deshacer.', [
       { label: 'Abandonar', primary: true, onClick: () => endGame(opp(who), 'resign') },
       { label: 'Seguir jugando' }
@@ -4288,7 +4290,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261017001114';
+  const BUILD = '20261017005841';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
