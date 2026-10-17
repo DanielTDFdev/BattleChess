@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.55** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.56** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -228,6 +228,14 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   dejar nada seleccionado. Se cancela sola al terminar la partida, salir de ella o revisar el historial.
   Desde v1.50, en 2D el sonido de la jugada (mover, comer, enroque, jaque) suena en `askConfirm`, al apoyar la pieza; al
   confirmar, `play_move(..., { quiet: true })` no lo repite. En 3D suena al moverse de verdad, después de confirmar.
+- **Fotos de Google (v1.56):** la foto de la cuenta en «Conectado como…», en las barras de jugador (online las dos; contra la
+  CPU solo la propia) y la del rival en «Mis partidas»; sin foto, círculo con la inicial (`setAvatar`, `.av`). La propia sale de
+  `user.photoURL` o, si la cuenta se vinculó desde una anónima, de `providerData` (`gData`/`gName`; `googleProfile()` la copia
+  al perfil). La del rival se guarda en la partida (`host/photo`, `guest/photo`) al crear o aceptar; las reglas solo aceptan
+  `https://lh*.googleusercontent.com/`. Se pide `=s96-c` y la imagen va con `referrerpolicy="no-referrer"`.
+- **Apodo en la cuenta (v1.56):** `setNick` guarda en localStorage y, con Google, en `users/<uid>/prefs/nick`;
+  `loadAccountPrefs()` lo trae (manda el de la cuenta; si no hay, sube el del dispositivo o el primer nombre de Google).
+  Se guarda también al editar el campo (`change`).
 - **Correspondencia de 1 hora (v1.55):** los plazos son 1 hora, 1 día, 3 días o sin límite (modo `h1`, `perMove` 3600000);
   7 días ya no se ofrece, pero las partidas viejas y sus revanchas siguen andando (las reglas aceptan 0, 1 h, 1, 3 y 7 días).
   `plazoTxt`/`plazoTag` muestran horas («1 hora», «1h»); `lateMs()` pone en rojo con menos de 12 h, o de un cuarto del plazo si
@@ -290,6 +298,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.56:** fotos de la cuenta de Google (sala, barras de jugador y «Mis partidas») y el apodo guardado en la cuenta.
+  Reglas nuevas (validación de `host/photo` y `guest/photo`).
 - **v1.55:** correspondencia de 1 hora por jugada en lugar de 7 días. Reglas nuevas (`perMove` acepta 3600000).
 - **v1.54:** sonido al preguntar si abandona y el sonido de victoria más corto (7 s).
 - **v1.53:** Peleas, Cámara lenta y Sonido pasan a ser interruptores, como Confirmar jugadas.
