@@ -210,14 +210,14 @@
     background: #5a4330; color: #f3e6c8; font-family: var(--display); font-weight: 600; font-size: 13px; line-height: 1; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
   .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .av[hidden] { display: none; }
-  #lobby .acct .av, #lbGames .av { flex: none; width: 32px; height: 32px; font-size: 16px; }
+  #lobby .acct .av, #lbGames .av, .fList .av { flex: none; width: 32px; height: 32px; font-size: 16px; }
   #lbPastList .av { flex: none; width: 24px; height: 24px; font-size: 13px; }
   @media (max-width: 760px) { .pbar .av { width: 22px; height: 22px; font-size: 12px; } }
   #lobby .acct button { flex: none; display: inline-flex; align-items: center; gap: 8px; }
   #lobby .acct .gLogo { width: 18px; height: 18px; flex: none; }
   .gBtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
   .gBtn .gLogo { width: 18px; height: 18px; flex: none; }
-  #lbGames, #lbPastList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  #lbGames, #lbPastList, .fList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   /* partidas en curso: punto verde que late; desafío sin aceptar: punto gris quieto (v1.47) */
   #lbGames .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #4caf50; animation: livePulse 1.6s ease-out infinite; }
   #lbGames .dot.wait { background: #6b6a64; animation: none; }
@@ -235,16 +235,44 @@
   #lbPastList .who b { font-size: 15px; font-weight: 600; }
   #lbPastList .who span { font-size: 13px; }
   #lbPastList button:not(.del) { padding: 4px 10px; font-size: 14px; }
-  :is(#lbGames, #lbPastList) li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
-  :is(#lbGames, #lbPastList) li.empty { color: var(--muted); justify-content: center; }
-  :is(#lbGames, #lbPastList) .del { flex: none; background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 6px; }
-  :is(#lbGames, #lbPastList) .del.sure { background: #b8382b; color: #fff; border-radius: 3px; font-size: 14px; padding: 6px 10px; }
-  :is(#lbGames, #lbPastList) .who { flex: 1; min-width: 0; }
-  :is(#lbGames, #lbPastList) .who b { display: block; font-weight: 600; }
-  :is(#lbGames, #lbPastList) .who span { font-size: 14px; color: var(--muted); }
-  :is(#lbGames, #lbPastList) .who span.mine { color: var(--torch); }
-  :is(#lbGames, #lbPastList) .who span.late { color: #ff9a8a; }
-  :is(#lbGames, #lbPastList) .tag { flex: none; font-size: 12px; font-weight: 600; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
+  :is(#lbGames, #lbPastList, .fList) li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
+  :is(#lbGames, #lbPastList, .fList) li.empty { color: var(--muted); justify-content: center; }
+  :is(#lbGames, #lbPastList, .fList) .del { flex: none; background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 6px; }
+  :is(#lbGames, #lbPastList, .fList) .del.sure { background: #b8382b; color: #fff; border-radius: 3px; font-size: 14px; padding: 6px 10px; }
+  :is(#lbGames, #lbPastList, .fList) .who { flex: 1; min-width: 0; }
+  :is(#lbGames, #lbPastList, .fList) .who b { display: block; font-weight: 600; }
+  :is(#lbGames, #lbPastList, .fList) .who span { font-size: 14px; color: var(--muted); }
+  :is(#lbGames, #lbPastList, .fList) .who span.mine { color: var(--torch); }
+  :is(#lbGames, #lbPastList, .fList) .who span.late { color: #ff9a8a; }
+  :is(#lbGames, #lbPastList, .fList) .tag { flex: none; font-size: 12px; font-weight: 600; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
+  #lobby .uRow { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); padding: 0 2px; }
+  #lobby .uRow span { flex: 1; min-width: 0; }
+  #lobby .uRow b { color: var(--ink); font-weight: 600; }
+  #lobby .uRow button { padding: 4px 10px; font-size: 14px; }
+  #lobby .uRow[hidden], #paneFriends[hidden], #paneGames[hidden], #lbInbox[hidden], #frFound[hidden], #frNoUser[hidden] { display: none; }
+  #lobby .tabs { display: flex; border-bottom: 1px solid var(--line); margin-top: 4px; }
+  #lobby .tabs button { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; color: var(--muted); font-family: var(--display); font-size: 15px; letter-spacing: .05em; padding: 8px 6px; }
+  #lobby .tabs button[aria-selected="true"] { color: var(--torch); border-bottom-color: var(--torch); }
+  #frBadge { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 9px; background: #b8382b; color: #fff; font: 600 12px/18px var(--body); }
+  #frBadge[hidden] { display: none; }
+  #paneGames, #paneFriends { display: grid; gap: 10px; }
+  #lobby .fSearch { display: flex; gap: 6px; }
+  #lobby .fSearch input { flex: 1; }
+  #lobby .small { font-size: 13px; }
+  :is(#lbGames, #lbPastList) .addF { flex: none; padding: 4px 8px; font-size: 13px; }
+  .fList li .acts { flex: none; display: flex; gap: 6px; align-items: center; }
+  .fList li .acts button { padding: 5px 10px; font-size: 14px; }
+  .fList li .acts .ok { color: var(--muted); font-size: 13px; }
+  .fList .on { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #6b6a64; }
+  .fList .on.yes { background: #4caf50; }
+  #lbInbox li { border-color: var(--torch); }
+  .mExtra.frAdd { justify-self: center; }
+  .uPick { display: grid; gap: 8px; text-align: left; }
+  .uPick .in { display: flex; align-items: center; gap: 6px; }
+  .uPick .in span { color: var(--muted); font-size: 18px; }
+  .uPick input { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: #18131c; border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; }
+  .uPick .msg { min-height: 1.3em; font-size: 14px; color: var(--muted); margin: 0; }
+  .uPick .msg.bad { color: #ff9a8a; }
   .tPick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .tPick .lbl { width: 100%; font-size: 14px; color: var(--muted); margin-top: 4px; }
   .tPick button { flex: 1; padding: 6px 8px; font-size: 15px; white-space: nowrap; }
@@ -495,6 +523,7 @@
     <h2 id="lbTitle">Jugar online</h2>
     <div id="lbMain">
       <div class="acct"><span class="av" id="acctAv" hidden></span><span id="acctTxt">Conectando…</span><button id="acctBtn">Salir</button></div>
+      <div class="uRow" id="uRow" hidden><span>Tu usuario: <b id="uName"></b></span><button id="uEdit">Cambiar</button></div>
       <label class="fld" for="nick">Tu apodo
         <input id="nick" maxlength="20" autocomplete="nickname" placeholder="Por ejemplo, Daniel">
       </label>
@@ -505,12 +534,25 @@
       </div>
       <p id="lbTerms" hidden></p>
       <button id="lbCreate" class="primary wide">Desafiar a un amigo</button>
-      <h3>Mis partidas</h3>
-      <ul id="lbGames"><li class="empty">Cargando…</li></ul>
-      <details id="lbPast" hidden><summary><span>Partidas terminadas (<span id="lbPastN">0</span>)</span></summary><ul id="lbPastList"></ul></details>
+      <ul id="lbInbox" class="fList" hidden aria-live="polite"></ul>
+      <div class="tabs" id="lbTabs" role="tablist">
+        <button id="tabGames" role="tab" aria-selected="true" aria-controls="paneGames">Mis partidas</button>
+        <button id="tabFriends" role="tab" aria-selected="false" aria-controls="paneFriends">Amigos<span id="frBadge" hidden></span></button>
+      </div>
+      <div id="paneGames" role="tabpanel">
+        <ul id="lbGames"><li class="empty">Cargando…</li></ul>
+        <details id="lbPast" hidden><summary><span>Partidas terminadas (<span id="lbPastN">0</span>)</span></summary><ul id="lbPastList"></ul></details>
+      </div>
+      <div id="paneFriends" role="tabpanel" hidden>
+        <div id="frNoUser" hidden><p class="muted">Elegí tu nombre de usuario para que tus amigos te encuentren.</p><button id="frPickUser" class="primary wide">Elegir usuario</button></div>
+        <form class="fSearch" id="frForm" autocomplete="off"><input id="frQ" maxlength="80" placeholder="@usuario o email de tu amigo" aria-label="Buscar amigos" autocapitalize="none" spellcheck="false"><button id="frGo">Buscar</button></form>
+        <ul id="frFound" class="fList" hidden></ul>
+        <ul id="frList" class="fList"><li class="empty">Cargando…</li></ul>
+        <p class="muted small">Invitar usa el tipo de partida elegido arriba.</p>
+      </div>
     </div>
     <div id="lbWait" hidden>
-      <p>Mandale este link a tu amigo. Cuando entre, se sortean los colores y empieza la partida.</p>
+      <p id="lbWaitTxt">Mandale este link a tu amigo. Cuando entre, se sortean los colores y empieza la partida.</p>
       <div class="link"><input id="lbLink" readonly aria-label="Link de la partida"><button id="lbCopy">Copiar</button></div>
       <button id="lbShare" class="primary wide">Compartir</button>
       <p class="muted">Podés cerrar esta ventana: la partida queda en «Mis partidas» y te avisa cuando tu amigo entre.</p>
@@ -2518,7 +2560,7 @@ const SOUNDS = {
     $('mTitle').textContent = title;
     $('mText').textContent = text;
     $('mText').hidden = !text;
-    const box = $('mBtns'); box.innerHTML = '';
+    const box = $('mBtns'); box.innerHTML = ''; box.hidden = false;
     buttons.forEach(b => {
       const el = document.createElement('button');
       el.textContent = b.label;
@@ -2611,13 +2653,14 @@ const SOUNDS = {
                     timeoutDraw: online && online.g && online.g.turn === localColor ? (isTimed() ? 'Se te acabó el tiempo' : 'Se venció el plazo de tu jugada') + ', pero a ' + oppN + ' solo le queda el rey y no puede darte mate.'
                                  : (isTimed() ? 'A ' + oppN + ' se le acabó el tiempo' : 'Se venció el plazo de ' + oppN) + ', pero solo te queda el rey y no podés dar mate.',
                     aborted: 'Partida anulada: ' + (online && online.g && online.g.turn === localColor ? 'no hiciste' : oppN + ' no hizo') + ' la primera jugada en 30 segundos. No cuenta para nadie.' }[reason];
-      if (reason === 'aborted') { showModal('Partida anulada', why, again); return; }
-      showModal('Tablas', why + ' La partida duró ' + mv + '.', again);
+      if (reason === 'aborted') { showModal('Partida anulada', why, again, { node: online ? endFriendNode() : null }); return; }
+      showModal('Tablas', why + ' La partida duró ' + mv + '.', again, { node: online ? endFriendNode() : null });
     } else if (vsCpu || online) {
       // Cada jugador ve su propio cartel (en el modo online, cada dispositivo mostrará el suyo)
       const tm = isTimed();
-      if (result === localColor) showModal('¡Felicitaciones!', 'Ganaste ' + how + ' en ' + mv + '.' + (reason === 'timeout' ? ' ' + oppN + (tm ? ' se quedó sin tiempo.' : ' no jugó dentro del plazo.') : ''), again, { img: 'win' });
-      else showModal('Derrota', 'Perdés esta partida en ' + mv + ' (' + (reason === 'left' ? 'te fuiste de la partida' : how) + ').' + (reason === 'timeout' ? (tm ? ' Se te acabó el tiempo.' : ' Se venció el plazo para tu jugada.') : ''), again, { img: 'lose' });
+      const node = online ? endFriendNode() : null;
+      if (result === localColor) showModal('¡Felicitaciones!', 'Ganaste ' + how + ' en ' + mv + '.' + (reason === 'timeout' ? ' ' + oppN + (tm ? ' se quedó sin tiempo.' : ' no jugó dentro del plazo.') : ''), again, { img: 'win', node });
+      else showModal('Derrota', 'Perdés esta partida en ' + mv + ' (' + (reason === 'left' ? 'te fuiste de la partida' : how) + ').' + (reason === 'timeout' ? (tm ? ' Se te acabó el tiempo.' : ' Se venció el plazo para tu jugada.') : ''), again, { img: 'lose', node });
     } else {
       const W = sidePl(result), L = sidePl(opp(result));
       showModal('¡Felicitaciones, ' + W + '!', 'Ganan ' + how + ' en ' + mv + '. ' + Art(opp(result)) + ' pierden esta partida en ' + mv + '.', again, { img: 'win' });
@@ -3162,6 +3205,7 @@ const SOUNDS = {
   const setNick = (n, fromAccount) => {
     try { localStorage.setItem('chaskiboom.nick', n); } catch (_) {}
     if (!fromAccount && n && db && me && googleUser()) db.ref('users/' + me + '/prefs/nick').set(n).catch(e => console.warn('nick', e));
+    if (n && db && me && googleUser()) db.ref('profiles/' + me + '/nick').set(n.slice(0, 20)).catch(e => console.warn('perfil', e));   // lo que ven tus amigos
   };
 
   /* --- Correspondencia: plazo por jugada (1, 3 o 7 días, o sin límite) ---
@@ -3275,7 +3319,7 @@ const SOUNDS = {
   let fbP = null;
   // una sola conexión aunque se llame varias veces a la vez (si no, podían crearse dos usuarios anónimos)
   function fbInit() {
-    if (!fbP) fbP = fbConnect().then(() => { watchAll(); loadAccountPrefs(); }).catch(e => { fbP = null; throw e; });
+    if (!fbP) fbP = fbConnect().then(() => { watchAll(); loadAccountPrefs(); fStart(); }).catch(e => { fbP = null; throw e; });
     return fbP;
   }
   async function fbConnect() {
@@ -3291,6 +3335,7 @@ const SOUNDS = {
     // al reconectarse, el servidor ya borró la presencia (onDisconnect): se vuelve a marcar en la partida abierta
     db.ref('.info/connected').on('value', s => {
       if (s.val() && online && online.pres) { online.pres.set(true).catch(() => {}); online.pres.onDisconnect().remove(); }
+      if (s.val()) fPresence();   // presencia general, la que ven tus amigos
     });
   }
   /* Al arrancar: si hay una sesión de Firebase guardada (ya jugó online en este navegador o esta app), se conecta para
@@ -3336,7 +3381,7 @@ const SOUNDS = {
     } else await auth.signInWithPopup(prov);
     me = auth.currentUser.uid;
     googleProfile();
-    watchAll(); loadAccountPrefs();
+    watchAll(); loadAccountPrefs(); fStart();
     return lost;
   }
   // antes de cualquier cosa online: si no entró con Google, cartel que lo pide. Resuelve true si ya puede jugar.
@@ -3369,6 +3414,7 @@ const SOUNDS = {
   function stopWatch() {
     if (watch.idx) watch.idx.off();
     Object.keys(watch.games).forEach(unwatchGame);
+    fStop();
     watch.idx = null; watch.uid = null; watch.done.clear(); watch.list = {};
     try { updatePending(); } catch (_) {}
     watch.list = null;
@@ -3382,6 +3428,7 @@ const SOUNDS = {
   $('acctBtn').addEventListener('click', async () => {
     try {
       if (online) leaveOnline();
+      await fOffline();
       await firebase.auth().signOut();
       me = null; stopWatch();
       lobby.hidden = true;
@@ -3391,7 +3438,7 @@ const SOUNDS = {
 
   /* --- Sala de espera: apodo, desafío y «Mis partidas» --- */
   const lobby = $('lobby');
-  async function openLobby() {
+  async function openLobby(tab) {
     if (!HAS_FB) {
       if (/github\.io$/.test(location.hostname))
         showModal('Modo online en pruebas', 'El juego online todavía está en desarrollo. Podés probarlo en la versión de pruebas: ' + location.origin + location.pathname.replace(/[^/]*$/, '') + 'dev/', [{ label: 'Entendido', primary: true }]);
@@ -3402,10 +3449,11 @@ const SOUNDS = {
     try { await fbInit(); }
     catch (e) { console.error(e); showModal('Sin conexión', 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.', [{ label: 'Entendido', primary: true, onClick: backHome }]); return; }
     if (!(await needGoogle())) { backHome(); return; }
+    fStart();
     $('nick').value = getNick();
     $('lbMain').hidden = false; $('lbWait').hidden = true; $('lbMsg').textContent = '';
     lobby.hidden = false;
-    acctUI(); listGames();
+    acctUI(); listGames(); fLobby(tab);
   }
   // si se canceló la entrada a online y no hay partida, vuelve a la elección inicial
   function backHome() { if (!online && !started && !ended && modal.hidden && lobby.hidden) chooseMode(); }
@@ -3417,8 +3465,9 @@ const SOUNDS = {
   /* Los desafíos que nadie aceptó vencen a las 24 h: el que lo creó lo borra de la base al verlo vencido (no hay servidor
      que lo haga solo); mientras tanto las reglas no dejan entrar a nadie. */
   const inviteExpired = g => g && !g.guest && g.createdAt && srvNow() - g.createdAt > DAY;
-  function dropGame(id, whole) {
+  function dropGame(id, whole, g) {
     if (whole) db.ref('games/' + id).remove().catch(e => console.warn('borrar', e));   // solo un desafío propio sin aceptar
+    if (whole && g && g.inviteTo) { db.ref('invites/' + g.inviteTo.uid + '/' + id).remove().catch(() => {}); untrackInvite(id); }
     return db.ref('users/' + me + '/games/' + id).remove();
   }
   async function listGames() {
@@ -3428,7 +3477,7 @@ const SOUNDS = {
     const all = await Promise.all(ids.map(id => db.ref('games/' + id).once('value').then(s => [id, s.val()])));
     all.forEach(([id, g]) => {
       if (!g || !g.host) dropGame(id, false);                              // ya no existe: se limpia el índice
-      else if (inviteExpired(g) && g.host.uid === me) dropGame(id, true);   // desafío vencido
+      else if (inviteExpired(g) && g.host.uid === me) dropGame(id, true, g);   // desafío vencido
     });
     const games = all.filter(([, g]) => g && g.host && !inviteExpired(g));
     const past = $('lbPastList'), EMPTY = '<li class="empty">No tenés partidas en curso</li>';
@@ -3445,7 +3494,7 @@ const SOUNDS = {
       const tr = claimTimeout(id, g);   // si venció el plazo y nadie la cerró todavía, se cierra ahora
       const res = g.result || tr;
       let state, mine = false, late = false;
-      if (!g.guest) state = 'Esperando que tu amigo entre' + (g.createdAt ? ' · vence en ' + leftTxt(g.createdAt + DAY - srvNow()) : '');
+      if (!g.guest) state = (g.inviteTo ? 'Invitaste a ' + g.inviteTo.name : 'Esperando que tu amigo entre') + (g.createdAt ? ' · vence en ' + leftTxt(g.createdAt + DAY - srvNow()) : '');
       else if (res) state = (res.winner === 'draw' ? 'Tablas' : (res.winner === myColor ? 'Ganaste' : 'Perdiste')) + (/^timeout/.test(res.reason) ? ' por tiempo' : '');
       else if (!g.started) { mine = myColor === 'w'; state = mine ? 'Te toca comenzar' : 'Sin comenzar'; }
       else {
@@ -3473,7 +3522,7 @@ const SOUNDS = {
             return;
           }
           clearTimeout(t);
-          dropGame(id, !g.guest && g.host.uid === me).then(() => {
+          dropGame(id, !g.guest && g.host.uid === me, g).then(() => {
             li.remove();
             if (!ul.children.length) ul.innerHTML = EMPTY;
             pastCount();
@@ -3482,6 +3531,7 @@ const SOUNDS = {
         });
         li.appendChild(x);
       }
+      if (g.guest) addFriendBtn(li, g.host.uid === me ? g.guest.uid : g.host.uid);   // atajo: «+ Amigo» junto al rival
       (res ? past : ul).appendChild(li);
     });
     if (!ul.children.length) ul.innerHTML = EMPTY;
@@ -3527,6 +3577,8 @@ const SOUNDS = {
     const msg = (getNick() || 'Un amigo') + ' te desafía a una partida ' + (g ? modeName(g) + ' ' : '') + 'de ChaskiBoom Battle Chess'
       + '. Aceptá entrando a este link (el desafío vence en 24 h): ' + url;
     $('lbLink').value = url;
+    $('lbWaitTxt').textContent = g && g.inviteTo ? 'Le mandamos la invitación a ' + g.inviteTo.name + '. Cuando la acepte, se sortean los colores y empieza la partida. También podés mandarle el link.'
+                                               : 'Mandale este link a tu amigo. Cuando entre, se sortean los colores y empieza la partida.';
     $('lbMain').hidden = true; $('lbWait').hidden = false; $('lbMsg').textContent = '';
     lobby.hidden = false;
     $('lbCopy').onclick = () => {
@@ -3549,9 +3601,10 @@ const SOUNDS = {
     if (!(await needGoogle())) { backHome(); return; }
     const ref = db.ref('games/' + id);
     const g = (await ref.once('value')).val();
-    if (!g || !g.host) { showModal('Partida no encontrada', 'El link no corresponde a ninguna partida. Pedile a tu amigo que te lo mande de nuevo.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
+    if (!g || !g.host) { dropInvite(id); showModal('Partida no encontrada', 'El link no corresponde a ninguna partida. Pedile a tu amigo que te lo mande de nuevo.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
     const isHost = g.host.uid === me, isGuest = g.guest && g.guest.uid === me;
     if (!isHost && !isGuest) {
+      if (inviteExpired(g) || g.guest) dropInvite(id);
       if (inviteExpired(g)) { showModal('Desafío vencido', 'Este desafío venció: duran 24 horas. Pedile a ' + (g.host.name || 'tu amigo') + ' que te mande uno nuevo.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
       if (g.guest) { showModal('Partida completa', 'Esta partida ya tiene dos jugadores.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
       let name = getNick();
@@ -3559,11 +3612,12 @@ const SOUNDS = {
       // el primero que entra se queda con el lugar; el sorteo de colores lo hace quien se une
       const guest = { uid: me, name }, ph = myPhoto(); if (ph) guest.photo = ph;
       const tx = await ref.child('guest').transaction(cur => cur ? undefined : guest);
-      if (!tx.committed) { showModal('Partida completa', 'Otra persona entró a esta partida antes que vos.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
+      if (!tx.committed) { dropInvite(id); showModal('Partida completa', 'Otra persona entró a esta partida antes que vos.', [{ label: 'Entendido', primary: true, onClick: openLobby }]); return; }
       const whiteUid = Math.random() < 0.5 ? g.host.uid : me;
       await ref.update({ white: whiteUid, black: whiteUid === me ? g.host.uid : me, turn: 'w', ply: 0 });
       await db.ref('users/' + me + '/games/' + id).set({ updatedAt: NOW() });
     }
+    if (fr.inv[id]) dropInvite(id);   // invitación aceptada (o ya estaba adentro)
     startOnline(id, ref);
   }
 
@@ -3578,10 +3632,10 @@ const SOUNDS = {
       $('lbTerms').textContent = terms;
       $('lbTitle').textContent = (hostName || 'Un amigo') + ' te desafía';
       $('lbCreate').textContent = 'Aceptar el desafío';
-      $('lbGames').parentElement.querySelector('h3').hidden = true; $('lbGames').hidden = true; $('lbPast').hidden = true;
+      lbJoinHide(true);
       $('nick').value = getNick(); $('lbMsg').textContent = '';
       lobby.hidden = false;
-      const restore = () => { lbJoining = false; $('tPick').hidden = false; $('lbTerms').hidden = true; $('lbTitle').textContent = 'Jugar online'; $('lbCreate').textContent = 'Desafiar a un amigo'; $('lbGames').parentElement.querySelector('h3').hidden = false; $('lbGames').hidden = false; $('lbCreate').onclick = null; };
+      const restore = () => { lbJoining = false; $('tPick').hidden = false; $('lbTerms').hidden = true; $('lbTitle').textContent = 'Jugar online'; $('lbCreate').textContent = 'Desafiar a un amigo'; lbJoinHide(false); $('lbCreate').onclick = null; };
       $('lbCreate').onclick = e => { e.stopImmediatePropagation(); const n = askNick(); if (!n) return; lobby.hidden = true; restore(); res(n); };
       $('lbClose').onclick = () => { lobby.hidden = true; restore(); $('lbClose').onclick = null; res(null); };
     });
@@ -3629,7 +3683,7 @@ const SOUNDS = {
     online.g = g;
     // ¿todavía no entró el rival?
     if (!g.white) {
-      if (g.host.uid === me) { showWaiting(online.id); online.waiting = true; }
+      if (g.host.uid === me) { showWaiting(online.id); online.waiting = true; trackInvite(online.id, g); }
       caption('Esperando que tu amigo entre a la partida');
       return;
     }
@@ -3880,18 +3934,25 @@ const SOUNDS = {
     }).sort((a, b) => (a[1].deadline || Infinity) - (b[1].deadline || Infinity));
   }
   function updatePending() {
-    let L;
-    try { if (!watch.list) return; L = pendingGames(); } catch (_) { return; }   // todavía no arrancó la parte online
-    const bd = $('monBadge'); bd.hidden = !L.length; bd.textContent = L.length;
-    $('mon').title = L.length ? 'Te toca en ' + L.length + (L.length === 1 ? ' partida online' : ' partidas online') : '';
-    pendEl.hidden = !L.length;
-    if (!L.length) return;
-    const [, g] = L[0], left = g.deadline ? g.deadline - srvNow() : null;
-    const rival = (g.host.uid === me ? g.guest && g.guest.name : g.host.name) || 'tu rival';
-    let t = L.length === 1 ? 'Te toca en la partida contra ' + rival : 'Te toca en ' + L.length + ' partidas online';
-    if (left !== null) t += ' · ' + (L.length === 1 ? 'vence' : 'una vence') + ' en ' + leftTxt(left);
-    pendEl.querySelector('.t').textContent = t;
-    pendEl.classList.toggle('late', left !== null && left < lateMs(g.perMove));
+    let L = [], nv = [];
+    try { if (watch.list) L = pendingGames(); nv = fNews(); } catch (_) { return; }   // todavía no arrancó la parte online
+    const n = L.length + nv.length;
+    const bd = $('monBadge'); bd.hidden = !n; bd.textContent = n;
+    const gt = L.length ? 'Te toca en ' + L.length + (L.length === 1 ? ' partida online' : ' partidas online') : '';
+    const ft = nv.length === 1 ? nv[0] : nv.length ? nv.length + ' novedades de tus amigos' : '';
+    $('mon').title = [gt, ft].filter(Boolean).join(' · ');
+    pendEl.hidden = !n;
+    pendEl.classList.remove('late');
+    if (!n) return;
+    let t = '';
+    if (L.length) {
+      const [, g] = L[0], left = g.deadline ? g.deadline - srvNow() : null;
+      const rival = (g.host.uid === me ? g.guest && g.guest.name : g.host.name) || 'tu rival';
+      t = L.length === 1 ? 'Te toca en la partida contra ' + rival : 'Te toca en ' + L.length + ' partidas online';
+      if (left !== null) t += ' · ' + (L.length === 1 ? 'vence' : 'una vence') + ' en ' + leftTxt(left);
+      pendEl.classList.toggle('late', left !== null && left < lateMs(g.perMove));
+    }
+    pendEl.querySelector('.t').textContent = [t, ft].filter(Boolean).join(' · ');
   }
   setInterval(updatePending, 60000);   // el tiempo que queda
 
@@ -3925,8 +3986,9 @@ const SOUNDS = {
     w.cb = s => {
       const g = s.val();
       if (!g || !g.host) { w.prev = w.prev || {}; watch.done.add(id); unwatchGame(id); turnSummary(); return; }
-      if (inviteExpired(g)) { if (g.host.uid === me) dropGame(id, true); watch.done.add(id); unwatchGame(id); turnSummary(); return; }
+      if (inviteExpired(g)) { if (g.host.uid === me) dropGame(id, true, g); watch.done.add(id); unwatchGame(id); turnSummary(); return; }
       const prev = w.prev; w.prev = g;
+      if (g.inviteTo && !g.guest && g.host.uid === me) trackInvite(id, g); else untrackInvite(id);
       if (prev) otherNews(id, prev, g);            // la primera lectura es la referencia, no avisa
       else claimTimeout(id, g);
       if (g.result) { watch.done.add(id); unwatchGame(id); }
@@ -3978,6 +4040,446 @@ const SOUNDS = {
     if (otherAct) { const f = otherAct; otherAct = null; f(); return; }
     if (otherId && !(online && online.id === otherId)) { closeModal(); lobby.hidden = true; enterOnline(otherId); }
   });
+
+  /* ---------- Amigos (v1.58) ----------
+     Solo entre jugadores registrados (cuenta de Google): las reglas lo verifican con auth.token.email_verified, porque los
+     anónimos no tienen email. Datos:
+       profiles/<uid> = { user, nick, photo }   lo que ven los demás (el email nunca)
+       usernames/<usuario> = uid               único: lo garantizan las reglas; se busca por prefijo
+       emailIndex/<email con ',' por '.'> = uid  solo lo encuentra quien ya sabe el email (no se puede listar)
+       friends/<uid>/<amigo> = { since }       amistad mutua (la escribe entera quien acepta la solicitud)
+       requests/<para>/<de> = { at }           solicitud pendiente; users/<uid>/sent/<para> la recuerda quien la mandó
+       invites/<para>/<código> = { from, at }  invitación a un desafío normal (la partida lleva inviteTo); vence a las 24 h
+       presence/<uid> = true                    en línea (onDisconnect la borra); solo la ven tus amigos
+     El desafío por link sigue igual para quien no es amigo. */
+  const fr = { uid: null, refs: [], friends: {}, reqIn: {}, sent: {}, inv: {}, invGame: {}, prof: {}, profP: {}, pres: {}, presRefs: {}, sentRefs: {},
+               out: {}, user: undefined, loaded: {}, asked: false, tab: 'games', found: null };
+  const USER_RE = /^[a-z0-9._]{3,20}$/;
+  const isReg = () => !!(db && me && googleUser());
+  const emailKey = e => { if (!e) return null; const k = String(e).trim().toLowerCase(); return /[#$\[\]\/\s]/.test(k) ? null : k.replace(/\./g, ','); };
+  const rel = uid => fr.friends[uid] ? 'friend' : fr.sent[uid] ? 'sent' : fr.reqIn[uid] ? 'in' : 'none';
+  const pName = uid => { const p = fr.prof[uid] || {}; return p.nick || (p.user ? '@' + p.user : 'Tu amigo'); };
+  function fListen(path, cb) { const r = db.ref(path); r.on('value', cb, e => console.warn(path, e)); fr.refs.push([r, cb]); }
+
+  function fStart() {
+    if (!isReg() || fr.uid === me) return;
+    fStop();
+    fr.uid = me;
+    const u = firebase.auth().currentUser;
+    // perfil público: apodo y foto (el usuario lo pone askUser)
+    const pub = {}, n = getNick() || (gName(u).split(' ')[0] || '');
+    if (n) pub.nick = n.slice(0, 20);
+    const ph = myPhoto(); if (ph) pub.photo = ph;
+    if (Object.keys(pub).length) db.ref('profiles/' + me).update(pub).catch(e => console.warn('perfil', e));
+    const ek = emailKey(u.email); if (ek) db.ref('emailIndex/' + ek).set(me).catch(e => console.warn('email', e));
+    fPresence();
+    fListen('profiles/' + me + '/user', s => { fr.user = s.val() || null; fRender(); });
+    fListen('friends/' + me, s => {
+      const prev = fr.friends, first = !fr.loaded.friends;
+      fr.friends = s.val() || {};
+      Object.keys(fr.presRefs).forEach(f => { if (!fr.friends[f]) { fr.presRefs[f].r.off('value', fr.presRefs[f].cb); delete fr.presRefs[f]; delete fr.pres[f]; } });
+      Object.keys(fr.friends).forEach(f => {
+        if (!fr.presRefs[f]) {
+          const r = db.ref('presence/' + f), cb = x => { fr.pres[f] = !!x.val(); fRender(); };
+          r.on('value', cb, () => {}); fr.presRefs[f] = { r, cb };
+        }
+        if (!first && !prev[f] && fr.sent[f]) getProf(f).then(() => fNotify(pName(f) + ' aceptó tu solicitud de amistad', 'friends'));
+        if (fr.sent[f]) db.ref('users/' + me + '/sent/' + f).remove().catch(() => {});      // ya es amigo
+        if (fr.reqIn[f]) db.ref('requests/' + me + '/' + f).remove().catch(() => {});
+        getProf(f);
+      });
+      fr.loaded.friends = true; fRender();
+    });
+    fListen('requests/' + me, s => {
+      const prev = fr.reqIn, first = !fr.loaded.req;
+      fr.reqIn = s.val() || {};
+      Object.keys(fr.reqIn).forEach(f => {
+        if (fr.friends[f]) { db.ref('requests/' + me + '/' + f).remove().catch(() => {}); return; }
+        if (fr.sent[f]) { acceptReq(f).catch(e => console.warn('amigo', e)); return; }   // se pidieron los dos: amigos directo
+        getProf(f).then(() => { if (!first && !prev[f]) fNotify(pName(f) + ' quiere ser tu amigo', 'friends'); });
+      });
+      fr.loaded.req = true; fRender();
+    });
+    fListen('users/' + me + '/sent', s => {
+      fr.sent = s.val() || {};
+      // cada solicitud enviada se escucha: si desaparece sin que sean amigos, la rechazó (o se canceló) y se olvida
+      Object.keys(fr.sentRefs).forEach(f => { if (!fr.sent[f]) { fr.sentRefs[f].r.off('value', fr.sentRefs[f].cb); delete fr.sentRefs[f]; } });
+      Object.keys(fr.sent).forEach(f => {
+        getProf(f);
+        if (fr.sentRefs[f]) return;
+        const r = db.ref('requests/' + f + '/' + me);
+        const drop = () => setTimeout(() => { if (fr.sent[f] && !fr.friends[f]) db.ref('users/' + me + '/sent/' + f).remove().catch(() => {}); }, 1500);   // si la aceptó, llega la amistad antes
+        const cb = x => { if (!x.exists()) drop(); };
+        r.on('value', cb, drop); fr.sentRefs[f] = { r, cb };
+      });
+      fr.loaded.sent = true; fRender();
+    });
+    fListen('invites/' + me, s => {
+      const prev = fr.inv, first = !fr.loaded.inv;
+      fr.inv = s.val() || {};
+      Object.keys(fr.invGame).forEach(id => { if (!fr.inv[id]) delete fr.invGame[id]; });
+      Object.keys(fr.inv).forEach(id => {
+        const v = fr.inv[id] || {};
+        if (v.at && srvNow() - v.at > DAY) { dropInvite(id); return; }
+        Promise.all([getProf(v.from), loadInvGame(id)]).then(([, g]) => {
+          if (g && !first && !prev[id]) fNotify(pName(v.from) + ' te invita a una partida ' + modeName(g), 'games');
+        });
+      });
+      fr.loaded.inv = true; fRender();
+    });
+  }
+  function fStop() {
+    fr.refs.forEach(([r, cb]) => r.off('value', cb));
+    Object.keys(fr.presRefs).forEach(f => fr.presRefs[f].r.off('value', fr.presRefs[f].cb));
+    Object.keys(fr.sentRefs).forEach(f => fr.sentRefs[f].r.off('value', fr.sentRefs[f].cb));
+    Object.keys(fr.out).forEach(untrackInvite);
+    Object.assign(fr, { uid: null, refs: [], friends: {}, reqIn: {}, sent: {}, inv: {}, invGame: {}, pres: {}, presRefs: {}, sentRefs: {}, user: undefined, loaded: {}, asked: false, found: null });
+    try { updatePending(); } catch (_) {}
+  }
+  function fPresence() {
+    if (!isReg()) return;
+    const r = db.ref('presence/' + me);
+    r.set(true).catch(() => {}); r.onDisconnect().remove();
+  }
+  // al salir de la cuenta: deja de figurar en línea (después ya no hay permiso)
+  function fOffline() { if (!isReg()) return Promise.resolve(); const r = db.ref('presence/' + me); r.onDisconnect().cancel(); return r.remove().catch(() => {}); }
+  function getProf(uid, fresh) {
+    if (!uid) return Promise.resolve({});
+    if (!fresh && fr.profP[uid]) return fr.profP[uid];
+    return fr.profP[uid] = db.ref('profiles/' + uid).once('value').then(s => { const p = s.val() || {}; fr.prof[uid] = p; fRender(); return p; }, () => ({}));
+  }
+  // la partida de una invitación recibida: si ya no sirve (borrada, aceptada o vencida), la invitación se descarta
+  function loadInvGame(id) {
+    return db.ref('games/' + id).once('value').then(s => {
+      const g = s.val();
+      if (!g || !g.host || inviteExpired(g) || (g.guest && g.guest.uid !== me)) { dropInvite(id); return null; }
+      if (g.guest) { dropInvite(id); return null; }   // ya entraste
+      if (fr.inv[id]) { fr.invGame[id] = g; fRender(); }
+      return g;
+    }, () => { dropInvite(id); return null; });
+  }
+  function dropInvite(id) {
+    if (!db || !me) return;
+    delete fr.inv[id]; delete fr.invGame[id];
+    db.ref('invites/' + me + '/' + id).remove().catch(() => {});
+    fRender();
+  }
+  // novedades de amigos para el aviso de la pantalla inicial y el número del botón Online
+  function fNews() {
+    if (!fr.uid) return [];
+    const L = [];
+    Object.keys(fr.invGame).forEach(id => { if (fr.inv[id]) L.push(pName(fr.inv[id].from) + ' te invitó a una partida'); });
+    Object.keys(fr.reqIn).forEach(f => { if (!fr.friends[f] && fr.prof[f]) L.push(pName(f) + ' quiere ser tu amigo'); });
+    return L;
+  }
+  function fNotify(text, tab) {
+    showOther(null, text, false, { raw: true, go: 'Ver', act: () => { closeModal(); openLobby(tab); } });
+    updatePending();
+  }
+
+  /* --- Solicitudes --- */
+  async function sendReq(uid) {
+    if (!isReg() || uid === me || fr.friends[uid]) return;
+    if (fr.reqIn[uid]) return acceptReq(uid);
+    const u = {};
+    u['requests/' + uid + '/' + me] = { at: NOW() };
+    u['users/' + me + '/sent/' + uid] = { at: NOW() };
+    await db.ref().update(u);
+    if (!fr.sent[uid]) { fr.sent[uid] = { at: Date.now() }; fRender(); }   // sin esperar a que vuelva de la base
+  }
+  function acceptReq(f) {
+    const u = {};
+    u['friends/' + me + '/' + f] = { since: NOW() };
+    u['friends/' + f + '/' + me] = { since: NOW() };
+    u['requests/' + me + '/' + f] = null;
+    return db.ref().update(u);
+  }
+  const rejectReq = f => db.ref('requests/' + me + '/' + f).remove();
+  function cancelReq(f) { const u = {}; u['requests/' + f + '/' + me] = null; u['users/' + me + '/sent/' + f] = null; return db.ref().update(u); }
+  async function removeFriend(f) {
+    const u = {}; u['friends/' + me + '/' + f] = null; u['friends/' + f + '/' + me] = null;
+    await db.ref().update(u);
+    // invitaciones pendientes entre los dos: se borran (las de él a vos, y tus desafíos a él)
+    Object.keys(fr.inv).forEach(id => { if (fr.inv[id] && fr.inv[id].from === f) dropInvite(id); });
+    Object.keys(fr.out).forEach(id => { const o = fr.out[id]; if (o.g.inviteTo.uid === f) { untrackInvite(id); dropGame(id, true, o.g); if (online && online.id === id) leaveOnline(); } });
+    if (watch.list) Object.keys(watch.games).forEach(id => { const g = watch.games[id].prev; if (g && g.inviteTo && g.inviteTo.uid === f && !g.guest && g.host.uid === me) dropGame(id, true, g); });
+  }
+
+  /* --- Invitar a un amigo: un desafío normal (createGame) más la invitación en su bandeja --- */
+  async function inviteFriend(f) {
+    const name = askNick(); if (!name) return;
+    if (!fr.friends[f]) return;
+    const p = fr.prof[f] || {};
+    const id = await createGame(name, Object.assign(modeData(modePref), { inviteTo: { uid: f, name: (p.nick || p.user || 'tu amigo').slice(0, 20) } }));
+    try { await db.ref('invites/' + f + '/' + id).set({ from: me, at: NOW() }); }
+    catch (e) { dropGame(id, true); throw e; }
+    lobby.hidden = true;
+    enterOnline(id);
+  }
+  /* El que invitó escucha su invitación: si desaparece sin que el amigo haya entrado, la rechazó (o venció).
+     Si se pierde el permiso de leerla (las reglas solo dejan leerla mientras existe), es lo mismo. */
+  function trackInvite(id, g) {
+    if (fr.out[id] || !g.inviteTo || !db) return;
+    const r = db.ref('invites/' + g.inviteTo.uid + '/' + id);
+    let seen = false;
+    const gone = () => { if (!fr.out[id]) return; untrackInvite(id); inviteGone(id); };
+    const cb = s => { if (s.exists()) seen = true; else if (seen) gone(); };
+    r.on('value', cb, () => { if (seen) gone(); });
+    fr.out[id] = { r, cb, g };
+  }
+  function untrackInvite(id) { const o = fr.out[id]; if (!o) return; o.r.off('value', o.cb); delete fr.out[id]; }
+  async function inviteGone(id) {
+    let g = null;
+    try { g = (await db.ref('games/' + id).once('value')).val(); } catch (_) {}
+    if (!g || !g.host || g.guest || g.host.uid !== me) return;   // la aceptó (o ya no existe)
+    dropGame(id, true, g);
+    if (inviteExpired(g)) return;
+    const name = g.inviteTo && g.inviteTo.name || 'Tu amigo';
+    if (online && online.id === id) {
+      leaveOnline(); lobby.hidden = true;
+      showModal('Invitación rechazada', name + ' no aceptó la invitación.', [{ label: 'Entendido', primary: true, onClick: () => openLobby('friends') }]);
+    } else showOther(null, name + ' rechazó tu invitación', false, { raw: true, go: 'Ver amigos', act: () => { closeModal(); openLobby('friends'); } });
+  }
+
+  /* --- Nombre de usuario --- */
+  function userBase(name) {
+    let b = (name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9._]/g, '').slice(0, 20);
+    if (b.length < 3) b = (b + 'jugador').slice(0, 20);
+    return b;
+  }
+  async function suggestUser() {
+    const u = firebase.auth().currentUser;
+    const base = userBase(gName(u) || getNick() || (u && u.email || '').split('@')[0]);
+    for (let i = 0; i < 6; i++) {
+      const c = i ? base.slice(0, 17) + Math.floor(10 + Math.random() * 990) : base;
+      try { if (!(await db.ref('usernames/' + c).once('value')).exists()) return c; } catch (_) { return base; }
+    }
+    return base.slice(0, 14) + Date.now().toString(36).slice(-6);
+  }
+  // toma el nuevo, actualiza el perfil y libera el viejo, todo en una escritura (las reglas exigen que coincidan)
+  async function saveUser(n) {
+    const old = fr.user, u = {};
+    u['usernames/' + n] = me;
+    u['profiles/' + me + '/user'] = n;
+    if (old && old !== n) u['usernames/' + old] = null;
+    await db.ref().update(u);
+    fr.user = n; fRender();
+  }
+  function askUser(first) {
+    return new Promise(res => {
+      const box = document.createElement('div');
+      box.className = 'uPick';
+      box.innerHTML = '<div class="in"><span>@</span><input maxlength="20" autocapitalize="none" autocomplete="off" spellcheck="false" aria-label="Nombre de usuario"></div>'
+        + '<p class="msg">Minúsculas, números, punto y guion bajo (3 a 20).</p><div class="mBtns"><button class="primary">Guardar</button><button>' + (first ? 'Más tarde' : 'Cancelar') + '</button></div>';
+      const inp = box.querySelector('input'), msg = box.querySelector('.msg'), [ok, no] = box.querySelectorAll('button');
+      const say = (t, bad) => { msg.textContent = t; msg.classList.toggle('bad', !!bad); };
+      showModal(first ? 'Elegí tu usuario' : 'Cambiar tu usuario',
+        first ? 'Con este nombre te encuentran tus amigos para agregarte. En las partidas se sigue viendo tu apodo.' : 'Tus amigos te buscan con este nombre. El anterior queda libre para otro.', [], { node: box });
+      $('mBtns').hidden = true;
+      const done = v => { $('mBtns').hidden = false; closeModal(); res(v); };
+      if (fr.user) inp.value = fr.user;
+      else { inp.placeholder = 'Buscando un nombre libre…'; suggestUser().then(v => { if (!inp.value) inp.value = v; inp.placeholder = ''; }); }
+      inp.addEventListener('input', () => { const v = inp.value.toLowerCase().replace(/[^a-z0-9._]/g, ''); if (v !== inp.value) inp.value = v; say('Minúsculas, números, punto y guion bajo (3 a 20).'); });
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok.click(); });
+      ok.addEventListener('click', async () => {
+        const v = inp.value.trim();
+        if (!USER_RE.test(v)) { say('Tiene que tener entre 3 y 20 caracteres: minúsculas, números, punto o guion bajo.', true); inp.focus(); return; }
+        if (v === fr.user) { done(v); return; }
+        ok.disabled = true; say('Guardando…');
+        try {
+          if ((await db.ref('usernames/' + v).once('value')).exists()) { say('@' + v + ' ya está ocupado. Probá con otro.', true); return; }
+          await saveUser(v); done(v);
+        } catch (e) { console.warn('usuario', e); say('No se pudo guardar: puede que otro haya tomado @' + v + ' recién. Probá con otro.', true); }
+        finally { ok.disabled = false; }
+      });
+      no.addEventListener('click', () => done(null));
+      setTimeout(() => inp.focus(), 50);
+    });
+  }
+
+  /* --- Sala: pestañas, bandeja (invitaciones y solicitudes), buscador y lista de amigos --- */
+  async function fLobby(tab) {
+    fTab(tab === 'friends' ? 'friends' : fr.tab);
+    fRender(true);
+    for (let i = 0; i < 30 && fr.user === undefined; i++) await new Promise(r => setTimeout(r, 100));
+    // la primera vez que entra a Online (también los que ya jugaban antes de los amigos) se le pide el usuario
+    if (fr.user === null && !fr.asked && !lobby.hidden && modal.hidden && !lbJoining) { fr.asked = true; askUser(true); }
+  }
+  function fTab(t) {
+    fr.tab = t;
+    $('tabGames').setAttribute('aria-selected', String(t === 'games'));
+    $('tabFriends').setAttribute('aria-selected', String(t === 'friends'));
+    $('paneGames').hidden = t !== 'games'; $('paneFriends').hidden = t !== 'friends';
+    if (t === 'friends') fRender(true);
+  }
+  $('tabGames').addEventListener('click', () => fTab('games'));
+  $('tabFriends').addEventListener('click', () => fTab('friends'));
+  $('uEdit').addEventListener('click', () => askUser(false));
+  $('frPickUser').addEventListener('click', () => askUser(true));
+  // al aceptar un desafío por link se ocultan las pestañas; después vuelven
+  function lbJoinHide(on) {
+    ['lbTabs', 'lbInbox', 'uRow'].forEach(k => { $(k).hidden = on; });
+    if (on) { $('paneGames').hidden = true; $('paneFriends').hidden = true; $('lbPast').hidden = true; }
+    else { fTab(fr.tab); fRender(true); }
+  }
+  let fRenderT = null;
+  function fRender(now) {
+    if (now) { clearTimeout(fRenderT); fRenderT = null; fPaint(); return; }
+    if (!fRenderT) fRenderT = setTimeout(() => { fRenderT = null; fPaint(); }, 60);
+  }
+  function fRow(uid, sub) {
+    const p = fr.prof[uid] || {}, li = document.createElement('li');
+    li.innerHTML = '<span class="av"></span><div class="who"><b></b><span></span></div><span class="acts"></span>';
+    setAvatar(li.querySelector('.av'), p.photo, p.nick || p.user);
+    li.querySelector('b').textContent = p.nick || (p.user ? '@' + p.user : '…');
+    li.querySelector('.who span').textContent = sub !== undefined ? sub : p.user ? '@' + p.user : '';
+    return li;
+  }
+  function fBtn(li, label, fn, cls) {
+    const b = document.createElement('button');
+    b.textContent = label; if (cls) b.className = cls;
+    b.addEventListener('click', async () => {
+      b.disabled = true;
+      try { await fn(b); } catch (e) { console.warn('amigos', e); $('lbMsg').textContent = 'No se pudo. Revisá tu conexión e intentá de nuevo.'; }
+      b.disabled = false;
+    });
+    li.querySelector('.acts').appendChild(b);
+    return b;
+  }
+  // ✕ con doble toque, como en «Mis partidas»
+  function fDel(li, title, fn) {
+    const x = document.createElement('button');
+    x.className = 'del'; x.textContent = '✕'; x.title = title; x.setAttribute('aria-label', title);
+    let t = null;
+    x.addEventListener('click', async () => {
+      if (!x.classList.contains('sure')) { x.classList.add('sure'); x.textContent = 'Quitar'; t = setTimeout(() => { x.classList.remove('sure'); x.textContent = '✕'; }, 5000); return; }
+      clearTimeout(t); x.disabled = true;
+      try { await fn(); } catch (e) { console.warn('amigos', e); $('lbMsg').textContent = 'No se pudo. Intentá de nuevo.'; x.disabled = false; }
+    });
+    li.appendChild(x);
+  }
+  // botón según la relación con ese jugador (en el buscador)
+  function relActs(li, uid) {
+    const r = rel(uid), p = fr.prof[uid] || {};
+    const note = t => { const s = document.createElement('span'); s.className = 'ok'; s.textContent = t; li.querySelector('.acts').appendChild(s); };
+    if (r === 'friend') note('Ya es tu amigo');
+    else if (r === 'sent') { note('Solicitud enviada'); fBtn(li, 'Cancelar', () => cancelReq(uid)); }
+    else if (r === 'in') fBtn(li, 'Aceptar', () => acceptReq(uid), 'primary');
+    else if (!p.user) note('Todavía no eligió usuario');   // las reglas exigen que el otro esté registrado del todo
+    else fBtn(li, 'Agregar', () => sendReq(uid), 'primary');
+  }
+  function fPaint() {
+    if (!fr.uid) { updatePending(); return; }
+    $('uRow').hidden = !fr.user || lbJoining; $('uName').textContent = fr.user ? '@' + fr.user : '';
+    $('frNoUser').hidden = fr.user !== null;
+    const nReq = Object.keys(fr.reqIn).filter(f => !fr.friends[f]).length;
+    $('frBadge').hidden = !nReq; $('frBadge').textContent = nReq;
+    // bandeja: invitaciones y solicitudes recibidas (arriba de las pestañas)
+    const ib = $('lbInbox'); ib.innerHTML = '';
+    Object.keys(fr.invGame).forEach(id => {
+      const v = fr.inv[id], g = fr.invGame[id]; if (!v || !g) return;
+      const li = fRow(v.from, 'Te invita: ' + modeName(g) + ' · vence en ' + leftTxt(g.createdAt + DAY - srvNow()));
+      fBtn(li, 'Aceptar', () => { lobby.hidden = true; return enterOnline(id); }, 'primary');
+      fBtn(li, 'No', () => { dropInvite(id); });
+      ib.appendChild(li);
+    });
+    Object.keys(fr.reqIn).forEach(f => {
+      if (fr.friends[f] || !fr.prof[f]) return;
+      const p = fr.prof[f];
+      const li = fRow(f, (p.user ? '@' + p.user + ' · ' : '') + 'quiere ser tu amigo');
+      fBtn(li, 'Aceptar', () => acceptReq(f), 'primary');
+      fBtn(li, 'No', () => rejectReq(f));
+      ib.appendChild(li);
+    });
+    ib.hidden = !ib.children.length || lbJoining;
+    // amigos (en línea primero) y solicitudes enviadas
+    const ul = $('frList'); ul.innerHTML = '';
+    const ids = Object.keys(fr.friends).sort((a, b) => (fr.pres[b] ? 1 : 0) - (fr.pres[a] ? 1 : 0) || pName(a).localeCompare(pName(b)));
+    ids.forEach(f => {
+      const li = fRow(f);
+      const dot = document.createElement('span'); dot.className = 'on' + (fr.pres[f] ? ' yes' : ''); dot.title = fr.pres[f] ? 'En línea' : 'No está conectado';
+      li.prepend(dot);
+      const b = fBtn(li, 'Invitar', () => inviteFriend(f), 'primary');
+      b.title = 'Invitar a una partida ' + modeName(modeData(modePref));
+      fDel(li, 'Quitar de tus amigos', () => removeFriend(f));
+      ul.appendChild(li);
+    });
+    Object.keys(fr.sent).forEach(f => {
+      if (fr.friends[f]) return;
+      const li = fRow(f, 'Solicitud enviada');
+      fBtn(li, 'Cancelar', () => cancelReq(f));
+      ul.appendChild(li);
+    });
+    if (!ul.children.length) ul.innerHTML = '<li class="empty">' + (fr.loaded.friends ? 'Todavía no tenés amigos. Buscalos por @usuario o por email.' : 'Cargando…') + '</li>';
+    if (fr.found) renderFound();
+    updatePending();
+  }
+
+  /* --- Buscador: email exacto o usuario por prefijo --- */
+  $('frForm').addEventListener('submit', e => { e.preventDefault(); fSearch(); });
+  async function fSearch() {
+    const q = $('frQ').value.trim(), ul = $('frFound');
+    if (!q || !isReg()) { ul.hidden = true; fr.found = null; return; }
+    ul.hidden = false; ul.innerHTML = '<li class="empty">Buscando…</li>';
+    const byEmail = q.includes('@') && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(q);
+    let uids = [];
+    try {
+      if (byEmail) {
+        const k = emailKey(q);
+        if (k) { const s = await db.ref('emailIndex/' + k).once('value'); if (typeof s.val() === 'string') uids = [s.val()]; }
+      } else {
+        const p = q.replace(/^@/, '').toLowerCase();
+        if (!/^[a-z0-9._]+$/.test(p)) { ul.innerHTML = '<li class="empty">Un usuario solo tiene minúsculas, números, punto y guion bajo</li>'; fr.found = null; return; }
+        const s = await db.ref('usernames').orderByKey().startAt(p).endAt(p + '').limitToFirst(10).once('value');
+        s.forEach(c => { if (typeof c.val() === 'string') uids.push(c.val()); });
+      }
+    } catch (e) { console.warn('buscar', e); ul.innerHTML = '<li class="empty">No se pudo buscar. Revisá tu conexión.</li>'; fr.found = null; return; }
+    uids = uids.filter((u, i) => u !== me && uids.indexOf(u) === i);
+    await Promise.all(uids.map(u => getProf(u, true)));
+    fr.found = { uids, byEmail };
+    renderFound();
+  }
+  function renderFound() {
+    const ul = $('frFound'), F = fr.found;
+    ul.innerHTML = ''; ul.hidden = false;
+    if (!F.uids.length) {
+      ul.innerHTML = '<li class="empty">' + (F.byEmail ? 'Nadie entró a ChaskiBoom con ese email' : 'No hay ningún usuario que empiece así') + '</li>';
+      return;
+    }
+    F.uids.forEach(u => { const li = fRow(u); relActs(li, u); ul.appendChild(li); });
+  }
+
+  /* --- Atajo: «+ Amigo» junto al rival en «Mis partidas» y en el cartel de fin de una partida online --- */
+  function addFriendBtn(li, uid) {
+    if (!uid || uid === me || !isReg() || rel(uid) === 'friend') return;
+    getProf(uid).then(p => {
+      if (!p.user || rel(uid) === 'friend') return;   // no registrado (partidas anteriores a v1.45) o ya es amigo
+      const b = document.createElement('button');
+      b.className = 'addF';
+      const paint = () => { const r = rel(uid); b.textContent = r === 'sent' ? 'Enviada' : r === 'in' ? 'Aceptar amigo' : '+ Amigo'; b.disabled = r === 'sent'; b.hidden = r === 'friend'; b.title = r === 'sent' ? 'Solicitud de amistad enviada' : 'Agregar como amigo'; };
+      paint();
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        try { await sendReq(uid); } catch (e) { console.warn('amigos', e); $('lbMsg').textContent = 'No se pudo mandar la solicitud.'; }
+        paint();
+      });
+      const open = [...li.querySelectorAll('button')].find(x => !x.classList.contains('del'));
+      li.insertBefore(b, open || null);
+    });
+  }
+  function endFriendNode() {
+    const uid = online && online.oppUid;
+    if (!uid || !isReg() || rel(uid) === 'friend') return null;
+    const box = document.createElement('div');
+    box.className = 'frAdd'; box.hidden = true;
+    const b = document.createElement('button');
+    const name = online.oppName || 'tu rival';
+    const paint = () => { const r = rel(uid); b.textContent = r === 'sent' ? 'Solicitud enviada a ' + name : r === 'in' ? 'Aceptar a ' + name + ' como amigo' : 'Agregar a ' + name + ' como amigo'; b.disabled = r === 'sent'; box.hidden = r === 'friend'; };
+    b.addEventListener('click', async () => { b.disabled = true; try { await sendReq(uid); } catch (e) { console.warn('amigos', e); b.textContent = 'No se pudo mandar la solicitud'; return; } paint(); });
+    box.appendChild(b);
+    getProf(uid).then(p => { if (p.user) { paint(); if (rel(uid) !== 'friend') box.hidden = false; } });
+    return box;
+  }
 
   /* ---------- Chat y frases para el rival (solo online) ----------
      games/<código>/chat/<clave> = { uid, name, text, kind: 'free' | 'taunt', at } */
@@ -4419,7 +4921,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261017124735';
+  const BUILD = '20261018145824';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));

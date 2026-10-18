@@ -298,6 +298,32 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Barra de jugador (v1.52):** el «+N» de ventaja de material va pegado a las piezas capturadas; el reloj al extremo.
 - **Íconos en botones (v1.52):** Ofrecer tablas (apretón de manos), Abandonar (bandera blanca), Nueva partida (flecha circular),
   SVG de Lucide inline (`button.ico`, `.bIco`).
+- **Amigos (en /dev/, sale como v1.58):** solo entre jugadores registrados (cuenta de Google). Las reglas lo verifican con
+  `auth.token.email_verified` y no con `sign_in_provider`, porque no está claro qué devuelve ese campo en un anónimo que vinculó Google;
+  los anónimos no tienen email. Datos: `profiles/<uid>` = `{ user, nick, photo }` (lo que ven los demás, nunca el email);
+  `usernames/<usuario>` = uid (único: las reglas solo dejan tomarlo si está libre y si coincide con `profiles/<uid>/user`; cambiarlo
+  toma el nuevo, actualiza el perfil y libera el viejo en un solo `update`); `emailIndex/<email con ',' por '.'>` = uid (no se puede
+  listar; se usa el email normalizado y no un hash porque las reglas no calculan SHA-256 y con hash cualquiera podía quedarse con el
+  email de otro); `friends/<uid>/<amigo>` = `{ since }` (mutua: la escribe entera quien acepta, la regla exige la solicitud);
+  `requests/<para>/<de>` = `{ at }` y `users/<uid>/sent/<para>`; `invites/<para>/<código>` = `{ from, at }`; `presence/<uid>`
+  (en línea, solo la ven tus amigos; la presencia vieja es por partida).
+  - El @usuario (minúsculas, números, punto y guion bajo, 3 a 20) se pide al entrar a Online la primera vez (`askUser`, sugerencia
+    desde el nombre de Google con `suggestUser`); «Más tarde» lo deja para la próxima sesión. Se cambia con «Cambiar» en la sala.
+    El apodo sigue siendo libre y es lo que se ve en las partidas (`setNick` también lo copia a `profiles/<uid>/nick`).
+  - Sala con pestañas «Mis partidas» / «Amigos» (`fTab`). Arriba de las pestañas, la bandeja `#lbInbox` con invitaciones y
+    solicitudes recibidas (Aceptar / No). En Amigos: buscador (`fSearch`: con @ y forma de email busca el email exacto; si no, usuarios
+    por prefijo, 10 como máximo), lista con punto verde si está en línea, Invitar y ✕ (dos toques), y las solicitudes enviadas con Cancelar.
+  - Solicitudes: si los dos se piden a la vez, quedan amigos solos. Quien la mandó escucha `requests/<para>/<yo>`: si desaparece sin
+    amistad, la olvida (rechazada). Avisos con `showOther` («Maxi quiere ser tu amigo», «… aceptó tu solicitud»), número en el botón
+    Online y en la pestaña Amigos, y el recuadro `#pend` de la pantalla inicial (`fNews` en `updatePending`).
+  - Invitar = `createGame` con el modo elegido arriba (`modePref`) más `inviteTo: { uid, name }` en la partida y la invitación en la
+    bandeja del amigo; quien invita queda en la pantalla de espera (con el link también). Aceptar entra por `enterOnline`, igual que el
+    link, y borra la invitación. El que invitó escucha la invitación (`trackInvite`): si desaparece y nadie entró, la rechazaron y se borra
+    la partida. Vence a las 24 h con el `createdAt` de la partida; ✕ en «Mis partidas» cancela partida e invitación. Quitar un amigo
+    borra las invitaciones pendientes entre los dos.
+  - Atajo «+ Amigo» junto al rival en «Mis partidas» y «Agregar a X como amigo» en el cartel de fin online (`addFriendBtn`,
+    `endFriendNode`), solo si el rival tiene @usuario (las reglas exigen `profiles/<para>/user`).
+  - Prueba con mock: `t_friends.py` + `fbmock.js` (no están en el repo; mock compartido entre pestañas por BroadcastChannel, sin reglas).
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
@@ -387,6 +413,10 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **Amigos: pegar `database.rules.json` en la consola de Firebase** antes de probar /dev/ (nodos nuevos `profiles`, `usernames`,
+  `emailIndex`, `friends`, `requests`, `invites`, `presence`). El mock no aplica reglas: probar con dos cuentas reales elegir usuario,
+  buscar, solicitud, invitación y quitar amigo. Sin las reglas, todas esas escrituras dan PERMISSION_DENIED.
 
 - **Pegar `database.rules.json` en la consola de Firebase (v1.55)**: sin eso no se pueden crear partidas de 1 hora.
 

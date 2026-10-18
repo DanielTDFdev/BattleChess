@@ -6,14 +6,18 @@
         ".write": "auth != null && !newData.exists() && data.child('host/uid').val() === auth.uid && !data.child('guest').exists()",
         "host": {
           ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid",
-          "photo": { ".validate": "newData.isString() && newData.val().length < 500 && newData.val().beginsWith('https://lh') && newData.val().contains('.googleusercontent.com/')" }
+          "photo": {
+            ".validate": "newData.isString() && newData.val().length < 500 && newData.val().beginsWith('https://lh') && newData.val().contains('.googleusercontent.com/')"
+          }
         },
         "createdAt": {
           ".write": "auth != null && !data.exists()"
         },
         "guest": {
           ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid && root.child('games/' + $g + '/host/uid').val() !== auth.uid && root.child('games/' + $g + '/createdAt').val() > now - 86400000",
-          "photo": { ".validate": "newData.isString() && newData.val().length < 500 && newData.val().beginsWith('https://lh') && newData.val().contains('.googleusercontent.com/')" }
+          "photo": {
+            ".validate": "newData.isString() && newData.val().length < 500 && newData.val().beginsWith('https://lh') && newData.val().contains('.googleusercontent.com/')"
+          }
         },
         "white": {
           ".write": "auth != null && !data.exists() && newData.parent().child('guest/uid').val() === auth.uid"
@@ -77,6 +81,73 @@
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "profiles": {
+      "$uid": {
+        ".read": "auth != null && auth.token.email_verified === true",
+        ".write": "auth != null && auth.token.email_verified === true && auth.uid === $uid",
+        "user": {
+          ".validate": "newData.isString() && newData.parent().parent().parent().child('usernames/' + newData.val()).val() === $uid"
+        },
+        "nick": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+        },
+        "photo": {
+          ".validate": "newData.isString() && newData.val().length < 500 && newData.val().beginsWith('https://lh') && newData.val().contains('.googleusercontent.com/')"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "usernames": {
+      ".read": "auth != null && auth.token.email_verified === true",
+      "$name": {
+        ".write": "auth != null && auth.token.email_verified === true && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && (!newData.exists() || newData.val() === auth.uid)))",
+        ".validate": "$name.matches(/^[a-z0-9._]{3,20}$/) && newData.val() === auth.uid && newData.parent().parent().child('profiles/' + auth.uid + '/user').val() === $name"
+      }
+    },
+    "emailIndex": {
+      "$e": {
+        ".read": "auth != null && auth.token.email_verified === true",
+        ".write": "auth != null && auth.token.email_verified === true && $e === auth.token.email.toLowerCase().replace('.', ',')",
+        ".validate": "newData.val() === auth.uid"
+      }
+    },
+    "friends": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$f": {
+          ".write": "auth != null && auth.token.email_verified === true && ((!newData.exists() && (auth.uid === $uid || auth.uid === $f)) || (auth.uid === $uid && root.child('requests/' + $uid + '/' + $f).exists()) || (auth.uid === $f && root.child('requests/' + $f + '/' + $uid).exists()))",
+          ".validate": "newData.hasChild('since')"
+        }
+      }
+    },
+    "requests": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".read": "auth != null && auth.uid === $from",
+          ".write": "auth != null && auth.token.email_verified === true && ((auth.uid === $from && $from !== $to && !data.exists() && root.child('profiles/' + $to + '/user').exists() && !root.child('friends/' + $from + '/' + $to).exists()) || (!newData.exists() && (auth.uid === $from || auth.uid === $to)))",
+          ".validate": "newData.child('at').val() === now"
+        }
+      }
+    },
+    "invites": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$g": {
+          ".read": "auth != null && data.child('from').val() === auth.uid",
+          ".write": "auth != null && auth.token.email_verified === true && ((!data.exists() && newData.child('from').val() === auth.uid && root.child('friends/' + auth.uid + '/' + $to).exists() && root.child('games/' + $g + '/host/uid').val() === auth.uid) || (!newData.exists() && (auth.uid === $to || data.child('from').val() === auth.uid)))",
+          ".validate": "newData.child('at').val() === now"
+        }
+      }
+    },
+    "presence": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('friends/' + $uid + '/' + auth.uid).exists())",
         ".write": "auth != null && auth.uid === $uid"
       }
     }
