@@ -465,7 +465,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.59</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.60</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -4227,13 +4227,17 @@ const SOUNDS = {
     if (fr.out[id] || !g.inviteTo || !db) return;
     const r = db.ref('invites/' + g.inviteTo.uid + '/' + id);
     let seen = false;
-    const gone = () => { if (!fr.out[id]) return; untrackInvite(id); inviteGone(id); };
+    const gone = () => { if (!fr.out[id]) return; untrackInvite(id); inviteGone(id, g); };
     const cb = s => { if (s.exists()) seen = true; else if (seen) gone(); };
-    r.on('value', cb, () => { if (seen) gone(); });
+    // si la escucha empezó antes de que existiera la invitación, el servidor la rechaza aunque la escritura local ya la haya mostrado:
+    // inviteGone vuelve a mirar antes de darla por rechazada; sin haberla visto, se deja para la próxima (onGame / vigía)
+    r.on('value', cb, () => { if (seen) gone(); else untrackInvite(id); });
     fr.out[id] = { r, cb, g };
   }
   function untrackInvite(id) { const o = fr.out[id]; if (!o) return; o.r.off('value', o.cb); delete fr.out[id]; }
-  async function inviteGone(id) {
+  async function inviteGone(id, g0) {
+    // ¿de verdad no está? (si no existe, las reglas no dejan leerla: el error también cuenta como «no está»)
+    try { if (g0 && (await db.ref('invites/' + g0.inviteTo.uid + '/' + id).once('value')).exists()) { trackInvite(id, g0); return; } } catch (_) {}
     let g = null;
     try { g = (await db.ref('games/' + id).once('value')).val(); } catch (_) {}
     if (!g || !g.host || g.guest || g.host.uid !== me) return;   // la aceptó (o ya no existe)
@@ -4926,7 +4930,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261018160111';
+  const BUILD = '20261018161356';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
