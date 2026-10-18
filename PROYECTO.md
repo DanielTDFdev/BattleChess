@@ -320,7 +320,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     bandeja del amigo. `inviteTo` va en una segunda escritura: la regla `$other` mira el host en `root` y en la escritura que crea la
     partida todavía no existe (en v1.58 iba junto y la invitación fallaba siempre con «No se pudo»; el mock no aplica reglas); quien invita queda en la pantalla de espera (con el link también). Aceptar entra por `enterOnline`, igual que el
     link, y borra la invitación. El que invitó escucha la invitación (`trackInvite`): si desaparece y nadie entró, la rechazaron y se borra
-    la partida. Vence a las 24 h con el `createdAt` de la partida; ✕ en «Mis partidas» cancela partida e invitación. Quitar un amigo
+    la partida. Antes de darla por rechazada se vuelve a leer (`inviteGone`): si la escucha empezó antes de que existiera (el vigía la ve
+    al crearse la partida), el servidor la cancela por permisos aunque la escritura local ya la mostró, y en v1.59 eso parecía un rechazo
+    al instante. El mock (`fbmock.js`) ahora emula esa regla y la demora de la confirmación del servidor. Vence a las 24 h con el `createdAt` de la partida; ✕ en «Mis partidas» cancela partida e invitación. Quitar un amigo
     borra las invitaciones pendientes entre los dos.
   - Atajo «+ Amigo» junto al rival en «Mis partidas» y «Agregar a X como amigo» en el cartel de fin online (`addFriendBtn`,
     `endFriendNode`), solo si el rival tiene @usuario (las reglas exigen `profiles/<para>/user`).
