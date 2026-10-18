@@ -4210,8 +4210,13 @@ const SOUNDS = {
     const name = askNick(); if (!name) return;
     if (!fr.friends[f]) return;
     const p = fr.prof[f] || {};
-    const id = await createGame(name, Object.assign(modeData(modePref), { inviteTo: { uid: f, name: (p.nick || p.user || 'tu amigo').slice(0, 20) } }));
-    try { await db.ref('invites/' + f + '/' + id).set({ from: me, at: NOW() }); }
+    const id = await createGame(name, modeData(modePref));
+    /* inviteTo va en una segunda escritura: la regla de games/$g/$other mira el host en la base (root), y en la misma
+       escritura que crea la partida todavía no existe. Escrito junto con el host, la creación entera daba PERMISSION_DENIED. */
+    try {
+      await db.ref('games/' + id + '/inviteTo').set({ uid: f, name: (p.nick || p.user || 'tu amigo').slice(0, 20) });
+      await db.ref('invites/' + f + '/' + id).set({ from: me, at: NOW() });
+    }
     catch (e) { dropGame(id, true); throw e; }
     lobby.hidden = true;
     enterOnline(id);
@@ -4921,7 +4926,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261018150510';
+  const BUILD = '20261018155824';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));

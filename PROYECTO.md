@@ -317,7 +317,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     amistad, la olvida (rechazada). Avisos con `showOther` («Maxi quiere ser tu amigo», «… aceptó tu solicitud»), número en el botón
     Online y en la pestaña Amigos, y el recuadro `#pend` de la pantalla inicial (`fNews` en `updatePending`).
   - Invitar = `createGame` con el modo elegido arriba (`modePref`) más `inviteTo: { uid, name }` en la partida y la invitación en la
-    bandeja del amigo; quien invita queda en la pantalla de espera (con el link también). Aceptar entra por `enterOnline`, igual que el
+    bandeja del amigo. `inviteTo` va en una segunda escritura: la regla `$other` mira el host en `root` y en la escritura que crea la
+    partida todavía no existe (en v1.58 iba junto y la invitación fallaba siempre con «No se pudo»; el mock no aplica reglas); quien invita queda en la pantalla de espera (con el link también). Aceptar entra por `enterOnline`, igual que el
     link, y borra la invitación. El que invitó escucha la invitación (`trackInvite`): si desaparece y nadie entró, la rechazaron y se borra
     la partida. Vence a las 24 h con el `createdAt` de la partida; ✕ en «Mis partidas» cancela partida e invitación. Quitar un amigo
     borra las invitaciones pendientes entre los dos.

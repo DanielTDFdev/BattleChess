@@ -3790,8 +3790,13 @@ const SOUNDS = __SOUNDS__;
     const name = askNick(); if (!name) return;
     if (!fr.friends[f]) return;
     const p = fr.prof[f] || {};
-    const id = await createGame(name, Object.assign(modeData(modePref), { inviteTo: { uid: f, name: (p.nick || p.user || 'tu amigo').slice(0, 20) } }));
-    try { await db.ref('invites/' + f + '/' + id).set({ from: me, at: NOW() }); }
+    const id = await createGame(name, modeData(modePref));
+    /* inviteTo va en una segunda escritura: la regla de games/$g/$other mira el host en la base (root), y en la misma
+       escritura que crea la partida todavía no existe. Escrito junto con el host, la creación entera daba PERMISSION_DENIED. */
+    try {
+      await db.ref('games/' + id + '/inviteTo').set({ uid: f, name: (p.nick || p.user || 'tu amigo').slice(0, 20) });
+      await db.ref('invites/' + f + '/' + id).set({ from: me, at: NOW() });
+    }
     catch (e) { dropGame(id, true); throw e; }
     lobby.hidden = true;
     enterOnline(id);
