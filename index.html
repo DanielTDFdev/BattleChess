@@ -74,6 +74,27 @@
   #skip { margin-left: auto; }
   .more { display: contents; }
   #menuBtn { display: none; }
+  /* Menú de la partida (v1.61): bloques Partida / Vista / Ajustes y «Volver al inicio» */
+  .mSec { width: 100%; display: grid; gap: 8px; }
+  .mSec h4 { margin: 0; font-family: var(--display); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .mTiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .mTiles button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 66px; padding: 6px 4px; border-radius: 10px; font-size: 15px; line-height: 1.15; background: #19141d; text-align: center; }
+  .mTiles button .bIco { width: 22px; height: 22px; color: var(--torch); }
+  .mTiles button:disabled { opacity: .45; cursor: default; border-color: var(--line); }
+  .mRow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .seg2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 3px; gap: 3px; background: #19141d; border: 1px solid var(--line); border-radius: 9px; }
+  .seg2 button { border: none; border-radius: 6px; background: none; color: var(--muted); padding: 6px 18px; font-weight: 600; }
+  .seg2 button[aria-pressed="true"] { background: #3b3145; color: var(--ink); }
+  .mRow .pLbl { gap: 8px; }
+  .mRow #resetv { border-radius: 9px; }
+  .mSw { display: grid; }
+  .mSw label.sw { display: flex; justify-content: space-between; gap: 12px; min-height: 44px; border-bottom: 1px solid var(--line); font-size: 17px; }
+  .mSw label.sw:last-child { border-bottom: none; }
+  #homeBtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; border-radius: 10px; }
+  #homeBtn .bIco { width: 18px; height: 18px; }
+  #homeBtn:disabled { opacity: .45; cursor: default; }
+  .mHint { width: 100%; margin: -8px 0 0; font-size: 14px; color: var(--muted); text-align: center; }
+  .mHint[hidden] { display: none; }
   #newg { border-color: var(--torch); color: var(--torch); font-weight: 600; }
   .caps { width: 100%; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--muted); }
   .caps b { font-weight: 600; }
@@ -190,82 +211,109 @@
   .mBtns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
   .mBtns .primary { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
   #resign:hover { border-color: var(--red); }
-  #lobby { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(10, 7, 12, .62); z-index: 19; }
+  /* --- Sala Online (rediseño v1.61): pantalla completa en el celular, tarjeta en la PC --- */
+  #lobby { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(10, 7, 12, .62); z-index: 18; }
   #lobby[hidden] { display: none; }
-  #lobby .card { width: min(460px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; background: #221b28; border: 2px solid var(--torch); outline: 1px solid #5a4330; outline-offset: 4px; border-radius: 4px; padding: 22px 22px 18px; display: grid; gap: 12px; }
-  #lobby h2 { font-family: var(--display); color: var(--torch); margin: 0; font-size: 24px; text-align: center; letter-spacing: .04em; }
-  #lobby h3 { font-family: var(--display); font-size: 15px; margin: 6px 0 0; color: var(--muted); letter-spacing: .06em; }
+  #lobby .card { width: min(480px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; box-sizing: border-box; background: #221b28; border: 2px solid var(--torch); outline: 1px solid #5a4330; outline-offset: 4px;
+    border-radius: 8px; padding: 12px 18px 18px; display: grid; gap: 14px; align-content: start; }
+  @media (max-width: 760px) {
+    #lobby { padding: 0; place-items: stretch; }
+    #lobby .card { width: 100%; height: 100%; max-height: none; border: none; outline: none; border-radius: 0; background: var(--bg);
+      padding: calc(6px + env(safe-area-inset-top, 0px)) 14px calc(20px + env(safe-area-inset-bottom, 0px)); }
+  }
+  #lobby h2 { font-family: var(--display); color: var(--torch); margin: 0; font-size: 24px; letter-spacing: .05em; }
+  #lobby h3 { font-family: var(--display); font-size: 13px; margin: 0; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+  #lobby h3.hot { color: var(--torch); }
   #lobby p { margin: 0; line-height: 1.4; }
   #lobby .muted { color: var(--muted); font-size: 15px; }
-  #lobby .fld { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
-  #lobby input { font: inherit; color: var(--ink); background: #18131c; border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; min-width: 0; }
-  #lobby .wide { width: 100%; }
-  #lobby .primary { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
+  #lobby .center { text-align: center; padding: 12px 8px; }
+  #lobby .fld, #sheet .fld { display: grid; gap: 6px; font-size: 15px; color: var(--muted); }
+  #lobby input, #sheet input { font: inherit; font-size: 17px; color: var(--ink); background: #18131c; border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; height: 48px; box-sizing: border-box; min-width: 0; }
+  #lobby .primary, #sheet .primary { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
+  .big { width: 100%; min-height: 52px; border-radius: 12px; font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: .03em;
+    display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 14px; }
+  .big svg { width: 22px; height: 22px; flex: none; }
   #lobby .link { display: flex; gap: 6px; }
   #lobby .link input { flex: 1; }
-  #lobby .acct { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 3px; font-size: 14px; color: var(--muted); }
-  #lobby .acct span { flex: 1; min-width: 0; }
+  #lobby .link button { border-radius: 10px; padding: 0 16px; }
+  .lbHead { display: flex; align-items: center; gap: 4px; margin: 0 -8px; min-height: 52px; }
+  .lbHead h2 { flex: 1; min-width: 0; }
+  .iconBtn { flex: none; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; background: none; border: none; color: var(--ink); border-radius: 22px; }
+  .iconBtn svg { width: 24px; height: 24px; }
+  .iconBtn.dim { color: var(--muted); }
+  #acctChip { flex: none; display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 26px; background: none; max-width: 62%; }
+  #acctChip .who { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; min-width: 0; }
+  #acctChip b, #chipUser { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+  #acctChip b { font-size: 16px; font-weight: 600; }
+  #chipUser { font-size: 13px; color: var(--muted); }
+  #chipUser.need { color: var(--torch); }
+  .segTabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 4px; gap: 4px; background: #18131c; border-radius: 10px; }
+  .segTabs button { height: 42px; border: none; border-radius: 7px; background: none; color: var(--muted); font-family: var(--display); font-weight: 600; font-size: 15px;
+    letter-spacing: .04em; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 6px; }
+  .segTabs button[aria-selected="true"] { background: #3b3145; color: var(--ink); }
+  .nBadge { display: inline-block; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px; background: #b8382b; color: #fff;
+    font: 600 13px/20px var(--body); text-align: center; letter-spacing: 0; }
+  .nBadge[hidden] { display: none; }
+  #lbMain, #paneGames, #paneFriends, #lbJoin, #lbWait { display: grid; gap: 16px; }
+  #paneGames section, #paneFriends section { display: grid; gap: 8px; }
+  #lbMain[hidden], #paneGames[hidden], #paneFriends[hidden], #paneGames section[hidden], #paneFriends section[hidden], #lbJoin[hidden], #lbWait[hidden],
+    #frFound[hidden], #frNoUser[hidden], #lbEmpty[hidden] { display: none; }
+  .jTitle { font-family: var(--display); font-size: 20px; color: var(--torch); text-align: center; }
   /* foto de la cuenta de Google (v1.56): círculo con la foto o, si no hay, la inicial del apodo */
   .av { flex: none; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; display: inline-grid; place-items: center;
     background: #5a4330; color: #f3e6c8; font-family: var(--display); font-weight: 600; font-size: 13px; line-height: 1; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
   .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .av[hidden] { display: none; }
-  #lobby .acct .av, #lbGames .av, .fList .av { flex: none; width: 32px; height: 32px; font-size: 16px; }
-  #lbPastList .av { flex: none; width: 24px; height: 24px; font-size: 13px; }
+  #acctChip .av { width: 38px; height: 38px; font-size: 17px; }
   @media (max-width: 760px) { .pbar .av { width: 22px; height: 22px; font-size: 12px; } }
-  #lobby .acct button { flex: none; display: inline-flex; align-items: center; gap: 8px; }
-  #lobby .acct .gLogo { width: 18px; height: 18px; flex: none; }
   .gBtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
   .gBtn .gLogo { width: 18px; height: 18px; flex: none; }
-  #lbGames, #lbPastList, .fList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  /* partidas en curso: punto verde que late; desafío sin aceptar: punto gris quieto (v1.47) */
-  #lbGames .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #4caf50; animation: livePulse 1.6s ease-out infinite; }
-  #lbGames .dot.wait { background: #6b6a64; animation: none; }
-  @keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(76,175,80,.65); } 70% { box-shadow: 0 0 0 8px rgba(76,175,80,0); } 100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); } }
-  @media (prefers-reduced-motion: reduce) { #lbGames .dot { animation: none; } }
-  /* terminadas: plegadas y en renglones más chicos */
-  #lbPast { border: 1px solid var(--line); border-radius: 3px; }
-  #lbPast summary { cursor: pointer; padding: 8px 10px; color: var(--muted); font-size: 15px; list-style: none; display: flex; align-items: center; gap: 8px; }
+  /* filas de partidas y de amigos: se toca la fila entera; las acciones van en «⋯» (no desbordan en el celular) */
+  .gList, .fList { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .gList li, .fList li { display: flex; align-items: center; gap: 12px; min-height: 60px; box-sizing: border-box; padding: 8px 4px 8px 12px; background: #18131c;
+    border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+  @media (min-width: 761px) { .gList li, .fList li { background: #1b1520; } }
+  .gList li { cursor: pointer; }
+  .gList li:hover { border-color: #6a5578; }
+  .gList li.mine { border-color: rgba(227, 162, 70, .6); }
+  .gList li.wait { border-style: dashed; }
+  .gList li.empty, .fList li.empty { color: var(--muted); justify-content: center; text-align: center; cursor: default; padding: 10px 12px; }
+  :is(.gList, .fList) .av { width: 40px; height: 40px; font-size: 17px; }
+  .avLink { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px dashed #6b6a64; display: grid; place-items: center; color: var(--muted); }
+  .avLink svg { width: 18px; height: 18px; }
+  :is(.gList, .fList) .who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  :is(.gList, .fList) .who b { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  :is(.gList, .fList) .who span { font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  :is(.gList, .fList) .who span.mine { color: var(--torch); }
+  :is(.gList, .fList) .who span.late { color: #ff9a8a; }
+  :is(.gList, .fList) .who span.on { color: #6fcf74; }
+  .gList .tag { flex: none; font-size: 13px; font-weight: 600; padding: 1px 7px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); white-space: nowrap; }
+  .gList .dot3, .fList .dot3 { flex: none; width: 40px; height: 44px; padding: 0; display: grid; place-items: center; background: none; border: none; color: var(--muted); }
+  .dot3 svg { width: 20px; height: 20px; }
+  .avOn { position: relative; flex: none; }
+  .avOn::after { content: ""; position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; background: #6b6a64; border: 2px solid #18131c; }
+  .avOn.yes::after { background: #4caf50; }
+  .fList li .acts { flex: none; display: flex; gap: 6px; align-items: center; }
+  .fList li .acts button { height: 40px; padding: 0 14px; border-radius: 20px; font-size: 16px; }
+  .fList li .acts .ghost { background: none; color: var(--torch); border-color: var(--torch); }
+  .fList li .acts .x { width: 40px; padding: 0; display: grid; place-items: center; color: var(--muted); background: none; }
+  .fList li .acts .x svg { width: 18px; height: 18px; }
+  .fList li .acts .ok { color: var(--muted); font-size: 14px; padding-right: 8px; }
+  #lbInbox li, #frReq li { border-color: var(--torch); background: rgba(227, 162, 70, .08); }
+  #lbInbox .who span, #frReq .who span { white-space: normal; line-height: 1.25; }
+  #lbPast { border: 1px solid var(--line); border-radius: 12px; }
+  #lbPast summary { cursor: pointer; min-height: 48px; padding: 0 14px; color: var(--muted); font-size: 17px; list-style: none; display: flex; align-items: center; gap: 10px; }
   #lbPast summary::-webkit-details-marker { display: none; }
   #lbPast summary::before { content: "▸"; transition: transform .2s; }
   #lbPast[open] summary::before { transform: rotate(90deg); }
+  #lbPast summary span:first-child { flex: 1; }
   #lbPast[hidden] { display: none; }
-  #lbPastList { padding: 0 6px 6px; }
-  #lbPastList li { padding: 5px 8px; gap: 8px; }
-  #lbPastList .who b { font-size: 15px; font-weight: 600; }
-  #lbPastList .who span { font-size: 13px; }
-  #lbPastList button:not(.del) { padding: 4px 10px; font-size: 14px; }
-  :is(#lbGames, #lbPastList, .fList) li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #18131c; border: 1px solid var(--line); border-radius: 3px; }
-  :is(#lbGames, #lbPastList, .fList) li.empty { color: var(--muted); justify-content: center; }
-  :is(#lbGames, #lbPastList, .fList) .del { flex: none; background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 6px; }
-  :is(#lbGames, #lbPastList, .fList) .del.sure { background: #b8382b; color: #fff; border-radius: 3px; font-size: 14px; padding: 6px 10px; }
-  :is(#lbGames, #lbPastList, .fList) .who { flex: 1; min-width: 0; }
-  :is(#lbGames, #lbPastList, .fList) .who b { display: block; font-weight: 600; }
-  :is(#lbGames, #lbPastList, .fList) .who span { font-size: 14px; color: var(--muted); }
-  :is(#lbGames, #lbPastList, .fList) .who span.mine { color: var(--torch); }
-  :is(#lbGames, #lbPastList, .fList) .who span.late { color: #ff9a8a; }
-  :is(#lbGames, #lbPastList, .fList) .tag { flex: none; font-size: 12px; font-weight: 600; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
-  #lobby .uRow { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); padding: 0 2px; }
-  #lobby .uRow span { flex: 1; min-width: 0; }
-  #lobby .uRow b { color: var(--ink); font-weight: 600; }
-  #lobby .uRow button { padding: 4px 10px; font-size: 14px; }
-  #lobby .uRow[hidden], #paneFriends[hidden], #paneGames[hidden], #lbInbox[hidden], #frFound[hidden], #frNoUser[hidden] { display: none; }
-  #lobby .tabs { display: flex; border-bottom: 1px solid var(--line); margin-top: 4px; }
-  #lobby .tabs button { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; color: var(--muted); font-family: var(--display); font-size: 15px; letter-spacing: .05em; padding: 8px 6px; }
-  #lobby .tabs button[aria-selected="true"] { color: var(--torch); border-bottom-color: var(--torch); }
-  #frBadge { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 9px; background: #b8382b; color: #fff; font: 600 12px/18px var(--body); }
-  #frBadge[hidden] { display: none; }
-  #paneGames, #paneFriends { display: grid; gap: 10px; }
-  #lobby .fSearch { display: flex; gap: 6px; }
-  #lobby .fSearch input { flex: 1; }
-  #lobby .small { font-size: 13px; }
-  :is(#lbGames, #lbPastList) .addF { flex: none; padding: 4px 8px; font-size: 13px; }
-  .fList li .acts { flex: none; display: flex; gap: 6px; align-items: center; }
-  .fList li .acts button { padding: 5px 10px; font-size: 14px; }
-  .fList li .acts .ok { color: var(--muted); font-size: 13px; }
-  .fList .on { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #6b6a64; }
-  .fList .on.yes { background: #4caf50; }
-  #lbInbox li { border-color: var(--torch); }
+  #lbPastList { padding: 0 8px 8px; }
+  #lobby .fSearch { display: flex; gap: 8px; }
+  #lobby .fSearch .srch { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 0 0 12px; background: #18131c; border: 1px solid var(--line); border-radius: 12px; }
+  #lobby .fSearch .srch svg { width: 20px; height: 20px; flex: none; color: var(--muted); }
+  #lobby .fSearch .srch input { flex: 1; border: none; background: none; padding: 0 12px 0 0; }
+  #lobby .fSearch button { border-radius: 12px; padding: 0 14px; }
   .mExtra.frAdd { justify-self: center; }
   .uPick { display: grid; gap: 8px; text-align: left; }
   .uPick .in { display: flex; align-items: center; gap: 6px; }
@@ -273,10 +321,61 @@
   .uPick input { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: #18131c; border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; }
   .uPick .msg { min-height: 1.3em; font-size: 14px; color: var(--muted); margin: 0; }
   .uPick .msg.bad { color: #ff9a8a; }
-  .tPick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-  .tPick .lbl { width: 100%; font-size: 14px; color: var(--muted); margin-top: 4px; }
-  .tPick button { flex: 1; padding: 6px 8px; font-size: 15px; white-space: nowrap; }
-  .tPick button[aria-pressed="true"] { background: var(--torch); color: #1d140c; border-color: var(--torch); font-weight: 600; }
+  /* paneles que suben desde abajo (Nueva partida, Tu cuenta, acciones) */
+  #sheet { position: fixed; inset: 0; z-index: 19; }
+  #sheet[hidden] { display: none; }
+  #sheet .shBack { position: absolute; inset: 0; background: rgba(8, 5, 10, .62); }
+  #sheet .shCard { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: min(520px, 100%); max-height: 90vh; overflow-y: auto; box-sizing: border-box;
+    background: #221b28; border-top: 2px solid var(--torch); border-radius: 18px 18px 0 0; padding: 8px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -16px 40px rgba(0, 0, 0, .5); display: grid; gap: 12px; animation: shUp .22s ease-out; }
+  @keyframes shUp { from { transform: translate(-50%, 40px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { #sheet .shCard { animation: none; } }
+  #sheet .grab { justify-self: center; width: 40px; height: 5px; border-radius: 3px; background: #4a3f55; }
+  #sheet .shBody { display: grid; gap: 16px; }
+  #sheet h2 { margin: 0; font-family: var(--display); font-size: 21px; color: var(--torch); letter-spacing: .04em; flex: 1; min-width: 0; }
+  #sheet h3 { margin: 0; font-family: var(--display); font-size: 13px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+  #sheet section { display: grid; gap: 10px; }
+  #sheet p { margin: 0; line-height: 1.4; }
+  #sheet .muted { color: var(--muted); font-size: 15px; }
+  .shHead { display: flex; align-items: center; gap: 12px; }
+  .shHead .av { width: 48px; height: 48px; font-size: 19px; }
+  .shHead .sub { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .shHead .sub b { font-size: 19px; font-weight: 600; }
+  .shHead .sub span { font-size: 15px; color: var(--muted); }
+  .shHead .sub span.mine { color: var(--torch); }
+  .tTabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 4px; gap: 4px; background: #18131c; border-radius: 10px; }
+  .tTabs button { height: 42px; border: none; border-radius: 7px; background: none; color: var(--muted); font-weight: 600; font-size: 16px; padding: 0 4px; }
+  .tTabs button[aria-selected="true"] { background: #3b3145; color: var(--ink); }
+  .tOpts { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 8px; }
+  .tOpts button { height: 48px; border-radius: 10px; background: none; font-size: 17px; padding: 0 4px; white-space: nowrap; }
+  .tOpts button[aria-pressed="true"] { border: 2px solid var(--torch); background: rgba(227, 162, 70, .14); font-weight: 600; }
+  .rivals { display: grid; gap: 8px; }
+  .rival { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 12px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+  .rival.link { border-style: dashed; }
+  .rival:has(input:checked) { border: 2px solid var(--torch); background: rgba(227, 162, 70, .08); }
+  .rival input { width: 20px; height: 20px; margin: 0; accent-color: var(--torch); flex: none; }
+  .rival .who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .rival .who b { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rival .who span { font-size: 14px; color: var(--muted); }
+  .rival .who span.on { color: #6fcf74; }
+  .rival .av { width: 40px; height: 40px; font-size: 17px; }
+  .actList { display: grid; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .actList button { display: flex; align-items: center; gap: 14px; min-height: 54px; padding: 0 16px; border: none; border-radius: 0; background: none; text-align: left; font-size: 18px; }
+  .actList button + button { border-top: 1px solid var(--line); }
+  .actList button svg { width: 22px; height: 22px; flex: none; color: var(--torch); }
+  .actList button.danger, .actList button.danger svg { color: #ff9a8a; }
+  .actList button.sure { background: #b8382b; color: #fff; }
+  .actList button.sure svg { color: #fff; }
+  .actList button:disabled { color: #6b6378; cursor: default; }
+  .actList button:disabled svg { color: #6b6378; }
+  .uField { display: flex; align-items: center; height: 48px; box-sizing: border-box; padding: 0 10px 0 12px; border: 1px solid var(--line); border-radius: 10px; background: #18131c; gap: 4px; }
+  .uField > span:first-child { color: var(--muted); font-size: 18px; }
+  .uField input { flex: 1; border: none !important; background: none !important; padding: 0 !important; height: 44px !important; }
+  .uField .st { font-size: 14px; color: var(--muted); white-space: nowrap; }
+  .uField .st.ok { color: #6fcf74; }
+  .uField .st.bad { color: #ff9a8a; }
+  .shMsg { min-height: 1.2em; font-size: 15px; color: #ff9a8a; }
+  .shMsg:empty { display: none; }
   .pbar .net { width: 8px; height: 8px; border-radius: 50%; background: #6b6375; flex: none; }
   .pbar .net.on { background: #5fcf7a; box-shadow: 0 0 6px #5fcf7a; }
   .pbar .net[hidden] { display: none; }
@@ -337,8 +436,8 @@
     .bar.open #menuBtn { background: var(--torch); color: #1d140c; border-color: var(--torch); }
     #skip { width: 100%; margin: 0; }
     .more { display: none; }
-    .bar.open .more { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; position: absolute; left: 0; right: 0; bottom: calc(100% + 8px);
-      background: #221b28; border: 1px solid var(--line); border-radius: 6px; padding: 12px; box-shadow: 0 -12px 30px rgba(0,0,0,.45); max-height: 60vh; overflow-y: auto; }
+    .bar.open .more { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; position: absolute; left: -8px; right: -8px; bottom: calc(100% + 10px);
+      background: #221b28; border: 1px solid var(--line); border-top: 2px solid var(--torch); border-radius: 16px; padding: 14px 16px 16px; box-shadow: 0 -16px 40px rgba(0,0,0,.55); max-height: 74vh; overflow-y: auto; }
     .more .caps .hint { margin-left: 0; }
     .top { padding: 8px 12px; gap: 2px; }
     .top h1 img { height: 62px; }
@@ -358,12 +457,28 @@
   #mon { position: relative; }
   #monBadge { position: absolute; top: -7px; right: -7px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font: 600 12px/18px var(--body); }
   #monBadge[hidden] { display: none; }
-  #pend { display: flex; align-items: center; gap: 10px; width: 100%; margin: 4px 0 16px; padding: 10px 12px; text-align: left; font: inherit; cursor: pointer;
-    background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; border-radius: 6px; }
-  #pend:hover { background: #f6ead0; }
-  #pend.late { background: #f6d2c8; border-color: #b8382b; }
-  #pend .t { flex: 1; min-width: 0; font-weight: 600; line-height: 1.25; }
-  #pend .go { flex: none; padding: 5px 10px; border-radius: 4px; background: #2a1d10; color: #f0e3c4; white-space: nowrap; }
+  #pend { display: flex; align-items: center; gap: 12px; width: 100%; margin: 0; padding: 12px 14px; text-align: left; font: inherit; cursor: pointer; box-sizing: border-box;
+    background: rgba(227, 162, 70, .12); color: var(--ink); border: 1px solid var(--torch); border-radius: 12px; }
+  #pend::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--torch); }
+  #pend:hover { background: rgba(227, 162, 70, .2); }
+  #pend.late { background: rgba(184, 56, 43, .2); border-color: #e0554a; }
+  #pend.late::before { background: #e0554a; }
+  #pend .t { flex: 1; min-width: 0; font-size: 17px; line-height: 1.25; }
+  #pend .go { flex: none; color: var(--torch); font-weight: 600; white-space: nowrap; }
+  /* pantalla inicial (v1.61): tres tarjetas grandes */
+  .home { display: grid; gap: 12px; text-align: left; margin-top: 4px; }
+  .home[hidden] { display: none; }
+  .hCard { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 12px; background: #19141d; border: 1px solid #5a4330; text-align: left; font: inherit; color: var(--ink); width: 100%; box-sizing: border-box; }
+  .hCard svg { width: 38px; height: 38px; flex: none; color: var(--torch); }
+  .hCard .tx { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  .hCard .tx b { font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: .03em; color: var(--torch); }
+  .hCard .tx span { font-size: 16px; color: var(--muted); }
+  .hCard.main { background: var(--torch); border-color: var(--torch); color: #1d140c; }
+  .hCard.main svg, .hCard.main .tx b, .hCard.main .tx span { color: #1d140c; }
+  .hCard.minor { border-style: dashed; border-color: var(--line); padding: 12px 16px; background: none; }
+  .hCard.minor svg { width: 30px; height: 30px; color: var(--muted); }
+  .hCard.minor .tx b { font-family: var(--body); font-size: 18px; color: var(--ink); letter-spacing: 0; }
+  .hCard .nBadge { min-width: 26px; height: 26px; border-radius: 13px; font-size: 15px; line-height: 26px; }
   #chatBadge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font: 600 12px/18px var(--body); }
   #chat { position: fixed; z-index: 15; right: 16px; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100% - 32px)); height: min(460px, 60vh);
     display: flex; flex-direction: column; background: #221b28; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0,0,0,.5); }
@@ -440,6 +555,22 @@
   body.wide .bar .seg { width: 100%; }
   body.wide .bar .seg button { flex: 1; }
   body.wide .caps .hint { margin-left: 0; font-size: 13px; }
+  /* PC: el Menú va siempre abierto en la columna izquierda; compacto para que entren el estado y la planilla de jugadas */
+  body.wide .bar { gap: 10px; }
+  body.wide .mSec { gap: 6px; }
+  body.wide .mTiles button { flex-direction: row; min-height: 38px; gap: 6px; font-size: 14px; padding: 4px 6px; }
+  body.wide .mTiles button .bIco { width: 16px; height: 16px; }
+  body.wide .mSw { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; }
+  body.wide .mSw label.sw { min-height: 32px; font-size: 15px; border-bottom: none; }
+  body.wide .seg2 button { padding: 4px 14px; }
+  body.wide .mRow select { padding: 4px 8px; }
+  body.wide #homeBtn { min-height: 38px; }
+  body.wide .mHint { margin-top: -6px; font-size: 13px; }
+  body.wide .mSec h4 { display: none; }
+  body.wide .mRow { flex-wrap: nowrap; }
+  body.wide .mRow .pLbl { gap: 6px; font-size: 15px; min-width: 0; }
+  body.wide .mRow select { max-width: 120px; }
+  body.wide .mTiles button { font-size: 13px; }
   /* Planilla de jugadas (solo PC): entre el estado y la consola, con el ícono de la pieza que movió */
   #moves { display: none; }
   body.wide #moves { display: block; position: fixed; z-index: 9; left: 12px; width: 306px; overflow-y: auto; margin: 0; padding: 4px 0;
@@ -465,7 +596,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.60</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.61</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -482,30 +613,46 @@
   </div>
   <button id="skip" hidden>Saltear pelea</button>
   <div class="more" id="more">
-  <div class="seg" role="group" aria-label="Modo de juego">
+  <div class="seg" role="group" aria-label="Modo de juego" hidden>
     <button id="mcpu" aria-pressed="true">Contra la CPU</button>
     <button id="mon" aria-pressed="false">Online<span id="monBadge" hidden></span></button>
   </div>
-  <label class="chk sw"><input type="checkbox" role="switch" id="fights" checked> Peleas</label>
-  <label class="chk sw"><input type="checkbox" role="switch" id="slow" checked> Cámara lenta</label>
-  <label class="chk sw"><input type="checkbox" role="switch" id="sound" checked> Sonido</label>
-  <label class="chk sw" id="confirmLbl"><input type="checkbox" role="switch" id="confirmMv"> Confirmar jugadas</label>
-  <button id="view2d" aria-pressed="false">Vista 2D</button>
-  <label class="chk only2d" for="pset">Piezas
-    <select id="pset">
-      <option value="cburnett">Cburnett</option><option value="merida">Merida</option><option value="chessnut">Chessnut</option>
-      <option value="celtic">Celtic</option><option value="fantasy">Fantasy</option>
-      <option value="anarcandy">Anarcandy</option><option value="caliente">Caliente</option><option value="california">California</option><option value="cardinal">Cardinal</option><option value="cooke">Cooke</option><option value="dubrovny">Dubrovny</option><option value="fresca">Fresca</option><option value="gioco">Gioco</option><option value="horsey">Horsey</option><option value="icpieces">Icpieces</option><option value="kiwen-suwi">Kiwen-suwi</option><option value="maestro">Maestro</option><option value="mpchess">Mpchess</option><option value="papercut">Papercut</option><option value="pirouetti">Pirouetti</option><option value="pixel">Pixel</option><option value="spatial">Spatial</option><option value="staunty">Staunty</option><option value="totoy">Totoy</option><option value="xkcd">Xkcd</option>
-    </select>
-  </label>
-  <button id="resetv">Vista inicial</button>
-  <button id="drawoffer" class="ico"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg>Ofrecer tablas</button>
-  <button id="resign" class="ico"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="#fbf7ee" fill-opacity=".9"/><path d="M4 22v-7"/></svg>Abandonar</button>
-  <button id="newg" class="ico"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Nueva partida</button>
-  <button id="anaBtn" hidden>Analizar partida</button>
-  <div class="caps">
-    <span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span>
-  </div>
+  <section class="mSec" aria-labelledby="msPartida">
+    <h4 id="msPartida">Partida</h4>
+    <div class="mTiles">
+      <button id="drawoffer" class="ico"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg>Ofrecer tablas</button>
+      <button id="resign" class="ico"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>Abandonar</button>
+      <button id="anaBtn" class="ico" disabled><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span class="t">Analizar</span></button>
+    </div>
+  </section>
+  <section class="mSec" aria-labelledby="msVista">
+    <h4 id="msVista">Vista</h4>
+    <div class="mRow">
+      <div class="seg2" role="group" aria-label="Vista del tablero"><button id="v2d" aria-pressed="true">2D</button><button id="v3d" aria-pressed="false">3D</button></div>
+      <button id="view2d" aria-pressed="false" hidden>Vista 2D</button>
+      <label class="chk only2d pLbl" for="pset">Piezas
+        <select id="pset">
+          <option value="cburnett">Cburnett</option><option value="merida">Merida</option><option value="chessnut">Chessnut</option>
+          <option value="celtic">Celtic</option><option value="fantasy">Fantasy</option>
+          <option value="anarcandy">Anarcandy</option><option value="caliente">Caliente</option><option value="california">California</option><option value="cardinal">Cardinal</option><option value="cooke">Cooke</option><option value="dubrovny">Dubrovny</option><option value="fresca">Fresca</option><option value="gioco">Gioco</option><option value="horsey">Horsey</option><option value="icpieces">Icpieces</option><option value="kiwen-suwi">Kiwen-suwi</option><option value="maestro">Maestro</option><option value="mpchess">Mpchess</option><option value="papercut">Papercut</option><option value="pirouetti">Pirouetti</option><option value="pixel">Pixel</option><option value="spatial">Spatial</option><option value="staunty">Staunty</option><option value="totoy">Totoy</option><option value="xkcd">Xkcd</option>
+        </select>
+      </label>
+      <button id="resetv">Centrar cámara</button>
+    </div>
+    <div class="caps"><span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span></div>
+  </section>
+  <section class="mSec" aria-labelledby="msAjustes">
+    <h4 id="msAjustes">Ajustes</h4>
+    <div class="mSw">
+      <label class="chk sw"><span>Peleas en 3D</span><input type="checkbox" role="switch" id="fights" checked></label>
+      <label class="chk sw"><span>Cámara lenta</span><input type="checkbox" role="switch" id="slow" checked></label>
+      <label class="chk sw"><span>Sonido</span><input type="checkbox" role="switch" id="sound" checked></label>
+      <label class="chk sw" id="confirmLbl"><span>Confirmar jugadas</span><input type="checkbox" role="switch" id="confirmMv"></label>
+    </div>
+  </section>
+  <button id="homeBtn" class="ico"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>Volver al inicio<span id="homeBadge" class="nBadge" hidden></span></button>
+  <p id="homeHint" class="mHint" hidden>Para salir de esta partida, terminala o abandonala.</p>
+  <button id="newg" hidden>Nueva partida</button>
   </div>
 </div>
 <div id="evalBar" aria-hidden="true"><i></i><b class="top"></b><b class="bot"></b></div>
@@ -520,47 +667,50 @@
 </div>
 <div id="lobby" hidden role="dialog" aria-modal="true" aria-labelledby="lbTitle">
   <div class="card">
-    <h2 id="lbTitle">Jugar online</h2>
+    <header class="lbHead">
+      <button id="lbClose" class="iconBtn" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <h2 id="lbTitle">Online</h2>
+      <button id="acctChip" aria-label="Tu cuenta"><span class="who"><b id="chipNick"></b><span id="chipUser"></span></span><span class="av" id="acctAv" hidden></span></button>
+    </header>
     <div id="lbMain">
-      <div class="acct"><span class="av" id="acctAv" hidden></span><span id="acctTxt">Conectando…</span><button id="acctBtn">Salir</button></div>
-      <div class="uRow" id="uRow" hidden><span>Tu usuario: <b id="uName"></b></span><button id="uEdit">Cambiar</button></div>
-      <label class="fld" for="nick">Tu apodo
-        <input id="nick" maxlength="20" autocomplete="nickname" placeholder="Por ejemplo, Daniel">
-      </label>
-      <div class="tPick" id="tPick" role="group" aria-label="Tipo de partida">
-        <span class="lbl">⚡ Blitz</span><button data-m="3+0">3 min</button><button data-m="3+2">3 + 2</button><button data-m="5+0">5 min</button>
-        <span class="lbl">⏱ Rápida</span><button data-m="10+0">10 min</button><button data-m="10+5">10 + 5</button><button data-m="15+10">15 + 10</button>
-        <span class="lbl">✉ Por correspondencia</span><button data-m="h1">1 hora</button><button data-m="d1">1 día</button><button data-m="d3">3 días</button><button data-m="d0">Sin límite</button>
-      </div>
-      <p id="lbTerms" hidden></p>
-      <button id="lbCreate" class="primary wide">Desafiar a un amigo</button>
-      <ul id="lbInbox" class="fList" hidden aria-live="polite"></ul>
-      <div class="tabs" id="lbTabs" role="tablist">
-        <button id="tabGames" role="tab" aria-selected="true" aria-controls="paneGames">Mis partidas</button>
-        <button id="tabFriends" role="tab" aria-selected="false" aria-controls="paneFriends">Amigos<span id="frBadge" hidden></span></button>
+      <div class="segTabs" id="lbTabs" role="tablist">
+        <button id="tabGames" role="tab" aria-selected="true" aria-controls="paneGames">Partidas</button>
+        <button id="tabFriends" role="tab" aria-selected="false" aria-controls="paneFriends">Amigos<span id="frBadge" class="nBadge" hidden></span></button>
       </div>
       <div id="paneGames" role="tabpanel">
-        <ul id="lbGames"><li class="empty">Cargando…</li></ul>
-        <details id="lbPast" hidden><summary><span>Partidas terminadas (<span id="lbPastN">0</span>)</span></summary><ul id="lbPastList"></ul></details>
+        <button id="lbNew" class="primary big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nueva partida</button>
+        <section id="secInv" hidden><h3>Invitaciones</h3><ul id="lbInbox" class="fList" aria-live="polite"></ul></section>
+        <section id="secMine" hidden><h3 class="hot">Te toca · <span id="nMine">0</span></h3><ul id="lbMine" class="gList"></ul></section>
+        <section id="secWait" hidden><h3>Esperando a tu rival · <span id="nWait">0</span></h3><ul id="lbGames" class="gList"></ul></section>
+        <p id="lbEmpty" class="muted center" hidden>Todavía no tenés partidas online. Tocá Nueva partida para desafiar a alguien.</p>
+        <details id="lbPast" hidden><summary><span>Terminadas</span><span id="lbPastN">0</span></summary><ul id="lbPastList" class="gList"></ul></details>
       </div>
       <div id="paneFriends" role="tabpanel" hidden>
-        <div id="frNoUser" hidden><p class="muted">Elegí tu nombre de usuario para que tus amigos te encuentren.</p><button id="frPickUser" class="primary wide">Elegir usuario</button></div>
-        <form class="fSearch" id="frForm" autocomplete="off"><input id="frQ" maxlength="80" placeholder="@usuario o email de tu amigo" aria-label="Buscar amigos" autocapitalize="none" spellcheck="false"><button id="frGo">Buscar</button></form>
+        <div id="frNoUser" hidden><p class="muted">Elegí tu nombre de usuario para que tus amigos te encuentren.</p><button id="frPickUser" class="primary big">Elegir usuario</button></div>
+        <form class="fSearch" id="frForm" autocomplete="off"><label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="frQ" type="search" maxlength="80" placeholder="Agregar por @usuario o email" aria-label="Buscar amigos por usuario o email" autocapitalize="none" spellcheck="false"></label><button id="frGo">Buscar</button></form>
         <ul id="frFound" class="fList" hidden></ul>
-        <ul id="frList" class="fList"><li class="empty">Cargando…</li></ul>
-        <p class="muted small">Invitar usa el tipo de partida elegido arriba.</p>
+        <section id="secReq" hidden><h3 class="hot">Solicitudes · <span id="nReq">0</span></h3><ul id="frReq" class="fList"></ul></section>
+        <section><h3>Tus amigos<span id="nFr"></span></h3><ul id="frList" class="fList"><li class="empty">Cargando…</li></ul></section>
       </div>
+    </div>
+    <div id="lbJoin" hidden>
+      <p id="lbJoinTitle" class="jTitle"></p>
+      <p id="lbTerms" hidden></p>
+      <label class="fld" for="nick">Tu apodo · lo ve tu rival
+        <input id="nick" maxlength="20" autocomplete="nickname" placeholder="Por ejemplo, Daniel">
+      </label>
+      <button id="lbJoinOk" class="primary big">Aceptar el desafío</button>
     </div>
     <div id="lbWait" hidden>
       <p id="lbWaitTxt">Mandale este link a tu amigo. Cuando entre, se sortean los colores y empieza la partida.</p>
       <div class="link"><input id="lbLink" readonly aria-label="Link de la partida"><button id="lbCopy">Copiar</button></div>
-      <button id="lbShare" class="primary wide">Compartir</button>
-      <p class="muted">Podés cerrar esta ventana: la partida queda en «Mis partidas» y te avisa cuando tu amigo entre.</p>
+      <button id="lbShare" class="primary big">Compartir</button>
+      <p class="muted">Podés cerrar esta ventana: la partida queda en «Partidas» y te avisa cuando tu amigo entre.</p>
     </div>
     <p id="lbMsg" class="muted" aria-live="polite"></p>
-    <div class="mBtns"><button id="lbClose">Cerrar</button></div>
   </div>
 </div>
+<div id="sheet" hidden><div class="shBack"></div><div class="shCard" role="dialog" aria-modal="true"><span class="grab" aria-hidden="true"></span><div class="shBody"></div></div></div>
 <section id="chat" hidden aria-label="Chat con tu rival">
   <header><b id="chatTitle">Chat</b><button id="chatClose" aria-label="Cerrar el chat">✕</button></header>
   <ol id="chatLog" aria-live="polite"></ol>
@@ -2215,7 +2365,8 @@ const SOUNDS = {
   const lockedGame = () => inGame() && !online;
   function lockGameButtons() {
     const lock = lockedGame();
-    ['mcpu', 'mon', 'newg'].forEach(id => {
+    $('homeHint').hidden = !lock;
+    ['mcpu', 'mon', 'newg', 'homeBtn'].forEach(id => {
       $(id).disabled = lock;
       $(id).title = lock ? 'Partida en curso: terminala o abandonala para empezar otra' : '';
     });
@@ -2391,6 +2542,13 @@ const SOUNDS = {
     $('newg').click();
   });
   $('mon').addEventListener('click', () => { if (!lockedGame()) openLobby(); });
+  /* «Volver al inicio» (v1.61) reemplaza a Contra la CPU / Online / Nueva partida en el Menú. Con una partida local en curso
+     queda bloqueado (hay que terminarla o abandonarla); de una online se sale sin abandonarla (queda en «Partidas»). */
+  $('homeBtn').addEventListener('click', () => {
+    if (busy || lockedGame()) return;
+    if (online) { leaveOnline(); started = false; ended = null; }
+    chooseMode();
+  });
   $('newg').addEventListener('click', () => {
     if (busy || lockedGame()) return;
     if (online) { openLobby(); return; }
@@ -2399,18 +2557,34 @@ const SOUNDS = {
   });
 
   // Pantalla inicial: elegir cómo jugar
-  function chooseMode() {
-    showModal('ChaskiBoom Battle Chess', '¿Cómo querés jugar?', [
-      { label: 'Contra la CPU', primary: true, onClick: () => { setMode(true); drawColors(chooseMode); } },
-      { label: 'Online', onClick: openLobby }
-    ], { logo: true, node: pendEl });
-    updatePending();
-  }
   // aviso fijo de la pantalla inicial: lo actualiza updatePending() a medida que llegan las partidas vigiladas
   const pendEl = document.createElement('button');
   pendEl.type = 'button'; pendEl.id = 'pend'; pendEl.hidden = true;
-  pendEl.innerHTML = '<span class="t"></span><span class="go">Ver partidas</span>';
+  pendEl.innerHTML = '<span class="t"></span><span class="go">Ver ›</span>';
   pendEl.addEventListener('click', () => { closeModal(); openLobby(); });
+  /* Pantalla inicial (v1.61): aviso de partidas pendientes y tres tarjetas: Contra la CPU, Online (con el número de novedades)
+     y Dos jugadores en el mismo dispositivo */
+  const homeEl = document.createElement('div');
+  homeEl.className = 'home';
+  homeEl.innerHTML =
+    '<button type="button" class="hCard main" data-go="cpu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg>'
+    + '<span class="tx"><b>Contra la CPU</b><span>5 niveles · elegís tu color</span></span></button>'
+    + '<button type="button" class="hCard" data-go="online"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+    + '<span class="tx"><b>Online</b><span>Con tus amigos o por link</span></span><span class="nBadge" id="homeOnBadge" hidden></span></button>'
+    + '<button type="button" class="hCard minor" data-go="two"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>'
+    + '<span class="tx"><b>Dos jugadores</b><span>En este mismo dispositivo</span></span></button>';
+  homeEl.prepend(pendEl);
+  homeEl.querySelectorAll('.hCard').forEach(b => b.addEventListener('click', () => {
+    closeModal();
+    const go = b.dataset.go;
+    if (go === 'cpu') { setMode(true); drawColors(chooseMode); }
+    else if (go === 'two') { setMode(false); drawColors(chooseMode); }
+    else openLobby();
+  }));
+  function chooseMode() {
+    showModal('ChaskiBoom Battle Chess', '', [], { logo: true, node: homeEl });
+    updatePending();
+  }
 
   /* Sorteo de colores al comenzar cada partida.
      El tablero no se toca hasta que se aprieta Comenzar: con Cancelar queda la partida anterior como estaba
@@ -2560,7 +2734,7 @@ const SOUNDS = {
     $('mTitle').textContent = title;
     $('mText').textContent = text;
     $('mText').hidden = !text;
-    const box = $('mBtns'); box.innerHTML = ''; box.hidden = false;
+    const box = $('mBtns'); box.innerHTML = ''; box.hidden = !buttons.length;
     buttons.forEach(b => {
       const el = document.createElement('button');
       el.textContent = b.label;
@@ -2628,7 +2802,7 @@ const SOUNDS = {
     ended = { result, reason };
     if (online && !opt.remote) online.ref.child('result').transaction(cur => cur || { winner: result, reason });
     premove = null; preSel = null; preTargets = [];
-    $('anaBtn').hidden = !canAnalyze(); $('anaBtn').textContent = 'Analizar partida';
+    anaBtnSet(canAnalyze(), 'Analizar');
     setTimeout(checkUpdate, 3000);   // buen momento para enterarse de una versión nueva (ofrece el cartel, no recarga)
     select(null);
     updateStatus();
@@ -3150,6 +3324,9 @@ const SOUNDS = {
       }, 370);
     }
   }
+  // Menú (v1.61): 2D / 3D como dos botones; usan el mismo cambio de vista
+  $('v2d').addEventListener('click', () => { if (!is2D) $('view2d').click(); });
+  $('v3d').addEventListener('click', () => { if (is2D) $('view2d').click(); });
   $('view2d').addEventListener('click', () => {
     if (busy) return;
     if (viewPos) goLive(true);
@@ -3161,6 +3338,7 @@ const SOUNDS = {
     document.body.classList.toggle('mode2d', is2D);
     $('view2d').setAttribute('aria-pressed', String(is2D));
     $('view2d').textContent = is2D ? 'Vista 3D' : 'Vista 2D';
+    $('v2d').setAttribute('aria-pressed', String(is2D)); $('v3d').setAttribute('aria-pressed', String(!is2D));
     board2d.hidden = !is2D;
     stage.classList.toggle('off', is2D);
     select(null);
@@ -3243,8 +3421,8 @@ const SOUNDS = {
   const ABORT_MS = 30000, GONE_MS = 40000, LOW_MS = 60000;
   const tcCat = tc => tc.base < 600000 ? 'Blitz' : 'Rápida';
   const tcShort = tc => (tc.base / 60000) + (tc.inc ? '+' + tc.inc / 1000 : ' min');
-  // «Blitz (3+2)», «por correspondencia (3 días por jugada)», «sin límite de tiempo»
-  const modeName = g => g.tc ? tcCat(g.tc) + ' (' + tcShort(g.tc) + ')' : g.perMove ? 'por correspondencia (' + plazoTxt(g.perMove) + ' por jugada)' : 'sin límite de tiempo';
+  // «Blitz (3+2)», «por días (3 días por jugada)», «sin límite de tiempo»
+  const modeName = g => g.tc ? tcCat(g.tc) + ' (' + tcShort(g.tc) + ')' : g.perMove ? 'por días (' + plazoTxt(g.perMove) + ' por jugada)' : 'sin límite de tiempo';
   const modeTag = g => g.tc ? (g.tc.base / 60000) + '+' + g.tc.inc / 1000 : plazoTag(g.perMove);
   const modeTitle = g => g.tc ? tcCat(g.tc) + ': ' + (g.tc.base / 60000) + ' min por jugador' + (g.tc.inc ? ' y ' + g.tc.inc / 1000 + ' s más por jugada' : '')
                                : g.perMove ? plazoTxt(g.perMove) + ' por jugada' : 'Sin límite de tiempo';
@@ -3263,12 +3441,8 @@ const SOUNDS = {
     } catch (_) {}
     return 'd0';
   })();
-  function paintMode() { $('tPick').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === modePref))); }
-  $('tPick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-    modePref = b.dataset.m; paintMode();
-    try { localStorage.setItem('chaskiboom.mode', modePref); } catch (_) {}
-  }));
-  paintMode();
+  // el tipo de partida se elige en el panel «Nueva partida» (v1.61) y se recuerda para la próxima
+  function setModePref(m) { modePref = m; try { localStorage.setItem('chaskiboom.mode', m); } catch (_) {} }
   const isTimed = () => !!(online && online.g && online.g.tc);
   // lo que le queda a c (ms) en una partida con reloj, según la hora del servidor
   function clockLeft(g, c) {
@@ -3419,14 +3593,20 @@ const SOUNDS = {
     try { updatePending(); } catch (_) {}
     watch.list = null;
   }
+  // chip de la cuenta arriba a la derecha de la sala: apodo, @usuario y foto (tocarlo abre «Tu cuenta»)
   function acctUI() {
     const u = googleUser();
-    $('acctTxt').textContent = u ? 'Conectado como ' + (gName(u) || u.email || 'usuario de Google') + '.' : '';
-    setAvatar($('acctAv'), myPhoto(), u && (gName(u) || u.email), !!u);
+    const nick = getNick() || (u ? gName(u).split(' ')[0] : '') || 'Tu cuenta';
+    $('chipNick').textContent = nick;
+    $('chipUser').textContent = fr.user ? '@' + fr.user : fr.user === null ? 'Elegí tu usuario' : '';
+    $('chipUser').classList.toggle('need', fr.user === null);
+    $('acctChip').setAttribute('aria-label', 'Tu cuenta: ' + nick + (fr.user ? ', @' + fr.user : ''));
+    setAvatar($('acctAv'), myPhoto(), nick, !!u);
     googleProfile();
   }
-  $('acctBtn').addEventListener('click', async () => {
+  async function signOutAcct() {
     try {
+      closeSheet();
       if (online) leaveOnline();
       await fOffline();
       await firebase.auth().signOut();
@@ -3434,7 +3614,8 @@ const SOUNDS = {
       lobby.hidden = true;
       if (!online && !started && !ended && modal.hidden) chooseMode();
     } catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo cerrar la sesión.'; }
-  });
+  }
+  $('acctChip').addEventListener('click', () => openAccount());
 
   /* --- Sala de espera: apodo, desafío y «Mis partidas» --- */
   const lobby = $('lobby');
@@ -3450,14 +3631,16 @@ const SOUNDS = {
     catch (e) { console.error(e); showModal('Sin conexión', 'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.', [{ label: 'Entendido', primary: true, onClick: backHome }]); return; }
     if (!(await needGoogle())) { backHome(); return; }
     fStart();
-    $('nick').value = getNick();
-    $('lbMain').hidden = false; $('lbWait').hidden = true; $('lbMsg').textContent = '';
+    $('lbMain').hidden = false; $('lbWait').hidden = true; $('lbJoin').hidden = true; $('lbMsg').textContent = '';
+    $('lbTitle').textContent = 'Online';
     lobby.hidden = false;
     acctUI(); listGames(); fLobby(tab);
   }
   // si se canceló la entrada a online y no hay partida, vuelve a la elección inicial
   function backHome() { if (!online && !started && !ended && modal.hidden && lobby.hidden) chooseMode(); }
+  let lbBack = null;   // al aceptar un desafío, «volver» lo cancela (promptNick)
   $('lbClose').addEventListener('click', () => {
+    if (lbBack) { const f = lbBack; lbBack = null; f(); return; }
     lobby.hidden = true;
     if (!online && !started && !ended && modal.hidden) chooseMode();   // si todavía no hay partida, vuelve a la elección inicial
   });
@@ -3470,8 +3653,61 @@ const SOUNDS = {
     if (whole && g && g.inviteTo) { db.ref('invites/' + g.inviteTo.uid + '/' + id).remove().catch(() => {}); untrackInvite(id); }
     return db.ref('users/' + me + '/games/' + id).remove();
   }
+  /* «Partidas» (v1.61): agrupadas por lo que hay que hacer. Te toca (las que vencen antes, arriba), Esperando a tu rival
+     (también los desafíos sin aceptar) y Terminadas (plegadas). Se toca la fila para abrirla; «⋯» abre sus acciones
+     (agregar al rival como amigo, compartir el link, cancelar el desafío o quitar una terminada de la lista). */
+  let lbGamesN = 0;
+  const ICO = {
+    more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+    addUser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+    out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>',
+    userX: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 8 5 5M22 8l-5 5"/></svg>'
+  };
+  // tipo de partida dicho corto, para la sala: «Blitz 3+2», «Rápida 10 min», «Por días · 1 día por jugada», «Sin límite de tiempo»
+  const modeLabel = g => g.tc ? tcCat(g.tc) + ' ' + tcShort(g.tc) : g.perMove ? 'Por días · ' + plazoTxt(g.perMove) + ' por jugada' : 'Sin límite de tiempo';
+  // estado de una partida para «Partidas» y su panel de acciones
+  function gameInfo(id, g) {
+    const myColor = g.white === me ? 'w' : g.black === me ? 'b' : null;
+    const oppName = !g.guest ? null : (g.host.uid === me ? g.guest.name : g.host.name);
+    const oppUid = !g.guest ? null : (g.host.uid === me ? g.guest.uid : g.host.uid);
+    const tr = claimTimeout(id, g);   // si venció el plazo y nadie la cerró todavía, se cierra ahora
+    const res = g.result || tr;
+    let state, mine = false, late = false;
+    if (!g.guest) state = (g.inviteTo ? 'Invitaste a ' + g.inviteTo.name : 'Nadie entró todavía') + (g.createdAt ? ' · vence en ' + leftTxt(g.createdAt + DAY - srvNow()) : '');
+    else if (res) state = (res.winner === 'draw' ? 'Tablas' : (res.winner === myColor ? 'Ganaste' : 'Perdiste')) + (/^timeout/.test(res.reason) ? ' por tiempo' : '');
+    else if (!g.started) { mine = myColor === 'w'; state = mine ? 'Tocá Comenzar' : 'Esperando que comience'; }
+    else {
+      mine = g.turn === myColor; state = mine ? 'Te toca' : 'Le toca';
+      if (g.perMove && g.deadline) { const left = g.deadline - srvNow(); state += ' · ' + (mine ? 'vence en ' : 'tiene ') + leftTxt(left); late = mine && left < lateMs(g.perMove); }
+    }
+    const plies = g.guest ? (g.ply || 0) + (g.ply === 1 ? ' jugada' : ' jugadas') : '';
+    const title = oppName || (g.inviteTo ? g.inviteTo.name : 'Desafío por link');
+    return { myColor, oppName, oppUid, res, state, mine, late, title, plies };
+  }
+  function gameRow(id, g, I) {
+    const li = document.createElement('li');
+    li.className = I.mine ? 'mine' : !g.guest ? 'wait' : '';
+    li.innerHTML = (g.guest || g.inviteTo ? '<span class="av"></span>' : '<span class="avLink">' + ICO.link + '</span>') + '<div class="who"><b></b><span></span></div>'
+      + (g.perMove !== undefined || g.tc ? '<span class="tag"></span>' : '') + '<button class="dot3">' + ICO.more + '</button>';
+    li.querySelector('b').textContent = I.title;
+    if (g.guest) setAvatar(li.querySelector('.av'), oppPhotoOf(g), I.oppName);
+    else if (g.inviteTo) setAvatar(li.querySelector('.av'), null, g.inviteTo.name);
+    if (g.perMove !== undefined || g.tc) { const t = li.querySelector('.tag'); t.textContent = modeTag(g); t.title = modeTitle(g); }
+    const sp = li.querySelector('.who span'); sp.textContent = I.state; if (I.mine) sp.className = I.late ? 'mine late' : 'mine';
+    const more = li.querySelector('.dot3');
+    more.setAttribute('aria-label', 'Más opciones: ' + I.title);
+    more.addEventListener('click', e => { e.stopPropagation(); gameActions(id, g, I); });
+    li.tabIndex = 0; li.setAttribute('role', 'button'); li.setAttribute('aria-label', 'Abrir: ' + I.title + ', ' + I.state);
+    const open = () => { lobby.hidden = true; enterOnline(id); };
+    li.addEventListener('click', open);
+    li.addEventListener('keydown', e => { if (e.target === li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(); } });
+    return li;
+  }
   async function listGames() {
-    const ul = $('lbGames');
     const idx = (await db.ref('users/' + me + '/games').once('value')).val() || {};
     const ids = Object.keys(idx).sort((a, b) => (idx[b].updatedAt || 0) - (idx[a].updatedAt || 0)).slice(0, 15);
     const all = await Promise.all(ids.map(id => db.ref('games/' + id).once('value').then(s => [id, s.val()])));
@@ -3479,83 +3715,243 @@ const SOUNDS = {
       if (!g || !g.host) dropGame(id, false);                              // ya no existe: se limpia el índice
       else if (inviteExpired(g) && g.host.uid === me) dropGame(id, true, g);   // desafío vencido
     });
-    const games = all.filter(([, g]) => g && g.host && !inviteExpired(g));
-    const past = $('lbPastList'), EMPTY = '<li class="empty">No tenés partidas en curso</li>';
-    past.innerHTML = '';
-    const pastCount = () => { const n = past.children.length; $('lbPastN').textContent = n; $('lbPast').hidden = !n; };
-    if (!games.length) { ul.innerHTML = '<li class="empty">Todavía no tenés partidas online</li>'; pastCount(); return; }
-    const myTurn = g => { const c = g.white === me ? 'w' : g.black === me ? 'b' : null; return !!g.white && !g.result && !timeoutResult(g) && (g.started ? g.turn === c : c === 'w'); };
-    // primero las que te tocan (las que vencen antes, arriba); el resto como venía, por la última novedad
-    games.sort((a, b) => (myTurn(b[1]) - myTurn(a[1])) || (myTurn(a[1]) ? (a[1].deadline || Infinity) - (b[1].deadline || Infinity) : 0));
-    ul.innerHTML = '';
-    games.forEach(([id, g]) => {
-      const myColor = g.white === me ? 'w' : g.black === me ? 'b' : null;
-      const oppName = !g.guest ? null : (g.host.uid === me ? g.guest.name : g.host.name);
-      const tr = claimTimeout(id, g);   // si venció el plazo y nadie la cerró todavía, se cierra ahora
-      const res = g.result || tr;
-      let state, mine = false, late = false;
-      if (!g.guest) state = (g.inviteTo ? 'Invitaste a ' + g.inviteTo.name : 'Esperando que tu amigo entre') + (g.createdAt ? ' · vence en ' + leftTxt(g.createdAt + DAY - srvNow()) : '');
-      else if (res) state = (res.winner === 'draw' ? 'Tablas' : (res.winner === myColor ? 'Ganaste' : 'Perdiste')) + (/^timeout/.test(res.reason) ? ' por tiempo' : '');
-      else if (!g.started) { mine = myColor === 'w'; state = mine ? 'Te toca comenzar' : 'Sin comenzar'; }
-      else {
-        mine = g.turn === myColor; state = mine ? 'Te toca mover' : 'Le toca a tu rival';
-        if (g.perMove && g.deadline) { const left = g.deadline - srvNow(); state += ' · ' + (mine ? 'vence en ' : 'tiene ') + leftTxt(left); late = mine && left < lateMs(g.perMove); }
+    const games = all.filter(([, g]) => g && g.host && !inviteExpired(g)).map(([id, g]) => [id, g, gameInfo(id, g)]);
+    // las que te tocan: las que vencen antes, arriba; el resto como venía, por la última novedad
+    const mine = games.filter(x => !x[2].res && x[2].mine).sort((a, b) => (a[1].deadline || Infinity) - (b[1].deadline || Infinity));
+    const wait = games.filter(x => !x[2].res && !x[2].mine), past = games.filter(x => x[2].res);
+    const fill = (ul, L) => { ul.innerHTML = ''; L.forEach(([id, g, I]) => ul.appendChild(gameRow(id, g, I))); };
+    fill($('lbMine'), mine); fill($('lbGames'), wait); fill($('lbPastList'), past);
+    $('secMine').hidden = !mine.length; $('nMine').textContent = mine.length;
+    $('secWait').hidden = !wait.length; $('nWait').textContent = wait.length;
+    $('lbPast').hidden = !past.length; $('lbPastN').textContent = past.length;
+    lbGamesN = games.length;
+    fRender(true);
+  }
+  // panel de abajo genérico (Nueva partida, Tu cuenta, acciones)
+  const sheet = $('sheet');
+  function openSheet(label, build) {
+    const body = sheet.querySelector('.shBody');
+    body.innerHTML = '';
+    sheet.querySelector('.shCard').setAttribute('aria-label', label);
+    build(body);
+    sheet.hidden = false;
+    const f = body.querySelector('.primary') || body.querySelector('button');
+    if (f) try { f.focus({ preventScroll: true }); } catch (_) {}
+  }
+  function closeSheet() { if (sheet.hidden) return; sheet.hidden = true; sheet.querySelector('.shBody').innerHTML = ''; }
+  sheet.querySelector('.shBack').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
+  function shHead(body, title, sub, avInfo) {
+    const h = document.createElement('div');
+    h.className = 'shHead';
+    h.innerHTML = (avInfo ? '<span class="av"></span>' : '') + '<div class="sub"></div><button class="iconBtn dim" aria-label="Cerrar">' + ICO.x + '</button>';
+    const sb = h.querySelector('.sub');
+    if (avInfo) { setAvatar(h.querySelector('.av'), avInfo.photo, avInfo.name); const b = document.createElement('b'); b.textContent = title; sb.appendChild(b); }
+    else { const t = document.createElement('h2'); t.textContent = title; sb.appendChild(t); }
+    (sub || []).forEach(x => { if (!x) return; const sp = document.createElement('span'); sp.textContent = x.t || x; if (x.c) sp.className = x.c; sb.appendChild(sp); });
+    h.querySelector('.iconBtn').addEventListener('click', closeSheet);
+    body.appendChild(h);
+    return h;
+  }
+  function bigBtn(parent, label, fn, icon) {
+    const b = document.createElement('button');
+    b.className = 'primary big'; b.innerHTML = icon || ''; b.appendChild(document.createTextNode(label));
+    b.addEventListener('click', fn);
+    parent.appendChild(b);
+    return b;
+  }
+  // botón de una lista de acciones; con sure: dos toques (el primero pide confirmar durante 5 s)
+  function actBtn(list, icon, label, fn, opt = {}) {
+    const b = document.createElement('button');
+    b.innerHTML = icon; const sp = document.createElement('span'); sp.textContent = label; b.appendChild(sp);
+    if (opt.danger) b.classList.add('danger');
+    if (opt.disabled) b.disabled = true;
+    let t = null;
+    b.addEventListener('click', async () => {
+      if (opt.sure && !b.classList.contains('sure')) {
+        b.classList.add('sure'); sp.textContent = opt.sure;
+        t = setTimeout(() => { b.classList.remove('sure'); sp.textContent = label; }, 5000);
+        return;
       }
-      const li = document.createElement('li');
-      li.innerHTML = (res ? '' : '<span class="dot' + (g.guest ? '' : ' wait') + '" title="' + (g.guest ? 'En curso' : 'Esperando a tu amigo') + '"></span>') + (g.guest ? '<span class="av"></span>' : '') + '<div class="who"><b></b><span></span></div>' + (g.perMove !== undefined || g.tc ? '<span class="tag"></span>' : '') + '<button>Abrir</button>';
-      li.querySelector('b').textContent = oppName ? 'Contra ' + oppName : 'Partida ' + id;
-      if (g.guest) setAvatar(li.querySelector('.av'), oppPhotoOf(g), oppName);
-      if (g.perMove !== undefined || g.tc) { const t = li.querySelector('.tag'); t.textContent = modeTag(g); t.title = modeTitle(g); }
-      const sp = li.querySelector('.who span'); sp.textContent = state + ' · ' + (g.ply || 0) + (g.ply === 1 ? ' jugada' : ' jugadas'); if (mine) sp.className = late ? 'mine late' : 'mine';
-      li.querySelector('button').addEventListener('click', () => { lobby.hidden = true; enterOnline(id); });
-      // ✕: cancelar un desafío sin aceptar (se borra) o quitar de tu lista una terminada (al rival le queda). Las en curso, no.
-      if (!g.guest || res) {
-        const x = document.createElement('button');
-        x.className = 'del'; x.textContent = '✕';
-        x.title = !g.guest ? 'Cancelar el desafío' : 'Quitar de la lista';
-        x.setAttribute('aria-label', x.title);
-        let t = null;
-        x.addEventListener('click', () => {
-          if (!x.classList.contains('sure')) {   // primer toque: pide confirmar
-            x.classList.add('sure'); x.textContent = 'Quitar ahora';
-            t = setTimeout(() => { x.classList.remove('sure'); x.textContent = '✕'; }, 5000);
-            return;
-          }
-          clearTimeout(t);
-          dropGame(id, !g.guest && g.host.uid === me, g).then(() => {
-            li.remove();
-            if (!ul.children.length) ul.innerHTML = EMPTY;
-            pastCount();
-          }).catch(e => { console.error(e); $('lbMsg').textContent = 'No se pudo borrar. Intentá de nuevo.'; });
-          if (online && online.id === id) leaveOnline();
-        });
-        li.appendChild(x);
-      }
-      if (g.guest) addFriendBtn(li, g.host.uid === me ? g.guest.uid : g.host.uid);   // atajo: «+ Amigo» junto al rival
-      (res ? past : ul).appendChild(li);
+      clearTimeout(t); b.disabled = true;
+      try { await fn(b, sp); } catch (e) { console.warn(e); $('lbMsg').textContent = 'No se pudo. Revisá tu conexión e intentá de nuevo.'; b.disabled = false; }
     });
-    if (!ul.children.length) ul.innerHTML = EMPTY;
-    pastCount();
+    list.appendChild(b);
+    return b;
+  }
+  function challengeMsg(id, g) {
+    const url = location.href.split('#')[0] + '#' + id;
+    return (getNick() || 'Un amigo') + ' te desafía a una partida ' + (g ? modeName(g) + ' ' : '') + 'de ChaskiBoom Battle Chess'
+      + '. Aceptá entrando a este link (el desafío vence en 24 h): ' + url;
+  }
+  function gameActions(id, g, I) {
+    openSheet('Partida: ' + I.title, body => {
+      shHead(body, g.guest ? 'Contra ' + I.title : I.title, [modeLabel(g) + (I.plies ? ' · ' + I.plies : ''), { t: I.state, c: I.mine ? 'mine' : '' }],
+        { photo: g.guest ? oppPhotoOf(g) : null, name: I.oppName || I.title });
+      bigBtn(body, 'Abrir partida', () => { closeSheet(); lobby.hidden = true; enterOnline(id); });
+      const list = document.createElement('div'); list.className = 'actList';
+      if (I.oppUid && isReg() && rel(I.oppUid) !== 'friend') {
+        const r = rel(I.oppUid);
+        const b = actBtn(list, ICO.addUser, r === 'sent' ? 'Solicitud de amistad enviada' : r === 'in' ? 'Aceptar como amigo' : 'Agregar como amigo',
+          async (btn, sp) => { await sendReq(I.oppUid); sp.textContent = 'Solicitud de amistad enviada'; btn.disabled = true; }, { disabled: r === 'sent' });
+        b.hidden = true;
+        getProf(I.oppUid).then(p => { b.hidden = !p.user; });   // solo si el rival es un jugador registrado (tiene @usuario)
+      }
+      if (!g.guest && g.host.uid === me && !g.inviteTo)
+        actBtn(list, ICO.share, 'Compartir el link', () => {
+          const msg = challengeMsg(id, g);
+          if (navigator.share) return navigator.share({ title: 'ChaskiBoom Battle Chess', text: msg }).catch(() => {});
+          if (navigator.clipboard) return navigator.clipboard.writeText(msg).then(() => { $('lbMsg').textContent = 'Mensaje con el link copiado.'; closeSheet(); });
+        });
+      if (!g.guest && g.host.uid === me)
+        actBtn(list, ICO.trash, g.inviteTo ? 'Cancelar la invitación' : 'Cancelar el desafío', async () => {
+          await dropGame(id, true, g); if (online && online.id === id) leaveOnline(); closeSheet(); listGames();
+        }, { danger: true, sure: 'Tocá de nuevo para cancelarlo' });
+      if (I.res)
+        actBtn(list, ICO.trash, 'Quitar de la lista', async () => {
+          await dropGame(id, false); if (online && online.id === id) leaveOnline(); closeSheet(); listGames();
+        }, { danger: true, sure: 'Tocá de nuevo para quitarla' });
+      if (list.children.length) body.appendChild(list);
+    });
+  }
+
+  /* --- Nueva partida (v1.61): 1) tipo de partida; 2) contra quién: un amigo (se le manda la invitación) o cualquiera con un link --- */
+  const MODES = { blitz: [['3+0', '3 min'], ['3+2', '3 + 2'], ['5+0', '5 min']], rapida: [['10+0', '10 min'], ['10+5', '10 + 5'], ['15+10', '15 + 10']],
+                  dias: [['h1', '1 hora'], ['d1', '1 día'], ['d3', '3 días'], ['d0', 'Sin límite']] };
+  const catOf = m => TCS[m] ? (TCS[m][0] < 10 ? 'blitz' : 'rapida') : 'dias';
+  function modeDesc(m) {
+    const d = modeData(m);
+    if (d.tc) return (d.tc.base / 60000) + ' minutos para cada uno' + (d.tc.inc ? ' y ' + d.tc.inc / 1000 + ' segundos más por jugada' : '') + '. Si se te acaba el tiempo, perdés.';
+    return d.perMove ? plazoTxt(d.perMove) + ' para cada jugada. Si se vence el plazo, perdés.' : 'Sin límite de tiempo: cada uno juega cuando puede.';
+  }
+  function openNewGame(friend) {
+    let m = modePref, sel = friend && fr.friends[friend] ? friend : 'link';
+    openSheet('Nueva partida', body => {
+      shHead(body, 'Nueva partida');
+      const s1 = document.createElement('section');
+      s1.innerHTML = '<h3>1 · Tipo de partida</h3><div class="tTabs" role="tablist" aria-label="Tipo de partida"></div><div class="tOpts" role="group" aria-label="Duración"></div><p class="muted"></p>';
+      const tabs = s1.querySelector('.tTabs'), opts = s1.querySelector('.tOpts'), desc = s1.querySelector('p');
+      [['blitz', 'Blitz'], ['rapida', 'Rápida'], ['dias', 'Por días']].forEach(([k, t]) => {
+        const b = document.createElement('button'); b.setAttribute('role', 'tab'); b.dataset.k = k; b.textContent = t;
+        b.addEventListener('click', () => { if (catOf(m) !== k) { m = MODES[k].find(x => x[0] === modePref) ? modePref : MODES[k][k === 'dias' ? 1 : 0][0]; paint(); } });
+        tabs.appendChild(b);
+      });
+      const paint = () => {
+        const k = catOf(m);
+        tabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.k === k)));
+        opts.innerHTML = ''; opts.style.setProperty('--n', MODES[k].length);
+        MODES[k].forEach(([v, t]) => {
+          const b = document.createElement('button'); b.textContent = t; b.setAttribute('aria-pressed', String(v === m));
+          b.addEventListener('click', () => { m = v; paint(); });
+          opts.appendChild(b);
+        });
+        desc.textContent = modeDesc(m);
+      };
+      body.appendChild(s1);
+      const s2 = document.createElement('section');
+      s2.innerHTML = '<h3>2 · ¿Contra quién?</h3><div class="rivals" role="radiogroup" aria-label="Rival"></div>';
+      const rv = s2.querySelector('.rivals');
+      const go = document.createElement('button');
+      const label = () => { go.textContent = sel === 'link' ? 'Crear el link' : 'Invitar a ' + pName(sel); };
+      const addRival = (val, name, sub, cls, avHtml, photo, on) => {
+        const l = document.createElement('label');
+        l.className = 'rival' + (cls ? ' ' + cls : '');
+        l.innerHTML = '<input type="radio" name="rival">' + avHtml + '<span class="who"><b></b><span></span></span>';
+        l.querySelector('b').textContent = name;
+        const sp = l.querySelector('.who span'); sp.textContent = sub; if (on) sp.className = 'on';
+        const av = l.querySelector('.av'); if (av) setAvatar(av, photo, name);
+        const r = l.querySelector('input'); r.checked = sel === val;
+        r.addEventListener('change', () => { if (r.checked) { sel = val; label(); } });
+        rv.appendChild(l);
+      };
+      Object.keys(fr.friends).sort((a, b) => (fr.pres[b] ? 1 : 0) - (fr.pres[a] ? 1 : 0) || pName(a).localeCompare(pName(b))).forEach(f => {
+        const p = fr.prof[f] || {};
+        addRival(f, pName(f), fr.pres[f] ? 'En línea' : 'No está conectado', '', '<span class="avOn' + (fr.pres[f] ? ' yes' : '') + '"><span class="av"></span></span>', p.photo, fr.pres[f]);
+      });
+      addRival('link', 'Cualquiera, con un link', 'Se lo mandás por WhatsApp', 'link', '<span class="avLink">' + ICO.link + '</span>');
+      if (!Object.keys(fr.friends).length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'Agregá amigos en la pestaña Amigos para invitarlos desde acá.'; s2.appendChild(p); }
+      body.appendChild(s2);
+      go.className = 'primary big';
+      go.addEventListener('click', async () => {
+        go.disabled = true;
+        setModePref(m);
+        try {
+          if (sel === 'link') await createLinkGame(m);
+          else await inviteFriend(sel);
+          closeSheet();
+        } catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo crear la partida. Revisá tu conexión e intentá de nuevo.'; closeSheet(); }
+        go.disabled = false;
+      });
+      body.appendChild(go);
+      paint(); label();
+    });
+  }
+  $('lbNew').addEventListener('click', () => openNewGame());
+
+  /* --- Tu cuenta (v1.61): apodo, @usuario (con aviso de si está libre) y salir --- */
+  function openAccount(msg) {
+    const u = googleUser();
+    openSheet('Tu cuenta', body => {
+      shHead(body, 'Tu cuenta', [(u ? gName(u) || u.email : '') + ' · cuenta de Google'], { photo: myPhoto(), name: getNick() || (u && gName(u)) });
+      const f = document.createElement('div');
+      f.style.display = 'grid'; f.style.gap = '14px';
+      f.innerHTML = '<label class="fld">Tu apodo · lo ve tu rival en las partidas<input id="acNick" maxlength="20" autocomplete="nickname"></label>'
+        + '<label class="fld">Tu usuario · con este te buscan tus amigos<span class="uField"><span>@</span><input id="acUser" maxlength="20" autocapitalize="none" autocomplete="off" spellcheck="false"><span class="st"></span></span></label>'
+        + '<p class="shMsg" role="alert"></p>';
+      body.appendChild(f);
+      const nk = f.querySelector('#acNick'), us = f.querySelector('#acUser'), st = f.querySelector('.st'), err = f.querySelector('.shMsg');
+      nk.value = getNick(); us.value = fr.user || '';
+      if (!fr.user) { us.placeholder = 'tu.usuario'; suggestUser().then(v => { if (!us.value) { us.value = v; check(); } }).catch(() => {}); }
+      err.textContent = msg || '';
+      let tChk = null, free = true;
+      const say = (t, c) => { st.textContent = t; st.className = 'st' + (c ? ' ' + c : ''); };
+      const check = () => {
+        const v = us.value; clearTimeout(tChk);
+        if (!v || v === fr.user) { say(''); free = true; return; }
+        if (!USER_RE.test(v)) { say('3 a 20', 'bad'); free = false; return; }
+        say('…');
+        tChk = setTimeout(() => db.ref('usernames/' + v).once('value').then(x => { if (us.value !== v) return; free = !x.exists() || x.val() === me; say(free ? 'Libre' : 'Ocupado', free ? 'ok' : 'bad'); }).catch(() => say('')), 350);
+      };
+      us.addEventListener('input', () => { const v = us.value.toLowerCase().replace(/[^a-z0-9._]/g, ''); if (v !== us.value) us.value = v; check(); });
+      bigBtn(body, 'Guardar', async e => {
+        const btn = e.currentTarget;
+        const n = nk.value.trim().slice(0, 20), v = us.value.trim();
+        if (!n) { err.textContent = 'Escribí un apodo para que tu rival sepa quién sos.'; nk.focus(); return; }
+        if (v && v !== fr.user && !USER_RE.test(v)) { err.textContent = 'El usuario tiene que tener entre 3 y 20 caracteres: minúsculas, números, punto o guion bajo.'; us.focus(); return; }
+        btn.disabled = true; err.textContent = '';
+        try {
+          if (n !== getNick()) setNick(n);
+          if (v && v !== fr.user) {
+            if ((await db.ref('usernames/' + v).once('value')).exists()) { err.textContent = '@' + v + ' ya está ocupado. Probá con otro.'; btn.disabled = false; return; }
+            await saveUser(v);
+          }
+          closeSheet(); acctUI(); fRender(true);
+        } catch (x) { console.warn(x); err.textContent = 'No se pudo guardar: puede que otro haya tomado @' + v + ' recién. Probá con otro.'; btn.disabled = false; }
+      });
+      const list = document.createElement('div'); list.className = 'actList';
+      actBtn(list, ICO.out, 'Salir de la cuenta', () => signOutAcct(), { danger: true });
+      body.appendChild(list);
+      if (msg) setTimeout(() => nk.focus(), 50);
+    });
   }
 
   // el apodo se guarda al editarlo (no hace falta crear una partida)
   $('nick').addEventListener('change', () => { const n = $('nick').value.trim().slice(0, 20); if (n) setNick(n); });
+  // el apodo se edita en «Tu cuenta» (v1.61); si no hay, se usa el primer nombre de Google
   function askNick() {
-    const n = $('nick').value.trim().slice(0, 20);
-    if (!n) { $('lbMsg').textContent = 'Escribí un apodo para que tu rival sepa quién sos.'; $('nick').focus(); return null; }
-    setNick(n); return n;
+    let n = (getNick() || '').trim().slice(0, 20);
+    if (!n) { try { n = (gName(firebase.auth().currentUser).split(' ')[0] || '').slice(0, 20); } catch (_) {} if (n) setNick(n); }
+    if (!n) { openAccount('Poné un apodo para que tu rival sepa quién sos.'); return null; }
+    return n;
   }
-
   let lbJoining = false;
-  $('lbCreate').addEventListener('click', async () => {
-    if (lbJoining) return;   // en modo «aceptar desafío» lo maneja promptNick
+  // desafío por link para cualquiera (desde el panel «Nueva partida»)
+  async function createLinkGame(m) {
     const name = askNick(); if (!name) return;
-    try {
-      await fbInit();
-      const id = await createGame(name, modeData(modePref));
-      enterOnline(id);
-    } catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo crear la partida. Intentá de nuevo.'; }
-  });
+    await fbInit();
+    const id = await createGame(name, modeData(m));
+    enterOnline(id);
+  }
 
   async function createGame(name, extra) {
     const abc = 'abcdefghjkmnpqrstuvwxyz23456789';
@@ -3579,7 +3975,8 @@ const SOUNDS = {
     $('lbLink').value = url;
     $('lbWaitTxt').textContent = g && g.inviteTo ? 'Le mandamos la invitación a ' + g.inviteTo.name + '. Cuando la acepte, se sortean los colores y empieza la partida. También podés mandarle el link.'
                                                : 'Mandale este link a tu amigo. Cuando entre, se sortean los colores y empieza la partida.';
-    $('lbMain').hidden = true; $('lbWait').hidden = false; $('lbMsg').textContent = '';
+    closeSheet();
+    $('lbMain').hidden = true; $('lbJoin').hidden = true; $('lbWait').hidden = false; $('lbMsg').textContent = '';
     lobby.hidden = false;
     $('lbCopy').onclick = () => {
       const done = () => { $('lbMsg').textContent = 'Mensaje con el link copiado.'; };
@@ -3623,21 +4020,23 @@ const SOUNDS = {
 
   function promptNick(hostName, g) {
     const terms = g.tc ? 'Partida ' + modeName(g) + ': ' + (g.tc.base / 60000) + ' minutos para cada uno' + (g.tc.inc ? ' y ' + g.tc.inc / 1000 + ' segundos más por jugada' : '') + '. Si se te acaba el tiempo, perdés la partida.'
-                : g.perMove ? 'Partida por correspondencia: ' + plazoTxt(g.perMove) + ' por jugada. Si se te vence el plazo, perdés la partida.' : '';
+                : g.perMove ? 'Partida por días: ' + plazoTxt(g.perMove) + ' por jugada. Si se te vence el plazo, perdés la partida.' : '';
     return new Promise(res => {
       lbJoining = true;
-      $('lbMain').hidden = false; $('lbWait').hidden = true;
-      $('tPick').hidden = true;
-      $('lbTerms').hidden = !terms;
-      $('lbTerms').textContent = terms;
-      $('lbTitle').textContent = (hostName || 'Un amigo') + ' te desafía';
-      $('lbCreate').textContent = 'Aceptar el desafío';
-      lbJoinHide(true);
+      closeSheet();
+      $('lbMain').hidden = true; $('lbWait').hidden = true; $('lbJoin').hidden = false;
+      $('lbTitle').textContent = 'Desafío';
+      $('lbJoinTitle').textContent = (hostName || 'Un amigo') + ' te desafía';
+      $('lbTerms').hidden = !terms; $('lbTerms').textContent = terms;
       $('nick').value = getNick(); $('lbMsg').textContent = '';
       lobby.hidden = false;
-      const restore = () => { lbJoining = false; $('tPick').hidden = false; $('lbTerms').hidden = true; $('lbTitle').textContent = 'Jugar online'; $('lbCreate').textContent = 'Desafiar a un amigo'; lbJoinHide(false); $('lbCreate').onclick = null; };
-      $('lbCreate').onclick = e => { e.stopImmediatePropagation(); const n = askNick(); if (!n) return; lobby.hidden = true; restore(); res(n); };
-      $('lbClose').onclick = () => { lobby.hidden = true; restore(); $('lbClose').onclick = null; res(null); };
+      const restore = () => { lbJoining = false; lbBack = null; $('lbJoin').hidden = true; $('lbMain').hidden = false; $('lbTitle').textContent = 'Online'; $('lbJoinOk').onclick = null; };
+      $('lbJoinOk').onclick = () => {
+        const n = $('nick').value.trim().slice(0, 20);
+        if (!n) { $('lbMsg').textContent = 'Escribí un apodo para que tu rival sepa quién sos.'; $('nick').focus(); return; }
+        setNick(n); lobby.hidden = true; restore(); res(n);
+      };
+      lbBack = () => { lobby.hidden = true; restore(); res(null); };
     });
   }
 
@@ -3937,7 +4336,7 @@ const SOUNDS = {
     let L = [], nv = [];
     try { if (watch.list) L = pendingGames(); nv = fNews(); } catch (_) { return; }   // todavía no arrancó la parte online
     const n = L.length + nv.length;
-    const bd = $('monBadge'); bd.hidden = !n; bd.textContent = n;
+    [$('monBadge'), $('homeBadge'), homeEl.querySelector('#homeOnBadge')].forEach(bd => { bd.hidden = !n; bd.textContent = n; });
     const gt = L.length ? 'Te toca en ' + L.length + (L.length === 1 ? ' partida online' : ' partidas online') : '';
     const ft = nv.length === 1 ? nv[0] : nv.length ? nv.length + ' novedades de tus amigos' : '';
     $('mon').title = [gt, ft].filter(Boolean).join(' · ');
@@ -4323,103 +4722,106 @@ const SOUNDS = {
   }
   $('tabGames').addEventListener('click', () => fTab('games'));
   $('tabFriends').addEventListener('click', () => fTab('friends'));
-  $('uEdit').addEventListener('click', () => askUser(false));
-  $('frPickUser').addEventListener('click', () => askUser(true));
-  // al aceptar un desafío por link se ocultan las pestañas; después vuelven
-  function lbJoinHide(on) {
-    ['lbTabs', 'lbInbox', 'uRow'].forEach(k => { $(k).hidden = on; });
-    if (on) { $('paneGames').hidden = true; $('paneFriends').hidden = true; $('lbPast').hidden = true; }
-    else { fTab(fr.tab); fRender(true); }
-  }
+  $('frPickUser').addEventListener('click', () => openAccount());
   let fRenderT = null;
   function fRender(now) {
     if (now) { clearTimeout(fRenderT); fRenderT = null; fPaint(); return; }
     if (!fRenderT) fRenderT = setTimeout(() => { fRenderT = null; fPaint(); }, 60);
   }
-  function fRow(uid, sub) {
+  // fila de un jugador: foto (con el punto de en línea si on !== undefined), nombre, línea de abajo y acciones
+  function fRow(uid, sub, on) {
     const p = fr.prof[uid] || {}, li = document.createElement('li');
-    li.innerHTML = '<span class="av"></span><div class="who"><b></b><span></span></div><span class="acts"></span>';
+    li.innerHTML = (on === undefined ? '<span class="av"></span>' : '<span class="avOn' + (on ? ' yes' : '') + '"><span class="av"></span></span>') + '<div class="who"><b></b><span></span></div><span class="acts"></span>';
     setAvatar(li.querySelector('.av'), p.photo, p.nick || p.user);
     li.querySelector('b').textContent = p.nick || (p.user ? '@' + p.user : '…');
-    li.querySelector('.who span').textContent = sub !== undefined ? sub : p.user ? '@' + p.user : '';
+    const sp = li.querySelector('.who span'); sp.textContent = sub !== undefined ? sub : p.user ? '@' + p.user : '';
+    if (on) sp.className = 'on';
     return li;
   }
-  function fBtn(li, label, fn, cls) {
+  function fBtn(li, label, fn, cls, aria) {
     const b = document.createElement('button');
-    b.textContent = label; if (cls) b.className = cls;
-    b.addEventListener('click', async () => {
+    if (cls === 'x') { b.className = 'x'; b.innerHTML = ICO.x; b.setAttribute('aria-label', label); }
+    else { b.textContent = label; if (cls) b.className = cls; }
+    if (aria) b.setAttribute('aria-label', aria);
+    b.addEventListener('click', async e => {
+      e.stopPropagation();
       b.disabled = true;
-      try { await fn(b); } catch (e) { console.warn('amigos', e); $('lbMsg').textContent = 'No se pudo. Revisá tu conexión e intentá de nuevo.'; }
+      try { await fn(b); } catch (x) { console.warn('amigos', x); $('lbMsg').textContent = 'No se pudo. Revisá tu conexión e intentá de nuevo.'; }
       b.disabled = false;
     });
     li.querySelector('.acts').appendChild(b);
     return b;
-  }
-  // ✕ con doble toque, como en «Mis partidas»
-  function fDel(li, title, fn) {
-    const x = document.createElement('button');
-    x.className = 'del'; x.textContent = '✕'; x.title = title; x.setAttribute('aria-label', title);
-    let t = null;
-    x.addEventListener('click', async () => {
-      if (!x.classList.contains('sure')) { x.classList.add('sure'); x.textContent = 'Quitar'; t = setTimeout(() => { x.classList.remove('sure'); x.textContent = '✕'; }, 5000); return; }
-      clearTimeout(t); x.disabled = true;
-      try { await fn(); } catch (e) { console.warn('amigos', e); $('lbMsg').textContent = 'No se pudo. Intentá de nuevo.'; x.disabled = false; }
-    });
-    li.appendChild(x);
   }
   // botón según la relación con ese jugador (en el buscador)
   function relActs(li, uid) {
     const r = rel(uid), p = fr.prof[uid] || {};
     const note = t => { const s = document.createElement('span'); s.className = 'ok'; s.textContent = t; li.querySelector('.acts').appendChild(s); };
     if (r === 'friend') note('Ya es tu amigo');
-    else if (r === 'sent') { note('Solicitud enviada'); fBtn(li, 'Cancelar', () => cancelReq(uid)); }
+    else if (r === 'sent') { note('Enviada'); fBtn(li, 'Cancelar', () => cancelReq(uid)); }
     else if (r === 'in') fBtn(li, 'Aceptar', () => acceptReq(uid), 'primary');
-    else if (!p.user) note('Todavía no eligió usuario');   // las reglas exigen que el otro esté registrado del todo
+    else if (!p.user) note('Sin usuario todavía');   // las reglas exigen que el otro esté registrado del todo
     else fBtn(li, 'Agregar', () => sendReq(uid), 'primary');
   }
+  // acciones de un amigo: jugar con él o quitarlo
+  function friendActions(f) {
+    const p = fr.prof[f] || {};
+    openSheet('Amigo: ' + pName(f), body => {
+      shHead(body, pName(f), [p.user ? '@' + p.user : '', { t: fr.pres[f] ? 'En línea' : 'No está conectado', c: fr.pres[f] ? 'mine' : '' }], { photo: p.photo, name: pName(f) });
+      bigBtn(body, 'Jugar con ' + pName(f), () => openNewGame(f));
+      const list = document.createElement('div'); list.className = 'actList';
+      actBtn(list, ICO.userX, 'Quitar de tus amigos', async () => { await removeFriend(f); closeSheet(); }, { danger: true, sure: 'Tocá de nuevo para quitarlo' });
+      body.appendChild(list);
+    });
+  }
   function fPaint() {
+    if (!lobby.hidden) try { acctUI(); } catch (_) {}
     if (!fr.uid) { updatePending(); return; }
-    $('uRow').hidden = !fr.user || lbJoining; $('uName').textContent = fr.user ? '@' + fr.user : '';
     $('frNoUser').hidden = fr.user !== null;
-    const nReq = Object.keys(fr.reqIn).filter(f => !fr.friends[f]).length;
-    $('frBadge').hidden = !nReq; $('frBadge').textContent = nReq;
-    // bandeja: invitaciones y solicitudes recibidas (arriba de las pestañas)
+    const reqs = Object.keys(fr.reqIn).filter(f => !fr.friends[f] && fr.prof[f]);
+    $('frBadge').hidden = !reqs.length; $('frBadge').textContent = reqs.length;
+    // invitaciones recibidas (en «Partidas»)
     const ib = $('lbInbox'); ib.innerHTML = '';
     Object.keys(fr.invGame).forEach(id => {
       const v = fr.inv[id], g = fr.invGame[id]; if (!v || !g) return;
-      const li = fRow(v.from, 'Te invita: ' + modeName(g) + ' · vence en ' + leftTxt(g.createdAt + DAY - srvNow()));
+      const li = fRow(v.from, 'Te invita · ' + modeLabel(g));
+      li.title = 'Vence en ' + leftTxt(g.createdAt + DAY - srvNow());
+      fBtn(li, 'Rechazar la invitación de ' + pName(v.from), () => { dropInvite(id); }, 'x');
       fBtn(li, 'Aceptar', () => { lobby.hidden = true; return enterOnline(id); }, 'primary');
-      fBtn(li, 'No', () => { dropInvite(id); });
       ib.appendChild(li);
     });
-    Object.keys(fr.reqIn).forEach(f => {
-      if (fr.friends[f] || !fr.prof[f]) return;
+    $('secInv').hidden = !ib.children.length;
+    $('lbEmpty').hidden = !!(lbGamesN || ib.children.length);
+    // solicitudes recibidas (en «Amigos»)
+    const rq = $('frReq'); rq.innerHTML = '';
+    reqs.forEach(f => {
       const p = fr.prof[f];
       const li = fRow(f, (p.user ? '@' + p.user + ' · ' : '') + 'quiere ser tu amigo');
+      fBtn(li, 'Rechazar la solicitud de ' + pName(f), () => rejectReq(f), 'x');
       fBtn(li, 'Aceptar', () => acceptReq(f), 'primary');
-      fBtn(li, 'No', () => rejectReq(f));
-      ib.appendChild(li);
+      rq.appendChild(li);
     });
-    ib.hidden = !ib.children.length || lbJoining;
+    $('secReq').hidden = !reqs.length; $('nReq').textContent = reqs.length;
     // amigos (en línea primero) y solicitudes enviadas
     const ul = $('frList'); ul.innerHTML = '';
     const ids = Object.keys(fr.friends).sort((a, b) => (fr.pres[b] ? 1 : 0) - (fr.pres[a] ? 1 : 0) || pName(a).localeCompare(pName(b)));
     ids.forEach(f => {
-      const li = fRow(f);
-      const dot = document.createElement('span'); dot.className = 'on' + (fr.pres[f] ? ' yes' : ''); dot.title = fr.pres[f] ? 'En línea' : 'No está conectado';
-      li.prepend(dot);
-      const b = fBtn(li, 'Invitar', () => inviteFriend(f), 'primary');
-      b.title = 'Invitar a una partida ' + modeName(modeData(modePref));
-      fDel(li, 'Quitar de tus amigos', () => removeFriend(f));
+      const p = fr.prof[f] || {};
+      const li = fRow(f, (fr.pres[f] ? 'En línea' : '') + (fr.pres[f] && p.user ? ' · ' : '') + (p.user ? '@' + p.user : ''), !!fr.pres[f]);
+      fBtn(li, 'Jugar', () => openNewGame(f), fr.pres[f] ? 'primary' : 'ghost', 'Jugar con ' + pName(f));
+      const m = document.createElement('button'); m.className = 'dot3'; m.innerHTML = ICO.more; m.setAttribute('aria-label', 'Más opciones: ' + pName(f));
+      m.addEventListener('click', () => friendActions(f));
+      li.appendChild(m);
       ul.appendChild(li);
     });
     Object.keys(fr.sent).forEach(f => {
       if (fr.friends[f]) return;
       const li = fRow(f, 'Solicitud enviada');
-      fBtn(li, 'Cancelar', () => cancelReq(f));
+      li.style.borderStyle = 'dashed';
+      fBtn(li, 'Cancelar', () => cancelReq(f), 'ghost');
       ul.appendChild(li);
     });
-    if (!ul.children.length) ul.innerHTML = '<li class="empty">' + (fr.loaded.friends ? 'Todavía no tenés amigos. Buscalos por @usuario o por email.' : 'Cargando…') + '</li>';
+    $('nFr').textContent = ids.length ? ' · ' + ids.length : '';
+    if (!ul.children.length) ul.innerHTML = '<li class="empty">' + (fr.loaded.friends ? 'Todavía no tenés amigos. Buscalos arriba por @usuario o por email.' : 'Cargando…') + '</li>';
     if (fr.found) renderFound();
     updatePending();
   }
@@ -4458,24 +4860,7 @@ const SOUNDS = {
     F.uids.forEach(u => { const li = fRow(u); relActs(li, u); ul.appendChild(li); });
   }
 
-  /* --- Atajo: «+ Amigo» junto al rival en «Mis partidas» y en el cartel de fin de una partida online --- */
-  function addFriendBtn(li, uid) {
-    if (!uid || uid === me || !isReg() || rel(uid) === 'friend') return;
-    getProf(uid).then(p => {
-      if (!p.user || rel(uid) === 'friend') return;   // no registrado (partidas anteriores a v1.45) o ya es amigo
-      const b = document.createElement('button');
-      b.className = 'addF';
-      const paint = () => { const r = rel(uid); b.textContent = r === 'sent' ? 'Enviada' : r === 'in' ? 'Aceptar amigo' : '+ Amigo'; b.disabled = r === 'sent'; b.hidden = r === 'friend'; b.title = r === 'sent' ? 'Solicitud de amistad enviada' : 'Agregar como amigo'; };
-      paint();
-      b.addEventListener('click', async () => {
-        b.disabled = true;
-        try { await sendReq(uid); } catch (e) { console.warn('amigos', e); $('lbMsg').textContent = 'No se pudo mandar la solicitud.'; }
-        paint();
-      });
-      const open = [...li.querySelectorAll('button')].find(x => !x.classList.contains('del'));
-      li.insertBefore(b, open || null);
-    });
-  }
+  /* --- Atajo: «Agregar a X como amigo» en el cartel de fin de una partida online (en «Partidas», desde «⋯») --- */
   function endFriendNode() {
     const uid = online && online.oppUid;
     if (!uid || !isReg() || rel(uid) === 'friend') return null;
@@ -4657,7 +5042,7 @@ const SOUNDS = {
     if (analysis && !analysis.done) analysis.cancel = true;
     analysis = null;
     document.body.classList.remove('analyzed');
-    $('anaBtn').hidden = true;
+    anaBtnSet(false, 'Analizar');
     hideBest(); setClsMark(null);
   }
   const winPct = cp => 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * Math.max(-1000, Math.min(1000, cp)))) - 1);
@@ -4727,7 +5112,7 @@ const SOUNDS = {
     });
     run.done = true;
     document.body.classList.add('analyzed');
-    $('anaBtn').hidden = false; $('anaBtn').textContent = 'Ver análisis';
+    anaBtnSet(true, 'Ver análisis');
     updatePlayers(); updateHist(); layout();
     showAnalysisSummary();
   }
@@ -4769,6 +5154,8 @@ const SOUNDS = {
     });
     return g;
   }
+  // el botón queda siempre a la vista en el Menú (v1.61): deshabilitado hasta que se pueda analizar
+  function anaBtnSet(on, t) { $('anaBtn').disabled = !on; $('anaBtn').querySelector('.t').textContent = t; }
   $('anaBtn').addEventListener('click', () => startAnalysis());
   // ícono de la clasificación de la jugada revisada, sobre la pieza que la hizo
   let clsAt = null;   // { sq, cls }
@@ -4930,7 +5317,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261018161356';
+  const BUILD = '20261018170407';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));

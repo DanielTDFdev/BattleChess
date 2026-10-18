@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.60** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.61** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -327,11 +327,37 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   - Atajo «+ Amigo» junto al rival en «Mis partidas» y «Agregar a X como amigo» en el cartel de fin online (`addFriendBtn`,
     `endFriendNode`), solo si el rival tiene @usuario (las reglas exigen `profiles/<para>/user`).
   - Prueba con mock: `t_friends.py` + `fbmock.js` (no están en el repo; mock compartido entre pestañas por BroadcastChannel, sin reglas).
+- **Rediseño del celular (v1.61, maquetas en el canvas «ChaskiBoom rediseño celular»):**
+  - Pantalla inicial (`chooseMode` con `homeEl`): aviso `#pend` y tres tarjetas `.hCard`: Contra la CPU, Online (número de novedades
+    `#homeOnBadge`) y **Dos jugadores** (el modo existía pero no se podía elegir: `setMode(false)` + `drawColors`).
+  - Sala Online a pantalla completa en el celular (tarjeta en la PC): encabezado con volver (`#lbClose`) y el chip de la cuenta
+    (`#acctChip`: apodo, @usuario, foto); pestañas Partidas / Amigos (`.segTabs`). En Partidas: «Nueva partida» y las secciones
+    Invitaciones (`#secInv`), Te toca (`#lbMine`), Esperando a tu rival (`#lbGames`, también los desafíos sin aceptar) y Terminadas
+    (plegadas). Se toca la fila para abrir; «⋯» (`gameActions`) tiene Abrir, Agregar como amigo (si el rival tiene @usuario),
+    Compartir el link (desafío sin aceptar), Cancelar el desafío/invitación o Quitar de la lista (terminadas), con dos toques.
+    El apodo, el selector de tipo y «Desafiar a un amigo» salieron de la sala.
+  - Paneles que suben desde abajo (`openSheet`/`closeSheet`, `#sheet`, z-index 19 entre la sala 18 y los carteles 20):
+    **Nueva partida** (`openNewGame(amigo)`: Blitz / Rápida / Por días con sus variantes y una línea que la explica; después contra
+    quién: un amigo, con el punto de en línea, o «Cualquiera, con un link»; recuerda el tipo en `chaskiboom.mode`), **Tu cuenta**
+    (`openAccount`: apodo, @usuario con aviso Libre/Ocupado, Salir) y las acciones de un amigo (`friendActions`: Jugar, Quitar).
+  - Amigos: buscador arriba, Solicitudes (`#frReq`) y la lista con **Jugar** (abre Nueva partida con el amigo elegido) y «⋯».
+  - Aceptar un desafío por link usa su propia vista (`#lbJoin`, `promptNick`) con el apodo y las condiciones.
+  - «Correspondencia» pasa a llamarse **«Por días»** en la interfaz y en el mensaje del desafío (`modeName`, `modeLabel`).
+  - Menú de la partida en bloques: Partida (Ofrecer tablas, Abandonar, Analizar, siempre a la vista y deshabilitado hasta que se
+    puede: `anaBtnSet`), Vista (2D/3D como dos botones `#v2d`/`#v3d`, piezas, «Centrar cámara») y Ajustes (los cuatro
+    interruptores); al pie **«Volver al inicio»** (`#homeBtn`) con el número de novedades, que reemplaza a Contra la CPU / Online /
+    Nueva partida (siguen en el DOM ocultos por la lógica de bloqueo). Con una partida local en curso queda deshabilitado con el aviso
+    «Para salir de esta partida, terminala o abandonala». En la PC el Menú es compacto (sin títulos, ajustes en dos columnas) para
+    que entren el estado y la planilla.
+  - Prueba: `t_ui.py` (capturas a 390×844 y 1366×800) y `t_friends.py` adaptado (61 casos), con el mock.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Historial reciente
 
+- **v1.61:** rediseño del celular: pantalla inicial con tarjetas (Contra la CPU, Online, Dos jugadores), sala Online a pantalla
+  completa con Partidas/Amigos, «Nueva partida» en dos pasos, «Tu cuenta», acciones con «⋯» y Menú de la partida en bloques.
+  Arregla el desborde horizontal de la sala en el celular (v1.58-v1.60).
 - **v1.60:** la invitación a un amigo aparecía rechazada apenas se mandaba (la escucha empezaba antes de que existiera la invitación).
 - **v1.59:** invitar a un amigo fallaba siempre con «No se pudo» (`inviteTo` se escribía junto con el host y la regla `$other` lo rechazaba).
 - **v1.58:** amigos: @usuario único, búsqueda por @usuario o email, solicitudes de amistad, invitaciones a partidas desde la app,
