@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.57** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.58** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -298,7 +298,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Barra de jugador (v1.52):** el «+N» de ventaja de material va pegado a las piezas capturadas; el reloj al extremo.
 - **Íconos en botones (v1.52):** Ofrecer tablas (apretón de manos), Abandonar (bandera blanca), Nueva partida (flecha circular),
   SVG de Lucide inline (`button.ico`, `.bIco`).
-- **Amigos (en /dev/, sale como v1.58):** solo entre jugadores registrados (cuenta de Google). Las reglas lo verifican con
+- **Amigos (v1.58):** solo entre jugadores registrados (cuenta de Google). Las reglas lo verifican con
   `auth.token.email_verified` y no con `sign_in_provider`, porque no está claro qué devuelve ese campo en un anónimo que vinculó Google;
   los anónimos no tienen email. Datos: `profiles/<uid>` = `{ user, nick, photo }` (lo que ven los demás, nunca el email);
   `usernames/<usuario>` = uid (único: las reglas solo dejan tomarlo si está libre y si coincide con `profiles/<uid>/user`; cambiarlo
@@ -329,6 +329,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.58:** amigos: @usuario único, búsqueda por @usuario o email, solicitudes de amistad, invitaciones a partidas desde la app,
+  «+ Amigo» en «Mis partidas» y en el cartel de fin. El desafío por link sigue igual. Reglas nuevas.
 - **v1.57:** en correspondencia (2D), al entrar a la partida o al volver a la página se repite la última jugada con su animación y sonido.
 - **v1.56:** fotos de la cuenta de Google (sala, barras de jugador y «Mis partidas») y el apodo guardado en la cuenta.
   Reglas nuevas (validación de `host/photo` y `guest/photo`).
