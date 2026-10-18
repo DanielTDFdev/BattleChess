@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.58** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.59** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -330,6 +330,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.59:** invitar a un amigo fallaba siempre con «No se pudo» (`inviteTo` se escribía junto con el host y la regla `$other` lo rechazaba).
 - **v1.58:** amigos: @usuario único, búsqueda por @usuario o email, solicitudes de amistad, invitaciones a partidas desde la app,
   «+ Amigo» en «Mis partidas» y en el cartel de fin. El desafío por link sigue igual. Reglas nuevas.
 - **v1.57:** en correspondencia (2D), al entrar a la partida o al volver a la página se repite la última jugada con su animación y sonido.
