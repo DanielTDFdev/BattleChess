@@ -352,6 +352,10 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   - Confirmar jugada (v1.62, `placeConfirm`): el cartel va afuera del tablero, pegado arriba de la barra del rival (sobre el logo y
     el estado, respetando la muesca); en la PC, en la columna izquierda debajo del estado. Solo si no entra arriba (celular acostado)
     vuelve a ir sobre el tablero esquivando el origen y el destino. Muestra la jugada («¿Confirmás Ad5?») porque tapa el estado.
+  - Avisos afuera del tablero (en /dev/, sale como v1.63): `placeOutside(el, maxW)` ubica cualquier cartel donde va el de confirmar
+    (arriba de la barra del rival en el celular, columna izquierda en la PC; false si no entra). Lo usan el cartel de confirmar, los
+    avisos de la partida (`showNews` → `showTaunt` con `out`: «¡Tu turno! … ya jugó», «aceptó el desafío», …; las frases del rival
+    siguen en el centro) y el «Jugaste. ¿Le avisás a X?» de WhatsApp (`showOther` con `out`), que ahora dura 3 s en vez de 15.
   - Prueba: `t_ui.py` (capturas a 390×844 y 1366×800) y `t_friends.py` adaptado (61 casos), con el mock.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
