@@ -356,6 +356,9 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     (arriba de la barra del rival en el celular, columna izquierda en la PC; false si no entra). Lo usan el cartel de confirmar, los
     avisos de la partida (`showNews` → `showTaunt` con `out`: «¡Tu turno! … ya jugó», «aceptó el desafío», …; las frases del rival
     siguen en el centro) y el «Jugaste. ¿Le avisás a X?» de WhatsApp (`showOther` con `out`), que ahora dura 3 s en vez de 15.
+  - Recordatorio al confirmar (en /dev/, sale como v1.64): si la jugada espera confirmación, cada 15 s suena `prompt`, el cartel se
+    sacude (`#confirm.nudge`, animación sobre `translate` para no pisar el transform que lo centra; con «Reducir movimiento», un
+    brillo) y vibra donde se puede, hasta que confirme o cancele (`nudgeStart`/`nudgeStop`). Con la página oculta no suena.
   - Prueba: `t_ui.py` (capturas a 390×844 y 1366×800) y `t_friends.py` adaptado (61 casos), con el mock.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).

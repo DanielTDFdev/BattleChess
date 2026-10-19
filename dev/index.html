@@ -524,6 +524,13 @@
     display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 2px;
     border-radius: 6px; box-shadow: 0 14px 36px rgba(0,0,0,.55); }
   #confirm[hidden] { display: none; }
+  /* v1.64: si no confirma ni cancela, cada 15 s se sacude (con «translate», que se suma al transform que lo centra) */
+  #confirm.nudge { animation: cfShake .6s ease-in-out; }
+  @keyframes cfShake { 0%, 100% { translate: 0 0; } 15% { translate: -10px 0; } 30% { translate: 9px 0; } 45% { translate: -7px 0; } 60% { translate: 5px 0; } 75% { translate: -3px 0; } 90% { translate: 2px 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    #confirm.nudge { animation: cfGlow .9s ease-in-out; }
+    @keyframes cfGlow { 50% { outline-color: #fff; box-shadow: 0 0 0 6px rgba(227, 162, 70, .55), 0 14px 36px rgba(0,0,0,.55); } }
+  }
   #confirm .t { flex: 1; min-width: 0; font-weight: 600; line-height: 1.25; }
   #confirm button { white-space: nowrap; }
   #confirm .ok { background: #2a1d10; color: #f0e3c4; border-color: #2a1d10; font-weight: 600; }
@@ -1668,6 +1675,7 @@ const SOUNDS = {
     confirmEl.querySelector('.t').textContent = '¿Confirmás ' + sanEs(mv.san) + '?';
     confirmEl.hidden = false;
     placeConfirm();
+    nudgeStart();
     caption('Jugada: ' + sanEs(mv.san));
     confirmEl.querySelector('.ok').focus();
   }
@@ -1722,10 +1730,26 @@ const SOUNDS = {
     confirmEl.style.left = x + 'px'; confirmEl.style.top = y + 'px';
   }
   window.addEventListener('resize', () => setTimeout(placeConfirm, 50));
+  /* v1.64: mientras la jugada espera confirmación, cada 15 s suena y el cartel se sacude (y vibra el celular, donde se puede)
+     hasta que confirme o cancele. Con la página oculta no suena: al volver se reinicia la cuenta. */
+  let nudgeTimer = null;
+  function nudgeStart() {
+    clearInterval(nudgeTimer);
+    nudgeTimer = setInterval(() => {
+      if (!pendingMove || confirmEl.hidden) { nudgeStop(); return; }
+      if (document.hidden) return;
+      sfx('prompt', 0, { exact: true });
+      confirmEl.classList.remove('nudge'); void confirmEl.offsetWidth; confirmEl.classList.add('nudge');
+      try { if (navigator.vibrate) navigator.vibrate([120, 60, 120]); } catch (_) {}
+    }, 15000);
+  }
+  function nudgeStop() { clearInterval(nudgeTimer); nudgeTimer = null; confirmEl.classList.remove('nudge'); }
+  confirmEl.addEventListener('animationend', () => confirmEl.classList.remove('nudge'));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && pendingMove && !confirmEl.hidden) nudgeStart(); });
   function cancelConfirm(keepSel) {
     if (!pendingMove) return;
     const from = pendingMove.from;
-    pendingMove = null; confirmEl.hidden = true;
+    pendingMove = null; confirmEl.hidden = true; nudgeStop();
     if (is2D) render2D();
     if (keepSel && !isOver() && !notMyTurn()) select(from); else select(null);
     if (!isOver()) updateStatus();
@@ -1733,7 +1757,7 @@ const SOUNDS = {
   confirmEl.querySelector('.ok').addEventListener('click', () => {
     if (!pendingMove) return;
     const { from, to } = pendingMove;
-    pendingMove = null; confirmEl.hidden = true;
+    pendingMove = null; confirmEl.hidden = true; nudgeStop();
     if (busy || isOver() || notMyTurn()) { if (is2D) render2D(); return; }
     dragDrop = true;   // en 2D la pieza ya está en su destino: aterriza sin vuelo
     play_move(from, to, { quiet: is2D });   // el sonido ya sonó al apoyarla (askConfirm)
@@ -5364,7 +5388,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261019010023';
+  const BUILD = '20261019011444';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
