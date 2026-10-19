@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.63** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.64** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -356,7 +356,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     (arriba de la barra del rival en el celular, columna izquierda en la PC; false si no entra). Lo usan el cartel de confirmar, los
     avisos de la partida (`showNews` → `showTaunt` con `out`: «¡Tu turno! … ya jugó», «aceptó el desafío», …; las frases del rival
     siguen en el centro) y el «Jugaste. ¿Le avisás a X?» de WhatsApp (`showOther` con `out`), que ahora dura 3 s en vez de 15.
-  - Recordatorio al confirmar (en /dev/, sale como v1.64): si la jugada espera confirmación, cada 15 s suena `prompt`, el cartel se
+  - Recordatorio al confirmar (v1.64): si la jugada espera confirmación, cada 15 s suena `prompt`, el cartel se
     sacude (`#confirm.nudge`, animación sobre `translate` para no pisar el transform que lo centra; con «Reducir movimiento», un
     brillo) y vibra donde se puede, hasta que confirme o cancele (`nudgeStart`/`nudgeStop`). Con la página oculta no suena.
   - Prueba: `t_ui.py` (capturas a 390×844 y 1366×800) y `t_friends.py` adaptado (61 casos), con el mock.
@@ -365,6 +365,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.64:** si una jugada queda sin confirmar ni cancelar, cada 15 s suena y el cartel «¿Confirmás …?» se sacude.
 - **v1.63:** «¡Tu turno! … ya jugó» (y los demás avisos de la partida) y «¿Le avisás a X?» van afuera del tablero; el de WhatsApp dura 3 s.
 - **v1.62:** el cartel «¿Confirmás …?» va afuera del tablero (arriba en el celular, en la columna izquierda en la PC) y dice la jugada.
 - **v1.61:** rediseño del celular: pantalla inicial con tarjetas (Contra la CPU, Online, Dos jugadores), sala Online a pantalla
