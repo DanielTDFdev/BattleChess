@@ -4551,6 +4551,7 @@ const SOUNDS = {
   window.verAmigosLog = async () => {
     if (!db || !me) return console.log('Sin sesión');
     const L = Object.values((await db.ref('users/' + me + '/fLog').once('value')).val() || {});
+    if (!L.length) return console.log('Sin registros de amigos todavía (empieza a anotar desde esta versión).');
     await Promise.all(L.map(e => getProf(e.f)));
     console.table(L.map(e => ({ cuando: new Date(e.at).toLocaleString(), amigo: pName(e.f), uid: e.f, que: e.how, version: e.ver, dispositivo: e.dev })));
   };
@@ -5443,7 +5444,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261019132708';
+  const BUILD = '20261019133217';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));

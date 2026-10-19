@@ -4131,6 +4131,7 @@ const SOUNDS = __SOUNDS__;
   window.verAmigosLog = async () => {
     if (!db || !me) return console.log('Sin sesión');
     const L = Object.values((await db.ref('users/' + me + '/fLog').once('value')).val() || {});
+    if (!L.length) return console.log('Sin registros de amigos todavía (empieza a anotar desde esta versión).');
     await Promise.all(L.map(e => getProf(e.f)));
     console.table(L.map(e => ({ cuando: new Date(e.at).toLocaleString(), amigo: pName(e.f), uid: e.f, que: e.how, version: e.ver, dispositivo: e.dev })));
   };
