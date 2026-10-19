@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.64** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.65** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -327,11 +327,11 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   - Atajo «+ Amigo» junto al rival en «Mis partidas» y «Agregar a X como amigo» en el cartel de fin online (`addFriendBtn`,
     `endFriendNode`), solo si el rival tiene @usuario (las reglas exigen `profiles/<para>/user`).
   - Prueba con mock: `t_friends.py` + `fbmock.js` (no están en el repo; mock compartido entre pestañas por BroadcastChannel, sin reglas).
-  - **Botón «Agregar como amigo» sin falsos (dev, sobre v1.64):** el del cartel de fin (`endFriendNode`) y el de «⋯» de una partida
+  - **Botón «Agregar como amigo» sin falsos (v1.65):** el del cartel de fin (`endFriendNode`) y el de «⋯» de una partida
     (`gameActions`) se decidían una vez al dibujarse; si la escucha de `friends/<uid>` no había llegado, ofrecían agregar a un amigo.
     Ahora se muestran solo con `relKnown()` (llegaron amigos, solicitudes recibidas y enviadas) y se repintan en cada cambio
     (`fHook`/`fRunHooks`, llamado desde `fPaint` y `fStop`).
-  - **Registro de altas y bajas (`users/<uid>/fLog`, dev):** el 19/10 Daniel y Chaskibumm dejaron de ser amigos sin que ninguno
+  - **Registro de altas y bajas (`users/<uid>/fLog`, v1.65):** el 19/10 Daniel y Chaskibumm dejaron de ser amigos sin que ninguno
     tocara Quitar (no se pudo saber por qué: la base no guarda historial; las reglas publicadas están bien). `fLog` anota: «lo quité yo
     (botón)» en `removeFriend`, «pasó a ser amigo», «desapareció de la lista (no lo quité yo)», «ya no era amigo al abrir» (compara con
     la lista guardada en localStorage `chaskiboom.friends.<uid>`) y «aceptar falló: …». Cada entrada lleva versión, build y navegador.
@@ -374,6 +374,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.65:** «Agregar como amigo» ya no aparece con un amigo (esperaba a que llegara la lista) y registro de altas y bajas de amigos (`verAmigosLog()` en la consola).
 - **v1.64:** si una jugada queda sin confirmar ni cancelar, cada 15 s suena y el cartel «¿Confirmás …?» se sacude.
 - **v1.63:** «¡Tu turno! … ya jugó» (y los demás avisos de la partida) y «¿Le avisás a X?» van afuera del tablero; el de WhatsApp dura 3 s.
 - **v1.62:** el cartel «¿Confirmás …?» va afuera del tablero (arriba en el celular, en la columna izquierda en la PC) y dice la jugada.
