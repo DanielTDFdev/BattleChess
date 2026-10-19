@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.61** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.62** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -349,12 +349,16 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     Nueva partida (siguen en el DOM ocultos por la lógica de bloqueo). Con una partida local en curso queda deshabilitado con el aviso
     «Para salir de esta partida, terminala o abandonala». En la PC el Menú es compacto (sin títulos, ajustes en dos columnas) para
     que entren el estado y la planilla.
+  - Confirmar jugada (v1.62, `placeConfirm`): el cartel va afuera del tablero, pegado arriba de la barra del rival (sobre el logo y
+    el estado, respetando la muesca); en la PC, en la columna izquierda debajo del estado. Solo si no entra arriba (celular acostado)
+    vuelve a ir sobre el tablero esquivando el origen y el destino. Muestra la jugada («¿Confirmás Ad5?») porque tapa el estado.
   - Prueba: `t_ui.py` (capturas a 390×844 y 1366×800) y `t_friends.py` adaptado (61 casos), con el mock.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Historial reciente
 
+- **v1.62:** el cartel «¿Confirmás …?» va afuera del tablero (arriba en el celular, en la columna izquierda en la PC) y dice la jugada.
 - **v1.61:** rediseño del celular: pantalla inicial con tarjetas (Contra la CPU, Online, Dos jugadores), sala Online a pantalla
   completa con Partidas/Amigos, «Nueva partida» en dos pasos, «Tu cuenta», acciones con «⋯» y Menú de la partida en bloques.
   Arregla el desborde horizontal de la sala en el celular (v1.58-v1.60).

@@ -524,7 +524,7 @@
   #confirm button { white-space: nowrap; }
   #confirm .ok { background: #2a1d10; color: #f0e3c4; border-color: #2a1d10; font-weight: 600; }
   #confirm .no { background: none; color: #2a1d10; border-color: #7a5c43; }
-  /* va sobre el tablero, en la franja que no tapa ni el origen ni el destino de la jugada (placeConfirm) */
+  /* va afuera del tablero: arriba en el celular, en la columna izquierda en la PC (placeConfirm) */
   #chatToast { position: fixed; z-index: 39; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); transform: translate(-50%, 12px); width: min(460px, calc(100% - 24px));
     display: flex; gap: 6px; align-items: baseline; padding: 9px 12px; background: #2b2233; color: var(--ink); border: 1px solid var(--torch); border-radius: 6px;
     box-shadow: 0 12px 30px rgba(0,0,0,.55); cursor: pointer; opacity: 0; transition: opacity .2s, transform .2s; }
@@ -596,7 +596,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="../assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.61</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.62</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -1658,6 +1658,7 @@ const SOUNDS = {
       if (tmp.in_check()) sfx('check', 0, { exact: true, delay: 0.12 });
     }
     else { selected = from; targets = [mv]; drawMarks(); }
+    confirmEl.querySelector('.t').textContent = '¿Confirmás ' + sanEs(mv.san) + '?';
     confirmEl.hidden = false;
     placeConfirm();
     caption('Jugada: ' + sanEs(mv.san));
@@ -1670,12 +1671,34 @@ const SOUNDS = {
     const x = R.left + (v.x + 1) / 2 * R.width, y = R.top + (1 - v.y) / 2 * R.height, h = 36;
     return { left: x - h, right: x + h, top: y - h, bottom: y + h };
   }
-  // ubica el cartel centrado sobre el tablero, a la altura que no se cruce con las casillas de la jugada
+  const satProbe = document.createElement('div');
+  satProbe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top,0px)';
+  document.body.appendChild(satProbe);
+  /* v1.62: el cartel va AFUERA del tablero, para ver bien la jugada. En el celular, arriba del tablero (sobre el logo y el estado,
+     pegado a la barra del rival); en la PC, en la columna de la izquierda, debajo del estado. Si no hay lugar arriba (celular
+     acostado), vuelve a ir sobre el tablero en la franja que no tapa ni el origen ni el destino de la jugada. */
   function placeConfirm() {
     if (!pendingMove) return;
     const B = (is2D ? board2d : renderer.domElement).getBoundingClientRect();
-    confirmEl.style.width = Math.min(380, B.width - 24, window.innerWidth - 24) + 'px';
-    const w = confirmEl.offsetWidth, h = confirmEl.offsetHeight, x = B.left + B.width / 2;
+    const safeTop = parseFloat(getComputedStyle(satProbe).paddingTop) || 0;   // la muesca del iPhone
+    if (document.body.classList.contains('wide')) {
+      const col = document.querySelector('.top').getBoundingClientRect(), cap = $('caption').getBoundingClientRect();
+      confirmEl.style.width = Math.min(306, col.width - 24) + 'px';
+      const h = confirmEl.offsetHeight;
+      confirmEl.style.left = (col.left + col.width / 2) + 'px';
+      confirmEl.style.top = (Math.max(cap.bottom, $('status').getBoundingClientRect().bottom) + 14 + h / 2) + 'px';
+      return;
+    }
+    confirmEl.style.width = Math.min(380, window.innerWidth - 24) + 'px';
+    const w = confirmEl.offsetWidth, h = confirmEl.offsetHeight;
+    const pTop = $('pTop').getBoundingClientRect();
+    const ceil = Math.min(B.top, pTop.height ? pTop.top : B.top) - 8;   // borde de arriba de la barra del rival (o del tablero)
+    if (ceil - h >= safeTop + 6) {
+      confirmEl.style.left = (window.innerWidth / 2) + 'px';
+      confirmEl.style.top = (ceil - h / 2) + 'px';
+      return;
+    }
+    const x = B.left + B.width / 2;
     const sqs = [pendingMove.from, pendingMove.to].map(sqRect).filter(Boolean);
     const box = y => ({ left: x - w / 2 - 6, right: x + w / 2 + 6, top: y - h / 2 - 6, bottom: y + h / 2 + 6 });
     const hits = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
@@ -5317,7 +5340,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261018170407';
+  const BUILD = '20261019004531';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
