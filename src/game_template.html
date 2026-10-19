@@ -3430,12 +3430,19 @@ const SOUNDS = __SOUNDS__;
         { photo: g.guest ? oppPhotoOf(g) : null, name: I.oppName || I.title });
       bigBtn(body, 'Abrir partida', () => { closeSheet(); lobby.hidden = true; enterOnline(id); });
       const list = document.createElement('div'); list.className = 'actList';
-      if (I.oppUid && isReg() && rel(I.oppUid) !== 'friend') {
-        const r = rel(I.oppUid);
-        const b = actBtn(list, ICO.addUser, r === 'sent' ? 'Solicitud de amistad enviada' : r === 'in' ? 'Aceptar como amigo' : 'Agregar como amigo',
-          async (btn, sp) => { await sendReq(I.oppUid); sp.textContent = 'Solicitud de amistad enviada'; btn.disabled = true; }, { disabled: r === 'sent' });
-        b.hidden = true;
-        getProf(I.oppUid).then(p => { b.hidden = !p.user; });   // solo si el rival es un jugador registrado (tiene @usuario)
+      if (I.oppUid && isReg()) {
+        let hasUser = false;
+        const b = actBtn(list, ICO.addUser, 'Agregar como amigo', async () => { await sendReq(I.oppUid); paint(); });
+        const sp = b.querySelector('span');
+        // solo si el rival es un jugador registrado (tiene @usuario) y ya se sabe que no es amigo
+        const paint = () => {
+          const r = rel(I.oppUid);
+          b.hidden = !hasUser || !relKnown() || r === 'friend';
+          sp.textContent = r === 'sent' ? 'Solicitud de amistad enviada' : r === 'in' ? 'Aceptar como amigo' : 'Agregar como amigo';
+          b.disabled = r === 'sent';
+        };
+        paint(); fHook(b, paint);
+        getProf(I.oppUid).then(p => { hasUser = !!p.user; paint(); });
       }
       if (!g.guest && g.host.uid === me && !g.inviteTo)
         actBtn(list, ICO.share, 'Compartir el link', () => {
@@ -4097,12 +4104,37 @@ const SOUNDS = __SOUNDS__;
        presence/<uid> = true                    en línea (onDisconnect la borra); solo la ven tus amigos
      El desafío por link sigue igual para quien no es amigo. */
   const fr = { uid: null, refs: [], friends: {}, reqIn: {}, sent: {}, inv: {}, invGame: {}, prof: {}, profP: {}, pres: {}, presRefs: {}, sentRefs: {},
-               out: {}, user: undefined, loaded: {}, asked: false, tab: 'games', found: null };
+               out: {}, user: undefined, loaded: {}, asked: false, tab: 'games', found: null, removing: {}, hooks: [] };
   const USER_RE = /^[a-z0-9._]{3,20}$/;
   const isReg = () => !!(db && me && googleUser());
   const emailKey = e => { if (!e) return null; const k = String(e).trim().toLowerCase(); return /[#$\[\]\/\s]/.test(k) ? null : k.replace(/\./g, ','); };
   const rel = uid => fr.friends[uid] ? 'friend' : fr.sent[uid] ? 'sent' : fr.reqIn[uid] ? 'in' : 'none';
   const pName = uid => { const p = fr.prof[uid] || {}; return p.nick || (p.user ? '@' + p.user : 'Tu amigo'); };
+  // la relación con alguien se conoce recién cuando llegaron amigos, solicitudes recibidas y enviadas
+  const relKnown = () => !!(fr.uid && fr.loaded.friends && fr.loaded.req && fr.loaded.sent);
+  /* botones sueltos que dependen de la relación (cartel de fin, «⋯» de una partida): se repintan en cada cambio.
+     Antes se decidían una sola vez al dibujarse y, si la lista de amigos no había llegado, ofrecían agregar a un amigo. */
+  function fHook(el, fn) { fr.hooks.push({ el, fn, t: Date.now() }); }
+  function fRunHooks() {
+    fr.hooks = fr.hooks.filter(h => {
+      if (h.el.isConnected) h.seen = true; else if (h.seen || Date.now() - h.t > 60000) return false;
+      try { h.fn(); } catch (e) { console.warn('amigos', e); }
+      return true;
+    });
+  }
+  /* Registro de altas y bajas de amigos en users/<uid>/fLog (para averiguar quién quitó a quién).
+     En la consola: verAmigosLog() */
+  function fLog(f, how) {
+    if (!db || !me) return;
+    db.ref('users/' + me + '/fLog').push({ f, how, at: NOW(), ver: $('ver').textContent, build: BUILD, dev: navigator.userAgent.slice(0, 120) }).catch(() => {});
+  }
+  window.verAmigosLog = async () => {
+    if (!db || !me) return console.log('Sin sesión');
+    const L = Object.values((await db.ref('users/' + me + '/fLog').once('value')).val() || {});
+    await Promise.all(L.map(e => getProf(e.f)));
+    console.table(L.map(e => ({ cuando: new Date(e.at).toLocaleString(), amigo: pName(e.f), uid: e.f, que: e.how, version: e.ver, dispositivo: e.dev })));
+  };
+  const fKey = () => 'chaskiboom.friends.' + me;
   function fListen(path, cb) { const r = db.ref(path); r.on('value', cb, e => console.warn(path, e)); fr.refs.push([r, cb]); }
 
   function fStart() {
@@ -4121,6 +4153,16 @@ const SOUNDS = __SOUNDS__;
     fListen('friends/' + me, s => {
       const prev = fr.friends, first = !fr.loaded.friends;
       fr.friends = s.val() || {};
+      let seen = {};
+      try { seen = JSON.parse(localStorage.getItem(fKey()) || '{}') || {}; } catch (_) {}
+      Object.keys(first ? seen : prev).forEach(f => {
+        if (fr.friends[f]) return;
+        if (fr.removing[f]) { delete fr.removing[f]; return; }
+        fLog(f, first ? 'ya no era amigo al abrir (lo vi como amigo el ' + new Date(seen[f]).toLocaleString() + ')' : 'desapareció de la lista (no lo quité yo)');
+      });
+      if (!first) Object.keys(fr.friends).forEach(f => { if (!prev[f]) fLog(f, 'pasó a ser amigo'); });
+      const keep = {}; Object.keys(fr.friends).forEach(f => keep[f] = Date.now());
+      try { localStorage.setItem(fKey(), JSON.stringify(keep)); } catch (_) {}
       Object.keys(fr.presRefs).forEach(f => { if (!fr.friends[f]) { fr.presRefs[f].r.off('value', fr.presRefs[f].cb); delete fr.presRefs[f]; delete fr.pres[f]; } });
       Object.keys(fr.friends).forEach(f => {
         if (!fr.presRefs[f]) {
@@ -4177,7 +4219,8 @@ const SOUNDS = __SOUNDS__;
     Object.keys(fr.presRefs).forEach(f => fr.presRefs[f].r.off('value', fr.presRefs[f].cb));
     Object.keys(fr.sentRefs).forEach(f => fr.sentRefs[f].r.off('value', fr.sentRefs[f].cb));
     Object.keys(fr.out).forEach(untrackInvite);
-    Object.assign(fr, { uid: null, refs: [], friends: {}, reqIn: {}, sent: {}, inv: {}, invGame: {}, pres: {}, presRefs: {}, sentRefs: {}, user: undefined, loaded: {}, asked: false, found: null });
+    Object.assign(fr, { uid: null, refs: [], friends: {}, reqIn: {}, sent: {}, inv: {}, invGame: {}, pres: {}, presRefs: {}, sentRefs: {}, user: undefined, loaded: {}, asked: false, found: null, removing: {} });
+    fRunHooks();
     try { updatePending(); } catch (_) {}
   }
   function fPresence() {
@@ -4236,12 +4279,14 @@ const SOUNDS = __SOUNDS__;
     u['friends/' + me + '/' + f] = { since: NOW() };
     u['friends/' + f + '/' + me] = { since: NOW() };
     u['requests/' + me + '/' + f] = null;
-    return db.ref().update(u);
+    return db.ref().update(u).catch(e => { fLog(f, 'aceptar falló: ' + (e && (e.code || e.message))); throw e; });
   }
   const rejectReq = f => db.ref('requests/' + me + '/' + f).remove();
   function cancelReq(f) { const u = {}; u['requests/' + f + '/' + me] = null; u['users/' + me + '/sent/' + f] = null; return db.ref().update(u); }
-  async function removeFriend(f) {
+  async function removeFriend(f, how) {
     const u = {}; u['friends/' + me + '/' + f] = null; u['friends/' + f + '/' + me] = null;
+    fr.removing[f] = true;
+    fLog(f, 'lo quité yo (' + (how || '?') + ')');
     await db.ref().update(u);
     // invitaciones pendientes entre los dos: se borran (las de él a vos, y tus desafíos a él)
     Object.keys(fr.inv).forEach(id => { if (fr.inv[id] && fr.inv[id].from === f) dropInvite(id); });
@@ -4414,11 +4459,12 @@ const SOUNDS = __SOUNDS__;
       shHead(body, pName(f), [p.user ? '@' + p.user : '', { t: fr.pres[f] ? 'En línea' : 'No está conectado', c: fr.pres[f] ? 'mine' : '' }], { photo: p.photo, name: pName(f) });
       bigBtn(body, 'Jugar con ' + pName(f), () => openNewGame(f));
       const list = document.createElement('div'); list.className = 'actList';
-      actBtn(list, ICO.userX, 'Quitar de tus amigos', async () => { await removeFriend(f); closeSheet(); }, { danger: true, sure: 'Tocá de nuevo para quitarlo' });
+      actBtn(list, ICO.userX, 'Quitar de tus amigos', async () => { await removeFriend(f, 'Amigos → ⋯ → Quitar'); closeSheet(); }, { danger: true, sure: 'Tocá de nuevo para quitarlo' });
       body.appendChild(list);
     });
   }
   function fPaint() {
+    fRunHooks();
     if (!lobby.hidden) try { acctUI(); } catch (_) {}
     if (!fr.uid) { updatePending(); return; }
     $('frNoUser').hidden = fr.user !== null;
@@ -4508,15 +4554,24 @@ const SOUNDS = __SOUNDS__;
   /* --- Atajo: «Agregar a X como amigo» en el cartel de fin de una partida online (en «Partidas», desde «⋯») --- */
   function endFriendNode() {
     const uid = online && online.oppUid;
-    if (!uid || !isReg() || rel(uid) === 'friend') return null;
+    if (!uid || !isReg()) return null;
     const box = document.createElement('div');
     box.className = 'frAdd'; box.hidden = true;
     const b = document.createElement('button');
     const name = online.oppName || 'tu rival';
-    const paint = () => { const r = rel(uid); b.textContent = r === 'sent' ? 'Solicitud enviada a ' + name : r === 'in' ? 'Aceptar a ' + name + ' como amigo' : 'Agregar a ' + name + ' como amigo'; b.disabled = r === 'sent'; box.hidden = r === 'friend'; };
-    b.addEventListener('click', async () => { b.disabled = true; try { await sendReq(uid); } catch (e) { console.warn('amigos', e); b.textContent = 'No se pudo mandar la solicitud'; return; } paint(); });
+    let hasUser = false, failed = false;
+    // se muestra recién cuando se sabe que no es amigo (la lista puede llegar después de que sale el cartel)
+    const paint = () => {
+      const r = rel(uid);
+      box.hidden = !hasUser || !relKnown() || r === 'friend';
+      if (failed) return;
+      b.textContent = r === 'sent' ? 'Solicitud enviada a ' + name : r === 'in' ? 'Aceptar a ' + name + ' como amigo' : 'Agregar a ' + name + ' como amigo';
+      b.disabled = r === 'sent';
+    };
+    b.addEventListener('click', async () => { b.disabled = true; failed = false; try { await sendReq(uid); } catch (e) { console.warn('amigos', e); failed = true; b.textContent = 'No se pudo mandar la solicitud'; b.disabled = false; return; } paint(); });
     box.appendChild(b);
-    getProf(uid).then(p => { if (p.user) { paint(); if (rel(uid) !== 'friend') box.hidden = false; } });
+    paint(); fHook(box, paint);
+    getProf(uid).then(p => { hasUser = !!p.user; paint(); });
     return box;
   }
 

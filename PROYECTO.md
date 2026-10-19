@@ -327,6 +327,15 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   - Atajo «+ Amigo» junto al rival en «Mis partidas» y «Agregar a X como amigo» en el cartel de fin online (`addFriendBtn`,
     `endFriendNode`), solo si el rival tiene @usuario (las reglas exigen `profiles/<para>/user`).
   - Prueba con mock: `t_friends.py` + `fbmock.js` (no están en el repo; mock compartido entre pestañas por BroadcastChannel, sin reglas).
+  - **Botón «Agregar como amigo» sin falsos (dev, sobre v1.64):** el del cartel de fin (`endFriendNode`) y el de «⋯» de una partida
+    (`gameActions`) se decidían una vez al dibujarse; si la escucha de `friends/<uid>` no había llegado, ofrecían agregar a un amigo.
+    Ahora se muestran solo con `relKnown()` (llegaron amigos, solicitudes recibidas y enviadas) y se repintan en cada cambio
+    (`fHook`/`fRunHooks`, llamado desde `fPaint` y `fStop`).
+  - **Registro de altas y bajas (`users/<uid>/fLog`, dev):** el 19/10 Daniel y Chaskibumm dejaron de ser amigos sin que ninguno
+    tocara Quitar (no se pudo saber por qué: la base no guarda historial; las reglas publicadas están bien). `fLog` anota: «lo quité yo
+    (botón)» en `removeFriend`, «pasó a ser amigo», «desapareció de la lista (no lo quité yo)», «ya no era amigo al abrir» (compara con
+    la lista guardada en localStorage `chaskiboom.friends.<uid>`) y «aceptar falló: …». Cada entrada lleva versión, build y navegador.
+    En la consola: `verAmigosLog()`.
 - **Rediseño del celular (v1.61, maquetas en el canvas «ChaskiBoom rediseño celular»):**
   - Pantalla inicial (`chooseMode` con `homeEl`): aviso `#pend` y tres tarjetas `.hCard`: Contra la CPU, Online (número de novedades
     `#homeOnBadge`) y **Dos jugadores** (el modo existía pero no se podía elegir: `setMode(false)` + `drawColors`).
@@ -459,6 +468,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **Amigos que desaparecen (19/10):** si vuelve a pasar, `verAmigosLog()` en la consola de los dos antes de volver a agregarse.
 
 - **Amigos: pegar `database.rules.json` en la consola de Firebase** antes de probar /dev/ (nodos nuevos `profiles`, `usernames`,
   `emailIndex`, `friends`, `requests`, `invites`, `presence`). El mock no aplica reglas: probar con dos cuentas reales elegir usuario,
