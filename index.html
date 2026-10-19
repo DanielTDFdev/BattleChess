@@ -507,6 +507,10 @@
   #taunt.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   #taunt .who { display: block; font-family: var(--display); font-size: 14px; letter-spacing: .06em; color: #7a5c43; margin-bottom: 4px; }
   #taunt .txt { font-size: clamp(20px, 3.4vw, 28px); font-weight: 600; line-height: 1.25; }
+  /* afuera del tablero (avisos de la partida): más compacto, para que entre arriba de la barra del rival */
+  #taunt.out { padding: 10px 14px; box-sizing: border-box; }
+  #taunt.out .who { font-size: 12px; margin-bottom: 2px; }
+  #taunt.out .txt { font-size: 19px; }
   /* Aviso de otra partida online (con botón para pasar a ella) */
   #upd { position: fixed; z-index: 41; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(520px, calc(100% - 24px));
     display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px; background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 2px;
@@ -535,6 +539,9 @@
     display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0e3c4; color: #2a1d10; border: 2px solid #7a5c43; outline: 2px solid var(--torch); outline-offset: 2px;
     border-radius: 6px; box-shadow: 0 14px 36px rgba(0,0,0,.55); opacity: 0; transition: opacity .2s, transform .2s; }
   #other.show { opacity: 1; transform: translate(-50%, 0); }
+  /* afuera del tablero (aviso de WhatsApp después de jugar, v1.63): lo ubica placeOutside, centrado en (left, top) */
+  #other.out { transform: translate(-50%, -50%) scale(.96); box-sizing: border-box; }
+  #other.out.show { transform: translate(-50%, -50%); }
   #other .txt { flex: 1; min-width: 0; font-weight: 600; line-height: 1.25; }
   #other button { background: #2a1d10; color: #f0e3c4; border-color: #7a5c43; white-space: nowrap; }
   #other.late { background: #f6d2c8; border-color: #b8382b; outline-color: #b8382b; }   /* vence en menos de 12 h */
@@ -596,7 +603,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.62</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.63</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -1677,27 +1684,33 @@ const SOUNDS = {
   /* v1.62: el cartel va AFUERA del tablero, para ver bien la jugada. En el celular, arriba del tablero (sobre el logo y el estado,
      pegado a la barra del rival); en la PC, en la columna de la izquierda, debajo del estado. Si no hay lugar arriba (celular
      acostado), vuelve a ir sobre el tablero en la franja que no tapa ni el origen ni el destino de la jugada. */
-  function placeConfirm() {
-    if (!pendingMove) return;
+  /* Pone un cartel (centrado con translate(-50%,-50%)) afuera del tablero: en la PC en la columna izquierda debajo del estado;
+     en el celular arriba de la barra del rival. Devuelve false si no entra (celular acostado): el que llama decide. */
+  function placeOutside(el, maxW) {
     const B = (is2D ? board2d : renderer.domElement).getBoundingClientRect();
     const safeTop = parseFloat(getComputedStyle(satProbe).paddingTop) || 0;   // la muesca del iPhone
     if (document.body.classList.contains('wide')) {
       const col = document.querySelector('.top').getBoundingClientRect(), cap = $('caption').getBoundingClientRect();
-      confirmEl.style.width = Math.min(306, col.width - 24) + 'px';
-      const h = confirmEl.offsetHeight;
-      confirmEl.style.left = (col.left + col.width / 2) + 'px';
-      confirmEl.style.top = (Math.max(cap.bottom, $('status').getBoundingClientRect().bottom) + 14 + h / 2) + 'px';
-      return;
+      el.style.width = Math.min(306, col.width - 24) + 'px';
+      const h = el.offsetHeight;
+      el.style.left = (col.left + col.width / 2) + 'px';
+      el.style.top = (Math.max(cap.bottom, $('status').getBoundingClientRect().bottom) + 14 + h / 2) + 'px';
+      return true;
     }
-    confirmEl.style.width = Math.min(380, window.innerWidth - 24) + 'px';
-    const w = confirmEl.offsetWidth, h = confirmEl.offsetHeight;
+    el.style.width = Math.min(maxW, window.innerWidth - 24) + 'px';
+    const h = el.offsetHeight;
     const pTop = $('pTop').getBoundingClientRect();
     const ceil = Math.min(B.top, pTop.height ? pTop.top : B.top) - 8;   // borde de arriba de la barra del rival (o del tablero)
-    if (ceil - h >= safeTop + 6) {
-      confirmEl.style.left = (window.innerWidth / 2) + 'px';
-      confirmEl.style.top = (ceil - h / 2) + 'px';
-      return;
-    }
+    if (ceil - h < safeTop + 6) return false;
+    el.style.left = (window.innerWidth / 2) + 'px';
+    el.style.top = (ceil - h / 2) + 'px';
+    return true;
+  }
+  function placeConfirm() {
+    if (!pendingMove) return;
+    if (placeOutside(confirmEl, 380)) return;
+    const B = (is2D ? board2d : renderer.domElement).getBoundingClientRect();
+    const w = confirmEl.offsetWidth, h = confirmEl.offsetHeight;
     const x = B.left + B.width / 2;
     const sqs = [pendingMove.from, pendingMove.to].map(sqRect).filter(Boolean);
     const box = y => ({ left: x - w / 2 - 6, right: x + w / 2 + 6, top: y - h / 2 - 6, bottom: y + h / 2 + 6 });
@@ -4262,7 +4275,8 @@ const SOUNDS = {
     const o = online, name = o.oppName || 'tu rival';
     const url = location.href.split('#')[0] + '#' + o.id;
     const txt = 'Te toca en ChaskiBoom Battle Chess. Tenés ' + plazoTxt(pm) + ' para jugar: ' + url;
-    showOther(o.id, 'Jugaste. ¿Le avisás a ' + name + '?', true, { raw: true, silent: true, go: 'Avisar por WhatsApp',
+    // v1.63: afuera del tablero y solo 3 s (antes 15 s, tapando el tablero)
+    showOther(o.id, 'Jugaste. ¿Le avisás a ' + name + '?', true, { raw: true, silent: true, out: true, ms: 3000, go: 'Avisar por WhatsApp',
       act: () => { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank', 'noopener'); } });
   }
 
@@ -4315,7 +4329,7 @@ const SOUNDS = {
   });
   // ms: cuánto dura el cartel (5 s; en las partidas con reloj, 1,5 s)
   function showNews(text, banner, quiet, ms) {
-    if (banner) showTaunt({ name: 'ChaskiBoom', text }, { ms: ms || 5000, vol: 1, silent: quiet });
+    if (banner) showTaunt({ name: 'ChaskiBoom', text }, { ms: ms || 5000, vol: 1, silent: quiet, out: true });
     else if (!quiet) sfx('check', 0, { exact: true });
     try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (_) {}
   }
@@ -4442,9 +4456,13 @@ const SOUNDS = {
     el.querySelector('.txt').textContent = opt.raw ? text : text + ' (en otra partida)';
     el.querySelector('.go').textContent = opt.go || 'Ver partida';
     el.classList.toggle('late', !!opt.late);
-    el.hidden = false; void el.offsetWidth; el.classList.add('show');
+    el.hidden = false;
+    // opt.out: afuera del tablero, como el cartel de confirmar (si no entra, arriba como siempre)
+    el.classList.remove('out'); el.style.left = el.style.top = el.style.width = '';
+    if (opt.out) { el.classList.add('out'); if (!placeOutside(el, 520)) { el.classList.remove('out'); el.style.left = el.style.top = el.style.width = ''; } }
+    void el.offsetWidth; el.classList.add('show');
     clearTimeout(otherTimer); otherTimer = null;
-    if (opt.silent) { otherTimer = setTimeout(hideOther, 15000); return; }
+    if (opt.silent) { otherTimer = setTimeout(hideOther, opt.ms || 15000); return; }
     sfx('check', 0, soft ? { exact: true, vol: 0.35, rate: 1.4 } : { exact: true });   // jugada en otra partida: el sonido suave
     if (document.hidden) { awayNews = text; awayBanner = false; notifyTurn(); }
     else { otherTimer = setTimeout(hideOther, 15000); try { if (navigator.vibrate) navigator.vibrate([150, 80, 150]); } catch (_) {} }
@@ -5023,7 +5041,13 @@ const SOUNDS = {
     el.querySelector('.who').textContent = m.uid === me ? 'Vos' : (m.name || 'Tu rival');
     el.querySelector('.txt').textContent = m.text;
     clearTimeout(tauntTimer);
-    el.hidden = false; void el.offsetWidth; el.classList.add('show');
+    el.hidden = false;
+    /* v1.63: los avisos de la partida («¡Tu turno! … ya jugó», «aceptó el desafío», …) van afuera del tablero, como el cartel de
+       confirmar. Las frases del rival siguen en el centro. Si no entra afuera (celular acostado), también al centro. */
+    el.classList.toggle('out', !!opt.out);
+    el.style.left = el.style.top = el.style.width = '';
+    if (opt.out && !placeOutside(el, 420)) { el.classList.remove('out'); el.style.left = el.style.top = el.style.width = ''; }
+    void el.offsetWidth; el.classList.add('show');
     tauntTimer = setTimeout(() => { el.classList.remove('show'); tauntTimer = setTimeout(() => { el.hidden = true; }, 220); }, opt.ms || 3000);
     if (!opt.silent) sfx('check', 0, { exact: true, vol: opt.vol || 0.5 });
   }
@@ -5340,7 +5364,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261019004531';
+  const BUILD = '20261019010023';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
