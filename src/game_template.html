@@ -1206,6 +1206,43 @@ const SOUNDS = __SOUNDS__;
     const c = new Chess();
     return c.load(f.join(' ')) ? c : null;
   }
+  /* Destinos de premove: no se calculan con las jugadas legales de ahora sino con el movimiento "geométrico"
+     de la pieza, sin importar qué haya en el camino ni en el destino (vacía, rival o propia), porque la jugada del rival
+     puede cambiar todo: abrir una línea, poner una pieza para comer, liberar una casilla. Si al tocarte la jugada no es
+     legal, tryPremove() la descarta. Peón: avance de 1 (o 2 desde su fila) y las dos diagonales; rey: también enroques. */
+  function premoveDests(P, sq) {
+    const pc = P.get(sq); if (!pc) return [];
+    const f0 = sq.charCodeAt(0) - 97, r0 = +sq[1] - 1, out = [];
+    const add = (f, r) => {
+      if (f < 0 || f > 7 || r < 0 || r > 7) return false;
+      const to = String.fromCharCode(97 + f) + (r + 1);
+      out.push({ from: sq, to, captured: !!P.get(to) }); return true;
+    };
+    const ray = dirs => dirs.forEach(([df, dr]) => { for (let k = 1; add(f0 + df * k, r0 + dr * k); k++); });
+    const ORTH = [[1, 0], [-1, 0], [0, 1], [0, -1]], DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+    switch (pc.type) {
+      case 'p': {
+        const d = pc.color === 'w' ? 1 : -1, start = pc.color === 'w' ? 1 : 6;
+        add(f0, r0 + d); if (r0 === start) add(f0, r0 + 2 * d);
+        add(f0 - 1, r0 + d); add(f0 + 1, r0 + d); break;
+      }
+      case 'n': [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]].forEach(([a, b]) => add(f0 + a, r0 + b)); break;
+      case 'b': ray(DIAG); break;
+      case 'r': ray(ORTH); break;
+      case 'q': ray(ORTH.concat(DIAG)); break;
+      case 'k': {
+        ORTH.concat(DIAG).forEach(([a, b]) => add(f0 + a, r0 + b));
+        const home = pc.color === 'w' ? '1' : '8';
+        if (sq === 'e' + home) {
+          const rook = s => { const x = P.get(s); return x && x.type === 'r' && x.color === pc.color; };
+          if (rook('h' + home)) add(6, r0);
+          if (rook('a' + home)) add(2, r0);
+        }
+        break;
+      }
+    }
+    return out;
+  }
   function clearPremove(msg) {
     const had = premove || preSel;
     premove = null; preSel = null; preTargets = [];
@@ -1223,7 +1260,7 @@ const SOUNDS = __SOUNDS__;
         drawMarks(); return;
       }
       const pc = P && sq ? P.get(sq) : null;
-      if (pc && pc.color === localColor && sq !== preSel) { preSel = sq; preTargets = P.moves({ square: sq, verbose: true }); }
+      if (pc && pc.color === localColor && sq !== preSel) { preSel = sq; preTargets = premoveDests(P, sq); }
       else { if (preSel && sq && sq !== preSel) denySfx(); preSel = null; preTargets = []; }
       drawMarks(); return;
     }
