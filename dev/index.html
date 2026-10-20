@@ -2290,7 +2290,7 @@ const SOUNDS = {
   }
 
   /* ---------- Motor de la CPU ----------
-     Con Stockfish (versión publicada): 5 niveles combinando Skill Level y profundidad.
+     Con Stockfish (versión publicada): 6 niveles combinando Skill Level y profundidad.
      Sin Stockfish (vista previa o si no carga): búsqueda propia minimax con poda alfa-beta.
      Stockfish aun en Skill Level 0 juega como un aficionado de club (no regala piezas), así que los dos niveles
      de abajo mezclan jugadas al azar (rnd = probabilidad de jugar cualquier jugada legal):
@@ -2299,14 +2299,16 @@ const SOUNDS = {
      v1.40: Medio era Skill 8 a profundidad 6 (≈ 2100 de motor) y nadie le ganaba; se bajó toda la escalera.
      Entre motores lo que más pesa es el azar (una pifia cada tantas jugadas), así que baja de a poco:
      20 % Fácil, 8 % Medio, 4 % Difícil, 0 % Experto. Experto queda apenas arriba del Medio viejo.
-     Simulación (40 partidas): Fácil-Medio 3-34, Medio-Difícil 5-33, Difícil-Medio viejo 0-37, Medio viejo-Experto 4-29. */
+     Simulación (40 partidas): Fácil-Medio 3-34, Medio-Difícil 5-33, Difícil-Medio viejo 0-37, Medio viejo-Experto 4-29.
+     v1.67: Maestro arriba de todo: Skill 20 con 1 s por jugada (lo que era Experto hasta v1.40), para un rival de verdad. */
   const ENGINE_URL = '../assets/engine/stockfish-18-lite-single.js';
   const LEVELS = [
     { name: 'Muy fácil', own: true, rnd: 0.5, fb: 0 },
     { name: 'Fácil', skill: 0, depth: 1, rnd: 0.2, fb: 1 },
     { name: 'Medio', skill: 2, depth: 4, rnd: 0.08, fb: 2 },
     { name: 'Difícil', skill: 4, depth: 5, rnd: 0.04, fb: 3 },
-    { name: 'Experto', skill: 8, depth: 8, fb: 3 }
+    { name: 'Experto', skill: 8, depth: 8, fb: 3 },
+    { name: 'Maestro', skill: 20, time: 1000, fb: 3 }   // Stockfish a pleno, 1 s por jugada (el Experto de antes de v1.40)
   ];
   let cpuLevel = 1, gameSerial = 0, sf = null, sfReady = null, sfListener = null, sfFailed = !ENGINE_URL;
   try { const l = Number(localStorage.getItem('chaskiboom.level')); if (l >= 0 && l < LEVELS.length) cpuLevel = l; } catch (_) {}
@@ -2665,7 +2667,7 @@ const SOUNDS = {
   homeEl.className = 'home';
   homeEl.innerHTML =
     '<button type="button" class="hCard main" data-go="cpu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg>'
-    + '<span class="tx"><b>Contra la CPU</b><span>5 niveles · elegís tu color</span></span></button>'
+    + '<span class="tx"><b>Contra la CPU</b><span>6 niveles · elegís tu color</span></span></button>'
     + '<button type="button" class="hCard" data-go="online"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
     + '<span class="tx"><b>Online</b><span>Con tus amigos o por link</span></span><span class="nBadge" id="homeOnBadge" hidden></span></button>'
     + '<button type="button" class="hCard minor" data-go="two"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>'
@@ -5481,7 +5483,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261020114208';
+  const BUILD = '20261020115441';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));

@@ -63,7 +63,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   al que no puede ir, al elegir un destino imposible para un premove y cuando un premove ya no es legal.
   Desde v1.54: `prompt` (de `prompt.wav`) al abrir «¿Abandonar la partida?», y `win` recortado a 7 s desde
   `game over ganador.wav` (se apaga en el último segundo).
-- **CPU:** Stockfish 18 lite en Web Worker, 5 niveles (Muy fácil … Experto) elegidos en el cartel de nueva partida.
+- **CPU:** Stockfish 18 lite en Web Worker, 6 niveles (Muy fácil … Maestro) elegidos en el cartel de nueva partida.
   Stockfish en Skill Level 0 sigue siendo demasiado fuerte para principiantes, así que (desde v1.12) Muy fácil no usa
   Stockfish: 50 % jugadas al azar y 50 % `pickCpu` (come lo que ve, no deja piezas colgadas a 1 jugada). Fácil: 20 % al azar
   y el resto Stockfish nivel 0 a profundidad 1. Medio, Difícil y Experto sin cambios. En simulación, Muy fácil pierde
@@ -73,6 +73,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   prof. 8 (apenas arriba del Medio viejo). Entre motores lo que más pesa es el azar, por eso baja de a poco.
   Simulación de 40 partidas (`sim.js`, Stockfish lite en node, no está en el repo): Fácil-Medio 3-34, Medio-Difícil 5-33,
   Difícil-Medio viejo 0-37, Medio viejo-Experto 4-29. Solo confirma el orden; falta calibrar con partidas de Daniel.
+  **Maestro (v1.67):** Daniel le ganaba 2 de 20 al Experto; en vez de endurecerlo se agregó arriba Maestro: Skill 20 con
+  `go movetime 1000` (el Experto de antes de v1.40). Experto queda como el desafío real de Daniel.
 - **Nueva partida (v1.6):** el cartel tiene Comenzar y Cancelar. `drawColors(onCancel)` solo sortea y muestra el cartel;
   el tablero se reinicia recién en Comenzar (`resetGame(col)`). Cancelar deja la partida anterior intacta
   (y restaura el nivel de CPU si se cambió en el cartel); si no había partida empezada, vuelve a `chooseMode()`.
