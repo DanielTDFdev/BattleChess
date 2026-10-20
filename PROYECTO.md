@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.65** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.66** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -145,7 +145,10 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Sigue sonando para desafío aceptado, partida comenzada, tablas, revancha y frases.
 - **Premoves (v1.20):** contra la CPU u online, durante el turno del rival (incluso mientras se anima tu
   jugada) se toca una pieza propia y su destino; quedan en azul (`.sq2.pre` en 2D, `M.pre` en 3D). `tapSquare()`
-  unifica los toques de 2D y 3D. Las jugadas posibles salen de `premovePos()` (la posición con tu color a mover).
+  unifica los toques de 2D y 3D. Los destinos salen de `premoveDests()` (v1.66) sobre `premovePos()` (la posición con tu
+  color a mover): el alcance geométrico de la pieza sin importar bloqueos ni qué haya en la casilla (vacía, rival o propia;
+  peón: avance y las dos diagonales; rey: también enroques). Con una pieza elegida, tocar una propia a su alcance anota el
+  premove (no cambia la selección), como en lichess.
   Con un premove anotado, cualquier toque lo cancela. `tryPremove()` se llama en `afterMove()` (online, cuando la
   cola de jugadas recibidas queda vacía): si es legal se juega, si no se avisa y se descarta. Se limpia al empezar
   o terminar la partida. No hay premoves entre dos jugadores en el mismo dispositivo.
@@ -374,6 +377,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.66:** premove a cualquier casilla al alcance de la pieza (vacía, con rival o con pieza propia, aunque haya piezas en el camino); al tocarte, si no es legal se cancela.
 - **v1.65:** «Agregar como amigo» ya no aparece con un amigo (esperaba a que llegara la lista) y registro de altas y bajas de amigos (`verAmigosLog()` en la consola).
 - **v1.64:** si una jugada queda sin confirmar ni cancelar, cada 15 s suena y el cartel «¿Confirmás …?» se sacude.
 - **v1.63:** «¡Tu turno! … ya jugó» (y los demás avisos de la partida) y «¿Le avisás a X?» van afuera del tablero; el de WhatsApp dura 3 s.
