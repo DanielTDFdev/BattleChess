@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.66** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.67** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -379,6 +379,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.67:** nivel Maestro de la CPU (Stockfish Skill 20, 1 s por jugada) arriba de Experto, que queda igual.
 - **v1.66:** premove a cualquier casilla al alcance de la pieza (vacía, con rival o con pieza propia, aunque haya piezas en el camino); al tocarte, si no es legal se cancela.
 - **v1.65:** «Agregar como amigo» ya no aparece con un amigo (esperaba a que llegara la lista) y registro de altas y bajas de amigos (`verAmigosLog()` en la consola).
 - **v1.64:** si una jugada queda sin confirmar ni cancelar, cada 15 s suena y el cartel «¿Confirmás …?» se sacude.
