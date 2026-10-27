@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.68** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.69** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -374,16 +374,22 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     sacude (`#confirm.nudge`, animación sobre `translate` para no pisar el transform que lo centra; con «Reducir movimiento», un
     brillo) y vibra donde se puede, hasta que confirme o cancele (`nudgeStart`/`nudgeStop`). Con la página oculta no suena.
   - Prueba: `t_ui.py` (capturas a 390×844 y 1366×800) y `t_friends.py` adaptado (61 casos), con el mock.
-- **Girar tablero (v1.68, solo 2D):** botón «Girar tablero» en el bloque Vista del Menú (`#flipBtn`, `.only2d`). `flipped` +
+- **Girar tablero (v1.68, solo 2D):** botón `#flipBtn` (desde v1.69 un cuadradito de 28 px con el ícono de flechas en círculo,
+  `position: fixed`, que ubica `layout()`: al costado derecho del tablero a la altura del borde de arriba; si no entra, en el celular,
+  al final de la fila de la barra del rival, que se acorta; en 3D se oculta). `flipped` +
   `botColor()` (el color que se ve abajo: el rival si está girado y en 2D) reemplaza a `localColor` en todo lo que ubica casillas en 2D:
   `build2D`, flechas (`svgArrow`), `setClsMark`, medallas de fin, barra de evaluación y las barras de jugador con sus relojes.
   Cada partida arranca sin girar (`setFlip(false)` en `resetGame` y al cargar una online). La 3D siempre mira desde tu lado.
   No responde con una pieza en vuelo, arrastrándose o esperando confirmación.
+- **Tablet vertical (v1.69):** la consola plegable (historial + Menú) también se aplica con `(orientation: portrait) and (max-width: 1100px)`
+  (iPad parado: 768-1024 px quedaba sin plegar y el Menú abierto tapaba el 60 % de la pantalla). Los tamaños compactos de
+  textos siguen solo hasta 760 px. El tope del tablero 2D fuera de la PC pasó de 680 a 960 px.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Historial reciente
 
+- **v1.69:** el botón de girar tablero pasa a ser un ícono chico al costado superior derecho del tablero (en la PC se superponía en el Menú); en el iPad vertical la consola se pliega como en el celular y el tablero es más grande.
 - **v1.68:** botón «Girar tablero» en la vista 2D (pone al rival abajo o arriba; cada partida arranca con el rival arriba).
 - **v1.67:** nivel Maestro de la CPU (Stockfish Skill 20, 1 s por jugada) arriba de Experto, que queda igual.
 - **v1.66:** premove a cualquier casilla al alcance de la pieza (vacía, con rival o con pieza propia, aunque haya piezas en el camino); al tocarte, si no es legal se cancela.

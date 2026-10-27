@@ -86,7 +86,13 @@
   .seg2 button { border: none; border-radius: 6px; background: none; color: var(--muted); padding: 6px 18px; font-weight: 600; }
   .seg2 button[aria-pressed="true"] { background: #3b3145; color: var(--ink); }
   .mRow .pLbl { gap: 8px; }
-  .mRow #resetv, .mRow #flipBtn { border-radius: 9px; }
+  .mRow #resetv { border-radius: 9px; }
+  /* Girar tablero (v1.69): botón chico pegado arriba a la derecha del tablero 2D (lo ubica layout) */
+  #flipBtn { position: fixed; z-index: 3; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; border-radius: 8px;
+             background: #19141d; border: 1px solid var(--line); color: var(--muted); }
+  #flipBtn:hover { color: var(--ink); }
+  body:not(.mode2d) #flipBtn { display: none; }
+  #flipBtn svg { width: 16px; height: 16px; }
   .mSw { display: grid; }
   .mSw label.sw { display: flex; justify-content: space-between; gap: 12px; min-height: 44px; border-bottom: 1px solid var(--line); font-size: 17px; }
   .mSw label.sw:last-child { border-bottom: none; }
@@ -429,8 +435,8 @@
   body:not(.mode2d) .only2d { display: none; }
   body.online .onlycpu { display: none; }
   body.mode2d .hint, body.mode2d #resetv, body.mode2d label[for-3d] { display: none; }
-  /* Celular: la consola se pliega a una fila (historial + Menú) y el resto se despliega hacia arriba */
-  @media (max-width: 760px) {
+  /* Celular y tablet vertical (iPad, v1.69): la consola se pliega a una fila (historial + Menú) y el resto se despliega hacia arriba */
+  @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
     .bar { padding: 8px; gap: 8px; }
     #menuBtn { display: inline-block; margin-left: 4px; font-weight: 600; }
     .bar.open #menuBtn { background: var(--torch); color: #1d140c; border-color: var(--torch); }
@@ -439,6 +445,8 @@
     .bar.open .more { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; position: absolute; left: -8px; right: -8px; bottom: calc(100% + 10px);
       background: #221b28; border: 1px solid var(--line); border-top: 2px solid var(--torch); border-radius: 16px; padding: 14px 16px 16px; box-shadow: 0 -16px 40px rgba(0,0,0,.55); max-height: 74vh; overflow-y: auto; }
     .more .caps .hint { margin-left: 0; }
+  }
+  @media (max-width: 760px) {
     .top { padding: 8px 12px; gap: 2px; }
     .top h1 img { height: 62px; }
     .top .sub { font-size: 12px; margin: 0; }
@@ -610,7 +618,7 @@
 <span id="clsMark3d" class="cls" hidden></span>
 <div class="top">
   <h1><img id="logo" src="assets/logo.webp" alt="ChaskiBoom Battle Chess" width="480" height="414"></h1>
-  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.68</span></p>
+  <p class="sub">© 2026 by Daniel Camargo · <span id="ver">v1.69</span></p>
   <div id="status">Juegan los azules</div>
   <p id="caption">Tocá una pieza azul para moverla</p>
 </div>
@@ -651,7 +659,6 @@
           <option value="anarcandy">Anarcandy</option><option value="caliente">Caliente</option><option value="california">California</option><option value="cardinal">Cardinal</option><option value="cooke">Cooke</option><option value="dubrovny">Dubrovny</option><option value="fresca">Fresca</option><option value="gioco">Gioco</option><option value="horsey">Horsey</option><option value="icpieces">Icpieces</option><option value="kiwen-suwi">Kiwen-suwi</option><option value="maestro">Maestro</option><option value="mpchess">Mpchess</option><option value="papercut">Papercut</option><option value="pirouetti">Pirouetti</option><option value="pixel">Pixel</option><option value="spatial">Spatial</option><option value="staunty">Staunty</option><option value="totoy">Totoy</option><option value="xkcd">Xkcd</option>
         </select>
       </label>
-      <button id="flipBtn" class="ico only2d" aria-pressed="false" title="Dar vuelta el tablero"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>Girar tablero</button>
       <button id="resetv">Centrar cámara</button>
     </div>
     <div class="caps"><span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span></div>
@@ -670,6 +677,7 @@
   <button id="newg" hidden>Nueva partida</button>
   </div>
 </div>
+<button id="flipBtn" class="only2d" aria-pressed="false" title="Girar tablero" aria-label="Girar tablero"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
 <div id="evalBar" aria-hidden="true"><i></i><b class="top"></b><b class="bot"></b></div>
 <div class="pbar" id="pTop"><span class="chip"></span><span class="av" hidden></span><span class="pname"></span><span class="acc"></span><span class="net" hidden title="Conexión del rival"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
 <div class="pbar" id="pBot"><span class="chip"></span><span class="av" hidden></span><span class="pname"></span><span class="acc"></span><span class="taken"></span><span class="adv"></span><span class="clock">0:00</span></div>
@@ -2594,7 +2602,7 @@ const SOUNDS = {
       const base = logo.getBoundingClientRect().height;
       const t0 = document.querySelector('.top').getBoundingClientRect().bottom + 6;
       const b0 = document.querySelector('.bar').getBoundingClientRect().top - 6;
-      const spare = (b0 - t0 - 2 * (BH + GAP)) - Math.min(W - 32, 680);
+      const spare = (b0 - t0 - 2 * (BH + GAP)) - Math.min(W - 32, 960);
       if (spare > 8) logo.style.height = Math.round(Math.min(base + spare * 0.85, W * 0.8 * 414 / 480)) + 'px';
     }
     const topY = wide ? 12 : document.querySelector('.top').getBoundingClientRect().bottom + 6;
@@ -2607,12 +2615,16 @@ const SOUNDS = {
     const botY = wide ? window.innerHeight - 12 : document.querySelector('.bar').getBoundingClientRect().top - 6;
     if (is2D) {
       const avail = botY - topY - 2 * (BH + GAP);
-      const size = Math.max(160, Math.min(W - 32, avail, wide ? 1100 : 680));
+      const size = Math.max(160, Math.min(W - 32, avail, wide ? 1100 : 960));
       const left = x0 + (W - size) / 2, top = topY + BH + GAP + Math.max(0, (avail - size) / 2);
       Object.assign(board2d.style, { left: left + 'px', top: top + 'px', width: size + 'px', height: size + 'px' });
       board2d.style.setProperty('--sq', ((size - 12) / 8) + 'px');
       [[pTop, top - BH - GAP], [pBot, top + size + GAP]].forEach(([el, y]) => Object.assign(el.style, { left: left + 'px', top: y + 'px', width: size + 'px', maxWidth: 'none' }));
       Object.assign($('evalBar').style, { left: Math.max(2, left - 15) + 'px', top: top + 'px', height: size + 'px' });
+      // girar tablero: al costado derecho, a la altura del borde de arriba; si no entra (celular), al final de la fila de la barra de arriba
+      const FB = 28, fb = $('flipBtn');
+      if (x0 + W - (left + size) >= FB + 10) Object.assign(fb.style, { left: (left + size + 6) + 'px', top: top + 'px' });
+      else { pTop.style.width = (size - FB - 6) + 'px'; Object.assign(fb.style, { left: (left + size - FB) + 'px', top: (top - BH - GAP + (BH - FB) / 2) + 'px' }); }
     } else {
       // en 3D, barras compactas en la esquina para no tapar las filas de atrás
       [[pTop, topY], [pBot, botY - BH]].forEach(([el, y]) => Object.assign(el.style, { left: (x0 + 16) + 'px', top: y + 'px', width: 'auto', maxWidth: (W - 32) + 'px' }));
@@ -5504,7 +5516,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261027151828';
+  const BUILD = '20261027154419';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
