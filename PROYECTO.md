@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.67** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.68** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -374,11 +374,17 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     sacude (`#confirm.nudge`, animación sobre `translate` para no pisar el transform que lo centra; con «Reducir movimiento», un
     brillo) y vibra donde se puede, hasta que confirme o cancele (`nudgeStart`/`nudgeStop`). Con la página oculta no suena.
   - Prueba: `t_ui.py` (capturas a 390×844 y 1366×800) y `t_friends.py` adaptado (61 casos), con el mock.
+- **Girar tablero (v1.68, solo 2D):** botón «Girar tablero» en el bloque Vista del Menú (`#flipBtn`, `.only2d`). `flipped` +
+  `botColor()` (el color que se ve abajo: el rival si está girado y en 2D) reemplaza a `localColor` en todo lo que ubica casillas en 2D:
+  `build2D`, flechas (`svgArrow`), `setClsMark`, medallas de fin, barra de evaluación y las barras de jugador con sus relojes.
+  Cada partida arranca sin girar (`setFlip(false)` en `resetGame` y al cargar una online). La 3D siempre mira desde tu lado.
+  No responde con una pieza en vuelo, arrastrándose o esperando confirmación.
 - **Diseño:** tipografías Cinzel + EB Garamond; en PC columna lateral con logo y consola; en celular,
   consola plegable (historial + Menú).
 
 ## Historial reciente
 
+- **v1.68:** botón «Girar tablero» en la vista 2D (pone al rival abajo o arriba; cada partida arranca con el rival arriba).
 - **v1.67:** nivel Maestro de la CPU (Stockfish Skill 20, 1 s por jugada) arriba de Experto, que queda igual.
 - **v1.66:** premove a cualquier casilla al alcance de la pieza (vacía, con rival o con pieza propia, aunque haya piezas en el camino); al tocarte, si no es legal se cancela.
 - **v1.65:** «Agregar como amigo» ya no aparece con un amigo (esperaba a que llegara la lista) y registro de altas y bajas de amigos (`verAmigosLog()` en la consola).
