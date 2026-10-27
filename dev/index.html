@@ -86,7 +86,7 @@
   .seg2 button { border: none; border-radius: 6px; background: none; color: var(--muted); padding: 6px 18px; font-weight: 600; }
   .seg2 button[aria-pressed="true"] { background: #3b3145; color: var(--ink); }
   .mRow .pLbl { gap: 8px; }
-  .mRow #resetv { border-radius: 9px; }
+  .mRow #resetv, .mRow #flipBtn { border-radius: 9px; }
   .mSw { display: grid; }
   .mSw label.sw { display: flex; justify-content: space-between; gap: 12px; min-height: 44px; border-bottom: 1px solid var(--line); font-size: 17px; }
   .mSw label.sw:last-child { border-bottom: none; }
@@ -651,6 +651,7 @@
           <option value="anarcandy">Anarcandy</option><option value="caliente">Caliente</option><option value="california">California</option><option value="cardinal">Cardinal</option><option value="cooke">Cooke</option><option value="dubrovny">Dubrovny</option><option value="fresca">Fresca</option><option value="gioco">Gioco</option><option value="horsey">Horsey</option><option value="icpieces">Icpieces</option><option value="kiwen-suwi">Kiwen-suwi</option><option value="maestro">Maestro</option><option value="mpchess">Mpchess</option><option value="papercut">Papercut</option><option value="pirouetti">Pirouetti</option><option value="pixel">Pixel</option><option value="spatial">Spatial</option><option value="staunty">Staunty</option><option value="totoy">Totoy</option><option value="xkcd">Xkcd</option>
         </select>
       </label>
+      <button id="flipBtn" class="ico only2d" aria-pressed="false" title="Dar vuelta el tablero"><svg class="bIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>Girar tablero</button>
       <button id="resetv">Centrar cámara</button>
     </div>
     <div class="caps"><span class="hint">Girar: clic derecho y arrastrar (dos dedos en el celular) · Acercar: rueda o pellizco</span></div>
@@ -2499,6 +2500,9 @@ const SOUNDS = {
   /* Barras de jugador al estilo chess.com: piezas capturadas (silueta clásica) y ventaja de material.
      El jugador local va abajo; el rival, arriba. */
   let localColor = 'w';   // se sortea en cada partida; en el modo online lo asignará el servidor
+  // Girar tablero (v1.68, solo 2D): con flipped el rival queda abajo. Cada partida arranca sin girar.
+  let flipped = false;
+  const botColor = () => is2D && flipped ? opp(localColor) : localColor;   // el color que se ve abajo
   const cpuTurn = () => vsCpu && chess.turn() !== localColor;
   // contra la CPU o online, el jugador local solo mueve su color
   const notMyTurn = () => (vsCpu || !!online) && chess.turn() !== localColor;
@@ -2569,8 +2573,8 @@ const SOUNDS = {
       el.querySelector('.acc').textContent = analysis && analysis.done ? analysis.acc[c] + ' %' : '';
       el.classList.toggle('turn', chess.turn() === c && !isOver());
     };
-    fill($('pBot'), localColor);
-    fill($('pTop'), opp(localColor));
+    fill($('pBot'), botColor());
+    fill($('pTop'), opp(botColor()));
   }
 
   // Ubica las barras de jugador (y el tablero 2D) entre el encabezado y la consola
@@ -2731,7 +2735,7 @@ const SOUNDS = {
     started = false;
     gameSerial++;
     if (ENGINE_URL && !sfFailed) sfInit().then(() => sf.postMessage('ucinewgame')).catch(() => {});
-    localColor = col;
+    localColor = col; setFlip(false);
     times.w = times.b = 0;
     build2D(); render2D(); drawMarks(); updateStatus(); layout();
     const mine = sidePl(localColor);
@@ -2765,7 +2769,7 @@ const SOUNDS = {
     clockFlush();
     const g = online && online.g, pm = g && g.perMove;
     if (g && g.tc && !ended) { if (timeoutResult(g)) claimTimeout(online.id, g); checkGone(g); }
-    [['pBot', localColor], ['pTop', opp(localColor)]].forEach(([id, c]) => {
+    [['pBot', botColor()], ['pTop', opp(botColor())]].forEach(([id, c]) => {
       const el = $(id).querySelector('.clock');
       let t = fmt(times[c]), late = false, title = '';
       if (g && g.tc) {
@@ -3003,8 +3007,8 @@ const SOUNDS = {
   }
   // 2D: el SVG de la flecha (viewBox 8×8, con el tablero dado vuelta si jugás con negras)
   function svgArrow(g, color) {
-    const X = p => (localColor === 'w' ? p[0] : 7 - p[0]) + 0.5, Y = p => (localColor === 'w' ? 7 - p[1] : p[1]) + 0.5;
-    const s2 = localColor === 'w' ? 1 : -1;
+    const bc = botColor(), X = p => (bc === 'w' ? p[0] : 7 - p[0]) + 0.5, Y = p => (bc === 'w' ? 7 - p[1] : p[1]) + 0.5;
+    const s2 = bc === 'w' ? 1 : -1;
     const hx = X(g.b), hy = Y(g.b), dx = Math.cos(g.ang) * s2, dy = -Math.sin(g.ang) * s2;
     const bx = hx - dx * g.HEAD, by = hy - dy * g.HEAD;
     return '<polyline points="' + g.body.map(p => X(p) + ',' + Y(p)).join(' ') + '" fill="none" stroke="' + color + '" stroke-width="0.17" stroke-linecap="round" stroke-linejoin="round"/>' +
@@ -3046,13 +3050,13 @@ const SOUNDS = {
   }
   // flecha verde y fija con la mejor jugada (al revisar una partida analizada)
   const bestMat = new THREE.MeshBasicMaterial({ color: 0x5fae3c, transparent: true, opacity: 0.8, depthWrite: false, toneMapped: false });
-  let best3d = null;
+  let best3d = null, bestArgs = null;
   function hideBest() {
     if (best3d) { scene.remove(best3d); best3d = null; }
-    $('best2d').innerHTML = '';
+    $('best2d').innerHTML = ''; bestArgs = null;
   }
   function showBest(from, to) {
-    hideBest();
+    hideBest(); bestArgs = [from, to];
     const g = arrowGeom(from, to);
     $('best2d').innerHTML = svgArrow(g, '#5fae3c');
     best3d = meshArrow(g, bestMat, 0.05);
@@ -3194,10 +3198,11 @@ const SOUNDS = {
   const board2d = $('board2d');
   function build2D() {
   board2d.querySelectorAll('.sq2').forEach(el => el.remove());
+  const bc = botColor();
   for (let i = 0; i < 64; i++) {
-    // el lado del jugador local queda abajo
-    const r = localColor === 'w' ? Math.floor(i / 8) : 7 - Math.floor(i / 8);
-    const c = localColor === 'w' ? i % 8 : 7 - i % 8;
+    // el lado del jugador local queda abajo (salvo con el tablero girado)
+    const r = bc === 'w' ? Math.floor(i / 8) : 7 - Math.floor(i / 8);
+    const c = bc === 'w' ? i % 8 : 7 - i % 8;
     const d = document.createElement('div');
     const sq = FILES[c] + (8 - r);
     d.className = 'sq2 ' + ((r + c) % 2 ? 'd' : 'l');
@@ -3206,7 +3211,7 @@ const SOUNDS = {
     d.setAttribute('aria-label', sq);
     // contenido fijo de cada casilla: la pieza, la marca de jugada posible y las coordenadas del borde.
     // render2D solo cambia lo que difiere (recrear las imágenes en cada jugada hacía parpadear el tablero en iPhone)
-    const bottomRank = localColor === 'w' ? '1' : '8', leftFile = localColor === 'w' ? 'a' : 'h';
+    const bottomRank = bc === 'w' ? '1' : '8', leftFile = bc === 'w' ? 'a' : 'h';
     d.className += ' np';
     d.innerHTML = '<img class="pc" alt="" decoding="sync" hidden><span class="sh"></span><span class="mk" hidden></span>'
       + (sq[1] === bottomRank ? '<span class="co f">' + sq[0] + '</span>' : '')
@@ -3431,6 +3436,21 @@ const SOUNDS = {
     if (viewPos) goLive(true);
     setView(!is2D);
   });
+  // Girar tablero (v1.68): rearma las casillas con el otro color abajo y redibuja lo que depende de la orientación
+  function setFlip(v) {
+    flipped = v;
+    $('flipBtn').setAttribute('aria-pressed', String(flipped));
+  }
+  $('flipBtn').addEventListener('click', () => {
+    if (busy || pendingMove || drag2) return;   // con una pieza en vuelo, por confirmar o arrastrándose, no
+    setFlip(!flipped);
+    $('arrow2d').innerHTML = '';
+    build2D(); render2D(); updatePlayers(); layout();
+    if (bestArgs) showBest(bestArgs[0], bestArgs[1]);
+    if (clsAt) setClsMark(clsAt.sq, clsAt.cls);
+    if (analysis && analysis.done) showEval(viewPos ? viewPly : chess.history().length);
+    refreshEndMarks();
+  });
   // Cambia entre la vista 2D clásica y la 3D (la 2D es la de arranque desde v1.7)
   function setView(v) {
     is2D = v;
@@ -3441,6 +3461,7 @@ const SOUNDS = {
     board2d.hidden = !is2D;
     stage.classList.toggle('off', is2D);
     select(null);
+    if (flipped) { build2D(); if (is2D) render2D(); updatePlayers(); }   // el giro vale solo en 2D: la 3D mira desde tu lado
     if (!is2D && dirty3d) { setupBoard(); dirty3d = false; drawMarks(); }
     updateStatus(); layout();
     refreshEndMarks();
@@ -4204,7 +4225,7 @@ const SOUNDS = {
     // Primera vez: se arma la posición de golpe, sin animaciones (también al retomar una partida)
     if (!online.loaded) {
       online.loaded = true;
-      localColor = color;
+      localColor = color; setFlip(false);
       chess.reset();
       moves.forEach(m => chess.move({ from: m.from, to: m.to, promotion: m.promo || 'q' }));
       online.applied = moves.length;
@@ -5334,7 +5355,7 @@ const SOUNDS = {
     });
     if (!clsAt || !is2D) return;
     const f = FILES.indexOf(sq[0]), r = Number(sq[1]) - 1;
-    const col = localColor === 'w' ? f : 7 - f, row = localColor === 'w' ? 7 - r : r;
+    const bc = botColor(), col = bc === 'w' ? f : 7 - f, row = bc === 'w' ? 7 - r : r;
     Object.assign($('clsMark').style, { left: ((col + 1) / 8 * 100) + '%', top: (row / 8 * 100) + '%' });
   }
   /* --- Fin de partida sobre el tablero (v1.46): mate, tiempo o abandono → copa verde sobre el rey ganador (salta dos veces)
@@ -5399,7 +5420,7 @@ const SOUNDS = {
     if (E && is2D) {
       const pos = (el, sq, dx, dy) => {
         const f = FILES.indexOf(sq[0]), r = Number(sq[1]) - 1;
-        const col = localColor === 'w' ? f : 7 - f, row = localColor === 'w' ? 7 - r : r;
+        const bc = botColor(), col = bc === 'w' ? f : 7 - f, row = bc === 'w' ? 7 - r : r;
         Object.assign(el.style, { left: ((col + dx) / 8 * 100) + '%', top: ((row + dy) / 8 * 100) + '%' });
       };
       pos(end2d.a, E.a, 1, 0);
@@ -5457,11 +5478,11 @@ const SOUNDS = {
     if (!analysis || !analysis.done) return;
     const cp = analysis.evals[Math.min(n, analysis.evals.length - 1)];
     const bar = $('evalBar'), w = winPct(cp);
-    bar.classList.toggle('flip', localColor === 'b');   // el color de abajo es el del jugador local
+    bar.classList.toggle('flip', botColor() === 'b');   // el color de abajo es el del jugador local
     bar.querySelector('i').style.height = w + '%';
     const mate = Math.abs(cp) >= 50000 ? Math.round((100000 - Math.abs(cp)) / 100) : null;
     const txt = mate === null ? (Math.abs(cp) / 100).toFixed(1) : mate ? 'M' + mate : '#';
-    const whiteAhead = cp >= 0, whiteBottom = localColor === 'w';
+    const whiteAhead = cp >= 0, whiteBottom = botColor() === 'w';
     bar.querySelector('.top').textContent = whiteAhead !== whiteBottom ? txt : '';
     bar.querySelector('.bot').textContent = whiteAhead === whiteBottom ? txt : '';
   }
@@ -5483,7 +5504,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261020121421';
+  const BUILD = '20261027151645';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
