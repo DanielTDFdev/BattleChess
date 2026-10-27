@@ -435,8 +435,8 @@
   body:not(.mode2d) .only2d { display: none; }
   body.online .onlycpu { display: none; }
   body.mode2d .hint, body.mode2d #resetv, body.mode2d label[for-3d] { display: none; }
-  /* Celular: la consola se pliega a una fila (historial + Menú) y el resto se despliega hacia arriba */
-  @media (max-width: 760px) {
+  /* Celular y tablet vertical (iPad, v1.69): la consola se pliega a una fila (historial + Menú) y el resto se despliega hacia arriba */
+  @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
     .bar { padding: 8px; gap: 8px; }
     #menuBtn { display: inline-block; margin-left: 4px; font-weight: 600; }
     .bar.open #menuBtn { background: var(--torch); color: #1d140c; border-color: var(--torch); }
@@ -445,6 +445,8 @@
     .bar.open .more { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; position: absolute; left: -8px; right: -8px; bottom: calc(100% + 10px);
       background: #221b28; border: 1px solid var(--line); border-top: 2px solid var(--torch); border-radius: 16px; padding: 14px 16px 16px; box-shadow: 0 -16px 40px rgba(0,0,0,.55); max-height: 74vh; overflow-y: auto; }
     .more .caps .hint { margin-left: 0; }
+  }
+  @media (max-width: 760px) {
     .top { padding: 8px 12px; gap: 2px; }
     .top h1 img { height: 62px; }
     .top .sub { font-size: 12px; margin: 0; }
@@ -2600,7 +2602,7 @@ const SOUNDS = {
       const base = logo.getBoundingClientRect().height;
       const t0 = document.querySelector('.top').getBoundingClientRect().bottom + 6;
       const b0 = document.querySelector('.bar').getBoundingClientRect().top - 6;
-      const spare = (b0 - t0 - 2 * (BH + GAP)) - Math.min(W - 32, 680);
+      const spare = (b0 - t0 - 2 * (BH + GAP)) - Math.min(W - 32, 960);
       if (spare > 8) logo.style.height = Math.round(Math.min(base + spare * 0.85, W * 0.8 * 414 / 480)) + 'px';
     }
     const topY = wide ? 12 : document.querySelector('.top').getBoundingClientRect().bottom + 6;
@@ -2613,7 +2615,7 @@ const SOUNDS = {
     const botY = wide ? window.innerHeight - 12 : document.querySelector('.bar').getBoundingClientRect().top - 6;
     if (is2D) {
       const avail = botY - topY - 2 * (BH + GAP);
-      const size = Math.max(160, Math.min(W - 32, avail, wide ? 1100 : 680));
+      const size = Math.max(160, Math.min(W - 32, avail, wide ? 1100 : 960));
       const left = x0 + (W - size) / 2, top = topY + BH + GAP + Math.max(0, (avail - size) / 2);
       Object.assign(board2d.style, { left: left + 'px', top: top + 'px', width: size + 'px', height: size + 'px' });
       board2d.style.setProperty('--sq', ((size - 12) / 8) + 'px');
@@ -5514,7 +5516,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261027153240';
+  const BUILD = '20261027154141';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));
