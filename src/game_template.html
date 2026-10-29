@@ -177,7 +177,7 @@ __PWA__
   #modal .card { width: min(420px, 100%); background: #221b28; border: 2px solid var(--torch); outline: 1px solid #5a4330; outline-offset: 4px; border-radius: 4px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
   #modal h2 { font-family: var(--display); font-weight: 700; color: var(--torch); margin: 0 0 10px; font-size: 26px; letter-spacing: .04em; text-wrap: balance; }
   #modal p { margin: 0 0 20px; font-size: 18px; line-height: 1.45; }
-  /* Cartel de fin de partida con retrato a la izquierda (winner / loser) */
+  /* Cartel de fin de partida con retrato a la izquierda (winner / loser / draw) */
   #modal .card.withImg { width: min(560px, 100%); display: grid; grid-template-columns: auto 1fr; column-gap: clamp(12px, 3vw, 22px); align-items: center; }
   #modal .card.withImg > :not(.mSide) { grid-column: 2; }
   #modal .mSide { grid-column: 1; grid-row: 1 / span 3; width: clamp(88px, 27vw, 180px); height: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.6)); }
@@ -2390,13 +2390,13 @@ const SOUNDS = __SOUNDS__;
     try { localStorage.setItem('chaskiboom.level', String(i)); } catch (_) {}
     updatePlayers();
   }
-  const RESULT_IMG = { win: "__WINNER__", lose: "__LOSER__" };   // retratos de los carteles de fin de partida
+  const RESULT_IMG = { win: "__WINNER__", lose: "__LOSER__", draw: "__DRAW__" };   // retratos de los carteles de fin de partida
   function showModal(title, text, buttons, opt = {}) {
     const old = modal.querySelector('.mLogo'); if (old) old.remove();
     const oldSide = modal.querySelector('.mSide'); if (oldSide) oldSide.remove();
     modal.querySelector('.card').classList.toggle('withImg', !!opt.img);
     if (opt.img) {
-      // retrato del ganador o del perdedor, a la izquierda del texto
+      // retrato del ganador, del perdedor o de tablas, a la izquierda del texto
       const img = document.createElement('img');
       img.className = 'mSide'; img.src = RESULT_IMG[opt.img]; img.alt = '';
       modal.querySelector('.card').prepend(img);
@@ -2523,7 +2523,7 @@ const SOUNDS = __SOUNDS__;
                                  : (isTimed() ? 'A ' + oppN + ' se le acabó el tiempo' : 'Se venció el plazo de ' + oppN) + ', pero solo te queda el rey y no podés dar mate.',
                     aborted: 'Partida anulada: ' + (online && online.g && online.g.turn === localColor ? 'no hiciste' : oppN + ' no hizo') + ' la primera jugada en 30 segundos. No cuenta para nadie.' }[reason];
       if (reason === 'aborted') { showModal('Partida anulada', why, again, { node: online ? endFriendNode() : null }); return; }
-      showModal('Tablas', why + ' La partida duró ' + mv + '.', again, { node: online ? endFriendNode() : null });
+      showModal('Tablas', why + ' La partida duró ' + mv + '.', again, { img: 'draw', node: online ? endFriendNode() : null });
     } else if (vsCpu || online) {
       // Cada jugador ve su propio cartel (en el modo online, cada dispositivo mostrará el suyo)
       const tm = isTimed();
