@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.69** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.70** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -26,7 +26,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 | `assets/sounds/` | Sonidos convertidos a MP3 mono (los originales de Daniel están en `/sonidos`) |
 | `assets/engine/` | Stockfish 18 lite (Stockfish.js, GPLv3) + licencia |
 | `assets/logo.webp` | Logo con transparencia real (recortado de `logo_chaskiboom.jpg`) |
-| `assets/winner.webp`, `assets/loser.webp` | Retratos de los carteles de ganador y perdedor (recortados de `winner.png` / `loser.png`, fondo transparente, 480 px de alto). Marcadores `__WINNER__` / `__LOSER__` |
+| `assets/winner.webp`, `assets/loser.webp`, `assets/draw.webp` | Retratos de los carteles de ganador, perdedor y tablas (recortados de `winner.png` / `loser.png` / `tablas_screen.jpg`, fondo transparente, 480 px de alto). Marcadores `__WINNER__` / `__LOSER__` / `__DRAW__` (`RESULT_IMG`, `showModal(..., { img })`). «Partida anulada» va sin retrato |
 | `assets/icono_chaskiboom.png` | Ícono original de la app (fondo blanco) |
 | `assets/icons/` | Íconos generados desde `icono_chaskiboom.png`: favicon, apple-touch-icon, 192/512 normales y maskable |
 | `database.rules.json` | Reglas de seguridad de Firebase Realtime Database (se pegan en la consola) |
@@ -389,6 +389,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.70:** cartel de tablas con retrato propio («Good Game», `assets/draw.webp`), como los de ganar y perder.
 - **v1.69:** el botón de girar tablero pasa a ser un ícono chico al costado superior derecho del tablero (en la PC se superponía en el Menú); en el iPad vertical la consola se pliega como en el celular y el tablero es más grande.
 - **v1.68:** botón «Girar tablero» en la vista 2D (pone al rival abajo o arriba; cada partida arranca con el rival arriba).
 - **v1.67:** nivel Maestro de la CPU (Stockfish Skill 20, 1 s por jugada) arriba de Experto, que queda igual.
