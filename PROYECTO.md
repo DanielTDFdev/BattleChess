@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.70** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.71** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -389,6 +389,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.71:** al ofrecer tablas online el botón pasa a «Enviando oferta…» / «Tablas ofrecidas» (dorado) y sale un aviso afuera del tablero (`drawNote`, `setDrawBtn`, `online.myOffer`); aviso con sonido si el rival las rechaza o juega sin contestar. La jugada propia ya no borra la oferta propia (antes ofrecer y mover la anulaba).
 - **v1.70:** cartel de tablas con retrato propio («Good Game», `assets/draw.webp`), como los de ganar y perder.
 - **v1.69:** el botón de girar tablero pasa a ser un ícono chico al costado superior derecho del tablero (en la PC se superponía en el Menú); en el iPad vertical la consola se pliega como en el celular y el tablero es más grande.
 - **v1.68:** botón «Girar tablero» en la vista 2D (pone al rival abajo o arriba; cada partida arranca con el rival arriba).
