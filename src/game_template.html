@@ -413,6 +413,7 @@ __PWA__
   .pbar .clock { margin-left: auto; }
   button.ico { display: inline-flex; align-items: center; gap: 7px; }   /* botones con ícono de Lucide (ISC) a la izquierda (v1.52) */
   button.ico .bIco { width: 17px; height: 17px; flex: none; }
+  #drawoffer.pending { border-color: var(--torch); color: var(--torch); }   /* oferta de tablas enviada, esperando respuesta (v1.71) */
   body.corr #confirmLbl { display: none; }   /* en correspondencia siempre se confirma: el interruptor no aplica */
   body:not(.mode2d) .only2d { display: none; }
   body.online .onlycpu { display: none; }
@@ -2061,6 +2062,7 @@ const SOUNDS = __SOUNDS__;
   }
   function updateStatus(moving) {
     lockGameButtons();
+    setDrawBtn();
     document.body.classList.toggle('corr', isCorr());
     const st = $('status');
     const turn = chess.turn(), side = sidePl(turn), other = sidePl(turn === 'w' ? 'b' : 'w');
@@ -2552,11 +2554,37 @@ const SOUNDS = __SOUNDS__;
     ]);
   });
 
+  // aviso de la oferta de tablas, afuera del tablero como los demás avisos de la partida
+  function drawNote(text, sound) {
+    showTaunt({ name: 'ChaskiBoom', text }, { ms: online && online.g && online.g.tc ? 2500 : 4000, silent: !sound, vol: 1, out: true });
+  }
+  // texto y color del botón según la oferta propia: sin oferta / enviándose / enviada
+  function setDrawBtn() {
+    const b = $('drawoffer'), st = online && !ended ? online.myOffer : false;
+    b.lastChild.textContent = st === 'sending' ? 'Enviando oferta…' : st ? 'Tablas ofrecidas' : 'Ofrecer tablas';
+    b.classList.toggle('pending', !!st);
+  }
   $('drawoffer').addEventListener('click', () => {
     if (!started || busy || isOver()) return;
     if (online) {
-      online.ref.update({ drawOffer: localColor, drawDeclined: null });
-      caption('Ofreciste tablas. Esperando la respuesta de ' + (online.oppName || 'tu rival'));
+      /* v1.71: antes solo cambiaba la línea de estado y no se notaba. Ahora el botón queda en «Enviando oferta…» hasta que
+         el servidor confirma la escritura y después en «Tablas ofrecidas», con un aviso afuera del tablero. */
+      const oppN = online.oppName || 'tu rival';
+      if (online.myOffer) { drawNote('Ya le ofreciste tablas a ' + oppN + '. Esperando su respuesta.'); return; }
+      const o = online;
+      o.myOffer = 'sending'; setDrawBtn();
+      o.ref.update({ drawOffer: localColor, drawDeclined: null }).then(() => {
+        if (online !== o || ended) return;
+        o.myOffer = true; setDrawBtn();
+        const g = o.g || {}, on = !!(g.online && g.online[o.oppUid]);
+        drawNote('Le ofreciste tablas a ' + oppN + '. ' + (on ? 'Esperando su respuesta.' : 'No está conectado: la va a ver cuando entre.'));
+        caption('Ofreciste tablas. Esperando la respuesta de ' + oppN);
+      }).catch(e => {
+        console.error(e);
+        if (online !== o) return;
+        o.myOffer = false; setDrawBtn();
+        drawNote('No se pudo ofrecer tablas. Revisá tu conexión.');
+      });
       return;
     }
     if (vsCpu) {
@@ -3860,8 +3888,15 @@ const SOUNDS = __SOUNDS__;
       ]);
     }
     if (!g.drawOffer) online.offerShown = false;
-    if (online.lastDecline !== undefined && g.drawDeclined && g.drawDeclined !== online.lastDecline) caption(online.oppName + ' rechazó las tablas');
+    const declined = online.lastDecline !== undefined && g.drawDeclined && g.drawDeclined !== online.lastDecline;
     online.lastDecline = g.drawDeclined || null;
+    if (g.drawOffer === localColor && !online.myOffer && !ended) { online.myOffer = true; setDrawBtn(); }   // partida abierta con una oferta propia pendiente
+    if (online.myOffer === true && g.drawOffer !== localColor && !g.result && !ended) {
+      // la oferta propia se fue: la rechazó o jugó sin contestar (jugar equivale a rechazarla)
+      online.myOffer = false; setDrawBtn();
+      const t = online.oppName + (declined ? ' rechazó las tablas' : ' siguió jugando: no aceptó las tablas');
+      drawNote(t, true); caption(t);
+    } else if (declined) caption(online.oppName + ' rechazó las tablas');
 
     claimTimeout(online.id, g);
 
@@ -3945,8 +3980,9 @@ const SOUNDS = __SOUNDS__;
     upd.fen = chess.fen();
     upd['times/' + mv.color] = Math.round(times[mv.color]);
     upd.lastMoveAt = NOW();
-    upd.drawOffer = null;
     const pm = online.g && online.g.perMove, G = online.g;
+    // jugar rechaza la oferta del rival; la propia sigue en pie (antes ofrecer y mover la borraba al instante, v1.71)
+    if (!G || G.drawOffer !== mv.color) upd.drawOffer = null;
     if (pm) upd.deadline = srvNow() + pm;
     if (G && G.tc && n >= 2) upd['clock/' + mv.color] = Math.max(0, Math.round(clockLeft(G, mv.color) + G.tc.inc));
     online.ref.update(upd).catch(e => { console.error(e); caption('No se pudo enviar la jugada. Revisá tu conexión.'); });
