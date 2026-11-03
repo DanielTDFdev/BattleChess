@@ -341,6 +341,13 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     (botón)» en `removeFriend`, «pasó a ser amigo», «desapareció de la lista (no lo quité yo)», «ya no era amigo al abrir» (compara con
     la lista guardada en localStorage `chaskiboom.friends.<uid>`) y «aceptar falló: …». Cada entrada lleva versión, build y navegador.
     En la consola: `verAmigosLog()`.
+- **Chat entre amigos fuera de las partidas (en /dev/, sin versión todavía):** `chats/<uidA_uidB>/msgs/<clave>` = `{ uid, name, text, at }`
+  (uids ordenados, `pairId`) y `chats/<par>/last` (+ `k`) para los avisos; `users/<uid>/chatSeen/<amigo>` = hasta dónde leyó. Solo amigos (lo
+  verifican las reglas con `friends/<yo>/<otro>`; cada uno borra solo lo suyo). En una partida contra un amigo, lo escrito va a la partida y a la
+  conversación con la misma clave, y el chat de la partida muestra las dos cosas juntas (las frases quedan solo en la partida). Fuera de la
+  partida: ícono de chat en cada amigo (punto rojo si hay sin leer), «Chatear» en su «⋯»; abre el mismo `#chat` suelto (`.solo`, z-index 21,
+  sin frases, `openFriendChat`/`soloOff`). Cada amigo tiene escucha de `last` (`fr.lastRefs`, `onLast`): aviso `#chatToast` que abre la
+  conversación, número en la pestaña Amigos, «X te escribió» en `fNews`. Se traen los últimos 60 (`CHAT_KEEP`); la base no poda nada.
 - **Rediseño del celular (v1.61, maquetas en el canvas «ChaskiBoom rediseño celular»):**
   - Pantalla inicial (`chooseMode` con `homeEl`): aviso `#pend` y tres tarjetas `.hCard`: Contra la CPU, Online (número de novedades
     `#homeOnBadge`) y **Dos jugadores** (el modo existía pero no se podía elegir: `setMode(false)` + `drawColors`).
@@ -490,6 +497,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **Chat entre amigos:** pegar `database.rules.json` (nodo `chats`) en la consola y probar con dos cuentas: chat suelto, chat en partida contra un amigo y su continuidad, avisos y no leídos.
 
 - **Amigos que desaparecen (19/10):** si vuelve a pasar, `verAmigosLog()` en la consola de los dos antes de volver a agregarse.
 
