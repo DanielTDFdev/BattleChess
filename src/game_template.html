@@ -474,6 +474,9 @@ __PWA__
   #chat { position: fixed; z-index: 15; right: 16px; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100% - 32px)); height: min(460px, 60vh);
     display: flex; flex-direction: column; background: #221b28; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 16px 40px rgba(0,0,0,.5); }
   #chat[hidden] { display: none; }
+  #chat.solo { z-index: 21; }   /* chat con un amigo abierto desde la sala (encima de la sala y de los paneles) */
+  .fList li .acts .chatI { position: relative; color: var(--torch); }
+  .fList li .acts .chatI .nd { position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
   #chat header { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line); font-family: var(--display); }
   #chat header b { flex: 1; font-weight: 600; color: var(--torch); }
   #chat header button { padding: 2px 8px; }
@@ -3398,6 +3401,7 @@ const SOUNDS = __SOUNDS__;
      (agregar al rival como amigo, compartir el link, cancelar el desafío o quitar una terminada de la lista). */
   let lbGamesN = 0;
   const ICO = {
+    chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>',
     more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
     link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
@@ -4212,7 +4216,7 @@ const SOUNDS = __SOUNDS__;
        presence/<uid> = true                    en línea (onDisconnect la borra); solo la ven tus amigos
      El desafío por link sigue igual para quien no es amigo. */
   const fr = { uid: null, refs: [], friends: {}, reqIn: {}, sent: {}, inv: {}, invGame: {}, prof: {}, profP: {}, pres: {}, presRefs: {}, sentRefs: {},
-               out: {}, user: undefined, loaded: {}, asked: false, tab: 'games', found: null, removing: {}, hooks: [] };
+               out: {}, user: undefined, loaded: {}, asked: false, tab: 'games', found: null, removing: {}, hooks: [], last: {}, lastRefs: {}, seenAt: {} };
   const USER_RE = /^[a-z0-9._]{3,20}$/;
   const isReg = () => !!(db && me && googleUser());
   const emailKey = e => { if (!e) return null; const k = String(e).trim().toLowerCase(); return /[#$\[\]\/\s]/.test(k) ? null : k.replace(/\./g, ','); };
@@ -4259,6 +4263,7 @@ const SOUNDS = __SOUNDS__;
     const ek = emailKey(u.email); if (ek) db.ref('emailIndex/' + ek).set(me).catch(e => console.warn('email', e));
     fPresence();
     fListen('profiles/' + me + '/user', s => { fr.user = s.val() || null; fRender(); });
+    fListen('users/' + me + '/chatSeen', s => { fr.seenAt = s.val() || {}; fRender(); });
     fListen('friends/' + me, s => {
       const prev = fr.friends, first = !fr.loaded.friends;
       fr.friends = s.val() || {};
@@ -4273,10 +4278,21 @@ const SOUNDS = __SOUNDS__;
       const keep = {}; Object.keys(fr.friends).forEach(f => keep[f] = Date.now());
       try { localStorage.setItem(fKey(), JSON.stringify(keep)); } catch (_) {}
       Object.keys(fr.presRefs).forEach(f => { if (!fr.friends[f]) { fr.presRefs[f].r.off('value', fr.presRefs[f].cb); delete fr.presRefs[f]; delete fr.pres[f]; } });
+      Object.keys(fr.lastRefs).forEach(f => { if (!fr.friends[f]) { fr.lastRefs[f].r.off('value', fr.lastRefs[f].cb); delete fr.lastRefs[f]; delete fr.last[f]; } });
       Object.keys(fr.friends).forEach(f => {
         if (!fr.presRefs[f]) {
           const r = db.ref('presence/' + f), cb = x => { fr.pres[f] = !!x.val(); fRender(); };
           r.on('value', cb, () => {}); fr.presRefs[f] = { r, cb };
+        }
+        if (!fr.lastRefs[f]) {   // último mensaje de la conversación: para el número de no leídos y el aviso
+          let first = true;
+          const r = db.ref('chats/' + pairId(f) + '/last'), cb = x => {
+            const prev = fr.last[f], L = x.val();
+            fr.last[f] = L && typeof L.text === 'string' ? L : null;
+            onLast(f, fr.last[f], prev, first); first = false;
+            fRender();
+          };
+          r.on('value', cb, e => console.warn('chat', e)); fr.lastRefs[f] = { r, cb };
         }
         if (!first && !prev[f] && fr.sent[f]) getProf(f).then(() => fNotify(pName(f) + ' aceptó tu solicitud de amistad', 'friends'));
         if (fr.sent[f]) db.ref('users/' + me + '/sent/' + f).remove().catch(() => {});      // ya es amigo
@@ -4327,8 +4343,9 @@ const SOUNDS = __SOUNDS__;
     fr.refs.forEach(([r, cb]) => r.off('value', cb));
     Object.keys(fr.presRefs).forEach(f => fr.presRefs[f].r.off('value', fr.presRefs[f].cb));
     Object.keys(fr.sentRefs).forEach(f => fr.sentRefs[f].r.off('value', fr.sentRefs[f].cb));
+    Object.keys(fr.lastRefs).forEach(f => fr.lastRefs[f].r.off('value', fr.lastRefs[f].cb));
     Object.keys(fr.out).forEach(untrackInvite);
-    Object.assign(fr, { uid: null, refs: [], friends: {}, reqIn: {}, sent: {}, inv: {}, invGame: {}, pres: {}, presRefs: {}, sentRefs: {}, user: undefined, loaded: {}, asked: false, found: null, removing: {} });
+    Object.assign(fr, { uid: null, refs: [], friends: {}, reqIn: {}, sent: {}, inv: {}, invGame: {}, pres: {}, presRefs: {}, sentRefs: {}, user: undefined, loaded: {}, asked: false, found: null, removing: {}, last: {}, lastRefs: {}, seenAt: {} });
     fRunHooks();
     try { updatePending(); } catch (_) {}
   }
@@ -4366,6 +4383,7 @@ const SOUNDS = __SOUNDS__;
     const L = [];
     Object.keys(fr.invGame).forEach(id => { if (fr.inv[id]) L.push(pName(fr.inv[id].from) + ' te invitó a una partida'); });
     Object.keys(fr.reqIn).forEach(f => { if (!fr.friends[f] && fr.prof[f]) L.push(pName(f) + ' quiere ser tu amigo'); });
+    Object.keys(fr.friends).forEach(f => { if (chatUnread(f) && fr.prof[f]) L.push(pName(f) + ' te escribió'); });
     return L;
   }
   function fNotify(text, tab) {
@@ -4568,6 +4586,7 @@ const SOUNDS = __SOUNDS__;
       shHead(body, pName(f), [p.user ? '@' + p.user : '', { t: fr.pres[f] ? 'En línea' : 'No está conectado', c: fr.pres[f] ? 'mine' : '' }], { photo: p.photo, name: pName(f) });
       bigBtn(body, 'Jugar con ' + pName(f), () => openNewGame(f));
       const list = document.createElement('div'); list.className = 'actList';
+      actBtn(list, ICO.chat, 'Chatear', () => openFriendChat(f));
       actBtn(list, ICO.userX, 'Quitar de tus amigos', async () => { await removeFriend(f, 'Amigos → ⋯ → Quitar'); closeSheet(); }, { danger: true, sure: 'Tocá de nuevo para quitarlo' });
       body.appendChild(list);
     });
@@ -4578,7 +4597,8 @@ const SOUNDS = __SOUNDS__;
     if (!fr.uid) { updatePending(); return; }
     $('frNoUser').hidden = fr.user !== null;
     const reqs = Object.keys(fr.reqIn).filter(f => !fr.friends[f] && fr.prof[f]);
-    $('frBadge').hidden = !reqs.length; $('frBadge').textContent = reqs.length;
+    const nUnread = Object.keys(fr.friends).filter(chatUnread).length;
+    $('frBadge').hidden = !(reqs.length + nUnread); $('frBadge').textContent = reqs.length + nUnread;
     // invitaciones recibidas (en «Partidas»)
     const ib = $('lbInbox'); ib.innerHTML = '';
     Object.keys(fr.invGame).forEach(id => {
@@ -4607,6 +4627,9 @@ const SOUNDS = __SOUNDS__;
     ids.forEach(f => {
       const p = fr.prof[f] || {};
       const li = fRow(f, (fr.pres[f] ? 'En línea' : '') + (fr.pres[f] && p.user ? ' · ' : '') + (p.user ? '@' + p.user : ''), !!fr.pres[f]);
+      const cb = fBtn(li, 'Chat con ' + pName(f), () => openFriendChat(f), 'x');
+      cb.classList.add('chatI'); cb.innerHTML = ICO.chat + (chatUnread(f) ? '<i class="nd"></i>' : '');
+      cb.setAttribute('aria-label', 'Chat con ' + pName(f) + (chatUnread(f) ? ' (mensaje sin leer)' : ''));
       fBtn(li, 'Jugar', () => openNewGame(f), fr.pres[f] ? 'primary' : 'ghost', 'Jugar con ' + pName(f));
       const m = document.createElement('button'); m.className = 'dot3'; m.innerHTML = ICO.more; m.setAttribute('aria-label', 'Más opciones: ' + pName(f));
       m.addEventListener('click', () => friendActions(f));
@@ -4621,6 +4644,7 @@ const SOUNDS = __SOUNDS__;
       ul.appendChild(li);
     });
     $('nFr').textContent = ids.length ? ' · ' + ids.length : '';
+    try { syncPairSubs(); } catch (_) {}   // si la lista llegó con una partida contra un amigo abierta
     if (!ul.children.length) ul.innerHTML = '<li class="empty">' + (fr.loaded.friends ? 'Todavía no tenés amigos. Buscalos arriba por @usuario o por email.' : 'Cargando…') + '</li>';
     if (fr.found) renderFound();
     updatePending();
@@ -4709,8 +4733,25 @@ const SOUNDS = __SOUNDS__;
     'Dale, papá, mové que se enfría el mate.'
   ];
   const TAUNT_GAP = 15000;   // una frase cada 15 segundos
-  let chatSeen = new Set(), chatLoaded = false, unread = 0, lastTaunt = 0;
+  /* v1.72: chat entre amigos que sigue fuera de las partidas.
+       chats/<uidA_uidB>/msgs/<clave> = { uid, name, text, at }   (los dos uid ordenados; solo amigos: lo verifican las reglas)
+       chats/<uidA_uidB>/last = { uid, name, text, at, k }       el último mensaje: cada uno lo escucha por amigo para los avisos
+       users/<uid>/chatSeen/<amigo> = at                          hasta dónde leyó
+     En una partida contra un amigo, cada mensaje escrito va a la partida (games/<código>/chat, como siempre) y a la conversación,
+     con la misma clave; el chat de la partida muestra las dos cosas juntas (la historia de antes también). Las frases solo van a la partida.
+     Fuera de la partida, el mismo panel #chat se abre «suelto» (clase solo) desde Amigos, sin frases. */
+  const CHAT_KEEP = 60;                       // mensajes de la conversación que se traen
+  const gameMsgs = new Map();                 // clave → mensaje de la partida abierta
+  const pairMsgs = {};                        // amigo → Map(clave → mensaje)
+  const pairSubs = {};                        // amigo → { q, cb, loaded }
+  const chatCtx = { f: null };                // f: amigo del chat suelto (null = chat de la partida)
+  let chatKeys = new Set(), chatLoaded = false, unread = 0, lastTaunt = 0;
   const chatEl = $('chat');
+  const pairId = f => [me, f].sort().join('_');
+  const gameFriend = () => online && online.oppUid && fr.friends[online.oppUid] ? online.oppUid : null;
+  const chatUnread = f => { const L = fr.last[f]; return !!(L && L.uid !== me && L.at > (fr.seenAt[f] || 0)); };
+  // la conversación con f está a la vista (chat abierto, suelto con f o el de una partida contra f)
+  const pairVisible = f => !chatEl.hidden && (chatCtx.f ? chatCtx.f === f : lobby.hidden && gameFriend() === f);   // con la sala abierta, el chat de la partida queda tapado
 
   PHRASES.forEach(p => {
     const li = document.createElement('li'), b = document.createElement('button');
@@ -4722,16 +4763,17 @@ const SOUNDS = __SOUNDS__;
     const open = $('phrList').hidden;
     $('phrList').hidden = !open; $('phrBtn').setAttribute('aria-expanded', String(open));
   });
-  /* Mensaje escrito del rival con el chat cerrado: aviso de 4 s con el texto (tocarlo abre el chat) y un sonido suave.
+  /* Mensaje escrito con el chat cerrado: aviso de 4 s con el texto (tocarlo abre el chat) y un sonido suave.
      Con la página oculta, además el título dice «💬 Fulano te escribió»; los 4 s cuentan recién al volver. */
-  let chatToastTimer = null, chatAway = null;
+  let chatToastTimer = null, chatAway = null, chatToastAct = null;
   function hideChatToast() {
     clearTimeout(chatToastTimer); chatToastTimer = null;
     const el = $('chatToast'); el.classList.remove('show');
     setTimeout(() => { if (!el.classList.contains('show')) el.hidden = true; }, 220);
   }
-  function chatToast(m) {
+  function chatToast(m, act) {
     const el = $('chatToast'), who = m.name || 'Tu rival';
+    chatToastAct = act || null;
     el.querySelector('.n').textContent = who + ':';
     el.querySelector('.t').textContent = m.text;
     el.hidden = false; void el.offsetWidth; el.classList.add('show');
@@ -4745,16 +4787,106 @@ const SOUNDS = __SOUNDS__;
     chatAway = null;
     if (!$('chatToast').hidden && !chatToastTimer) chatToastTimer = setTimeout(hideChatToast, 4000);
   });
-  $('chatToast').addEventListener('click', () => { hideChatToast(); setChatOpen(true); });
+  $('chatToast').addEventListener('click', () => {
+    hideChatToast();
+    const f = chatToastAct; chatToastAct = null;
+    if (f) f(); else { soloOff(); setChatOpen(true); }
+  });
   function setChatOpen(open) {
     if (open) hideChatToast();
+    if (!open && chatCtx.f) { soloOff(); }
     chatEl.hidden = !open;
     $('chatBtn').setAttribute('aria-expanded', String(open));
-    if (open) { unread = 0; updateBadge(); const log = $('chatLog'); log.scrollTop = log.scrollHeight; }
+    if (open) {
+      if (!chatCtx.f) { unread = 0; updateBadge(); }
+      renderChat(true); markSeenView();
+    }
   }
-  $('chatBtn').addEventListener('click', e => { e.stopPropagation(); setChatOpen(chatEl.hidden); });
+  $('chatBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    if (chatCtx.f) { soloOff(); setChatOpen(true); return; }
+    setChatOpen(chatEl.hidden);
+  });
   $('chatClose').addEventListener('click', () => setChatOpen(false));
   function updateBadge() { const b = $('chatBadge'); b.hidden = !unread; b.textContent = unread > 9 ? '9+' : String(unread); }
+
+  /* --- Chat suelto con un amigo (desde Amigos) --- */
+  function openFriendChat(f) {
+    if (!isReg() || !fr.friends[f]) return;
+    closeSheet();
+    chatCtx.f = f; chatSysLines = [];
+    chatEl.classList.add('solo');
+    $('chatTitle').textContent = 'Chat con ' + pName(f);
+    chatEl.querySelector('.phr').style.display = 'none';
+    syncPairSubs();
+    chatEl.hidden = true;   // setChatOpen lo abre y lo dibuja
+    setChatOpen(true);
+    setTimeout(() => { try { $('chatIn').focus({ preventScroll: true }); } catch (_) {} }, 60);
+  }
+  function soloOff() {
+    if (!chatCtx.f) return;
+    chatCtx.f = null; chatSysLines = [];
+    chatEl.classList.remove('solo');
+    chatEl.querySelector('.phr').style.display = '';
+    $('chatTitle').textContent = online ? 'Chat con ' + online.oppName : 'Chat';
+    syncPairSubs();
+    renderChat(true);
+  }
+
+  /* --- Conversaciones: se escuchan las que están en uso (la del chat suelto y la del rival de la partida, si es amigo) --- */
+  function syncPairSubs() {
+    if (!db || !me) return;
+    const need = {};
+    if (chatCtx.f) need[chatCtx.f] = true;
+    const gf = gameFriend(); if (gf) need[gf] = true;
+    Object.keys(pairSubs).forEach(f => { if (!need[f]) { pairSubs[f].q.off('value', pairSubs[f].cb); delete pairSubs[f]; } });
+    Object.keys(need).forEach(f => {
+      if (pairSubs[f]) return;
+      const sub = { loaded: false };
+      sub.q = db.ref('chats/' + pairId(f) + '/msgs').limitToLast(CHAT_KEEP);
+      sub.cb = s => {
+        const M = pairMsgs[f] || (pairMsgs[f] = new Map());
+        const add = [];
+        s.forEach(c => { const m = c.val(); if (m && typeof m.text === 'string' && !M.has(c.key)) { M.set(c.key, m); add.push([c.key, m]); } });
+        add.sort((a, b) => (a[1].at || 0) - (b[1].at || 0));
+        add.forEach(([k, m]) => incoming(k, m, f, sub.loaded));
+        sub.loaded = true;
+        renderChat(); markSeenView();
+      };
+      sub.q.on('value', sub.cb, e => console.warn('chat', e));
+      pairSubs[f] = sub;
+    });
+  }
+  // un mensaje nuevo (de la partida: f = null; de la conversación con f). live = llegó ahora, no con el historial
+  function incoming(k, m, f, live) {
+    if (chatKeys.has(k)) return;
+    chatKeys.add(k);
+    if (!live || m.uid === me) return;
+    if (!f && m.kind === 'taunt') showTaunt(m);
+    if (f) { if (pairVisible(f)) return; if (gameFriend() !== f) return; }   // las de otros amigos las avisa el vigía de «last»
+    else if (!chatEl.hidden && !chatCtx.f) return;
+    unread++; updateBadge();
+    if (m.kind !== 'taunt') chatToast(m);
+  }
+  function markSeenView() {
+    if (chatEl.hidden) return;
+    const f = chatCtx.f || gameFriend();
+    if (f) markSeen(f);
+  }
+  function markSeen(f) {
+    const L = fr.last[f];
+    if (!L || !L.at || L.at <= (fr.seenAt[f] || 0)) return;
+    fr.seenAt[f] = L.at;
+    db.ref('users/' + me + '/chatSeen/' + f).set(L.at).catch(() => {});
+    fRender();
+  }
+  // aviso de un mensaje de un amigo que no está a la vista (lo llama la escucha de chats/<par>/last)
+  function onLast(f, L, prev, first) {
+    if (pairVisible(f)) { markSeen(f); return; }
+    if (first || !L || L.uid === me || (prev && prev.k === L.k)) return;
+    if (gameFriend() === f) return;   // lo avisa el chat de la partida
+    chatToast({ name: pName(f), text: L.text }, () => openFriendChat(f));
+  }
 
   // contador de espera de las frases
   setInterval(() => {
@@ -4774,24 +4906,64 @@ const SOUNDS = __SOUNDS__;
 
   let lastFree = 0;
   function sendChat(text, kind) {
-    if (!online) return;
     const now = Date.now();
+    if (kind !== 'taunt') {
+      if (now - lastFree < 800) return;   // evita mandar mensajes repetidos por doble toque
+      lastFree = now;
+    }
+    text = text.slice(0, 200);
+    if (chatCtx.f) {
+      sendPair(chatCtx.f, text, getNick() || 'Vos').catch(err => { console.error(err); chatSys('No se pudo enviar el mensaje.'); });
+      return;
+    }
+    if (!online) return;
     if (kind === 'taunt') {
       if (now - lastTaunt < TAUNT_GAP) return;
       lastTaunt = now;
       $('phrList').hidden = true; $('phrBtn').setAttribute('aria-expanded', 'false');
-    } else {
-      if (now - lastFree < 800) return;   // evita mandar mensajes repetidos por doble toque
-      lastFree = now;
     }
     const key = (online.ref.child('chat').push ? online.ref.child('chat').push().key : null) || (now.toString(36) + Math.random().toString(36).slice(2, 6));
-    online.ref.child('chat/' + key).set({ uid: me, name: online.myName || getNick() || 'Vos', text: text.slice(0, 200), kind, at: NOW() })
+    const name = online.myName || getNick() || 'Vos';
+    online.ref.child('chat/' + key).set({ uid: me, name, text, kind, at: NOW() })
       .catch(err => { console.error(err); chatSys('No se pudo enviar el mensaje.'); });
+    // contra un amigo, lo escrito queda también en la conversación de los dos (con la misma clave: no se ve repetido)
+    const f = gameFriend();
+    if (f && kind !== 'taunt') sendPair(f, text, name, key).catch(err => console.warn('chat amigo', err));
+  }
+  function sendPair(f, text, name, key) {
+    const pid = pairId(f);
+    key = key || db.ref('chats/' + pid + '/msgs').push().key;
+    const m = { uid: me, name: String(name).slice(0, 20), text, at: NOW() };
+    const u = {};
+    u['chats/' + pid + '/msgs/' + key] = m;
+    u['chats/' + pid + '/last'] = Object.assign({ k: key }, m);
+    return db.ref().update(u);
   }
 
-  function chatSys(text) {
-    const li = document.createElement('li'); li.className = 'sys'; li.textContent = text;
-    $('chatLog').appendChild(li); $('chatLog').scrollTop = $('chatLog').scrollHeight;
+  let chatSysLines = [];
+  function chatSys(text) { chatSysLines.push(text); renderChat(true); }
+
+  // dibuja la conversación que corresponde (partida + la de siempre si el rival es amigo, o el chat suelto)
+  function renderChat(toEnd) {
+    const log = $('chatLog');
+    const near = toEnd || log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+    const all = new Map();
+    if (chatCtx.f) (pairMsgs[chatCtx.f] || new Map()).forEach((m, k) => all.set(k, m));
+    else {
+      gameMsgs.forEach((m, k) => all.set(k, m));
+      const gf = gameFriend();
+      if (gf && pairMsgs[gf]) pairMsgs[gf].forEach((m, k) => { if (!all.has(k)) all.set(k, m); });
+    }
+    const L = [...all.entries()].sort((a, b) => (a[1].at || 0) - (b[1].at || 0) || (a[0] < b[0] ? -1 : 1));
+    log.innerHTML = '';
+    if (!L.length && chatCtx.f) {
+      const li = document.createElement('li'); li.className = 'sys';
+      li.textContent = pairSubs[chatCtx.f] && pairSubs[chatCtx.f].loaded ? 'Todavía no se escribieron. Lo que se escriban en las partidas también queda acá.' : 'Cargando…';
+      log.appendChild(li);
+    }
+    L.forEach(([, m]) => addChatLine(m));
+    chatSysLines.forEach(t => { const li = document.createElement('li'); li.className = 'sys'; li.textContent = t; log.appendChild(li); });
+    if (near) log.scrollTop = log.scrollHeight;
   }
 
   function addChatLine(m) {
@@ -4800,7 +4972,6 @@ const SOUNDS = __SOUNDS__;
     const n = document.createElement('span'); n.className = 'n'; n.textContent = m.uid === me ? 'Vos' : (m.name || 'Rival');
     li.appendChild(n); li.appendChild(document.createTextNode(m.text || ''));
     $('chatLog').appendChild(li);
-    $('chatLog').scrollTop = $('chatLog').scrollHeight;
   }
 
   let tauntTimer = null;
@@ -4822,20 +4993,21 @@ const SOUNDS = __SOUNDS__;
 
   // se llama con cada actualización de la partida
   function onChat(chat) {
+    syncPairSubs();   // si el rival es amigo, se trae la conversación de siempre
     const entries = Object.entries(chat || {}).sort((a, b) => (a[1].at || 0) - (b[1].at || 0) || (a[0] < b[0] ? -1 : 1));
+    let added = false;
     entries.forEach(([k, m]) => {
-      if (chatSeen.has(k) || !m || typeof m.text !== 'string') return;
-      chatSeen.add(k);
-      addChatLine(m);
-      if (!chatLoaded) return;   // al entrar a la partida, el historial se muestra sin avisos
-      if (m.kind === 'taunt') showTaunt(m);
-      if (m.uid !== me && chatEl.hidden) { unread++; updateBadge(); if (m.kind !== 'taunt') chatToast(m); }
+      if (gameMsgs.has(k) || !m || typeof m.text !== 'string') return;
+      gameMsgs.set(k, m); added = true;
+      incoming(k, m, null, chatLoaded);   // al entrar a la partida, el historial se muestra sin avisos
     });
     chatLoaded = true;
+    if (added) { renderChat(); markSeenView(); }
   }
   function resetChat() {
-    chatSeen = new Set(); chatLoaded = false; unread = 0; updateBadge();
-    $('chatLog').innerHTML = ''; setChatOpen(false);
+    gameMsgs.clear(); chatKeys = new Set(); chatLoaded = false; unread = 0; updateBadge(); chatSysLines = [];
+    soloOff(); $('chatLog').innerHTML = ''; setChatOpen(false);
+    setTimeout(syncPairSubs, 0);   // online ya cambió: suelta la conversación del rival anterior
   }
 
   /* ---------- Análisis de la partida ----------

@@ -145,6 +145,21 @@
         }
       }
     },
+    "chats": {
+      "$pair": {
+        ".read": "auth != null && ($pair.beginsWith(auth.uid + '_') || $pair.endsWith('_' + auth.uid))",
+        "msgs": {
+          "$m": {
+            ".write": "auth != null && auth.token.email_verified === true && ($pair.beginsWith(auth.uid + '_') || $pair.endsWith('_' + auth.uid)) && ((!data.exists() && root.child('friends/' + auth.uid + '/' + $pair.replace(auth.uid, '').replace('_', '')).exists()) || (!newData.exists() && data.child('uid').val() === auth.uid))",
+            ".validate": "newData.hasChildren(['uid', 'text', 'at']) && newData.child('uid').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 200 && newData.child('at').val() === now && (!newData.hasChild('name') || (newData.child('name').isString() && newData.child('name').val().length <= 20))"
+          }
+        },
+        "last": {
+          ".write": "auth != null && auth.token.email_verified === true && ($pair.beginsWith(auth.uid + '_') || $pair.endsWith('_' + auth.uid)) && (root.child('friends/' + auth.uid + '/' + $pair.replace(auth.uid, '').replace('_', '')).exists() || !newData.exists())",
+          ".validate": "newData.hasChildren(['uid', 'text', 'at']) && newData.child('uid').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 200 && newData.child('at').val() === now && (!newData.hasChild('name') || (newData.child('name').isString() && newData.child('name').val().length <= 20)) && newData.child('k').isString()"
+        }
+      }
+    },
     "presence": {
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || root.child('friends/' + $uid + '/' + auth.uid).exists())",
