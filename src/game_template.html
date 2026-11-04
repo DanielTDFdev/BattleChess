@@ -359,6 +359,7 @@ __PWA__
   .uField { display: flex; align-items: center; height: 48px; box-sizing: border-box; padding: 0 10px 0 12px; border: 1px solid var(--line); border-radius: 10px; background: #18131c; gap: 4px; }
   .uField > span:first-child { color: var(--muted); font-size: 18px; }
   .uField input { flex: 1; border: none !important; background: none !important; padding: 0 !important; height: 44px !important; }
+  .uField input[readonly] { color: var(--muted); }
   .uField .st { font-size: 14px; color: var(--muted); white-space: nowrap; }
   .uField .st.ok { color: #6fcf74; }
   .uField .st.bad { color: #ff9a8a; }
@@ -3721,6 +3722,8 @@ const SOUNDS = __SOUNDS__;
       body.appendChild(f);
       const nk = f.querySelector('#acNick'), us = f.querySelector('#acUser'), st = f.querySelector('.st'), err = f.querySelector('.shMsg');
       nk.value = getNick(); us.value = fr.user || '';
+      if (fr.user) { us.readOnly = true; us.closest('label').firstChild.textContent = 'Tu usuario · con este te buscan tus amigos (definitivo)'; }
+      else us.closest('label').firstChild.textContent = 'Tu usuario · con este te buscan tus amigos. Elegilo bien: después no se puede cambiar';
       if (!fr.user) { us.placeholder = 'tu.usuario'; suggestUser().then(v => { if (!us.value) { us.value = v; check(); } }).catch(() => {}); }
       err.textContent = msg || '';
       let tChk = null, free = true;
@@ -3729,6 +3732,7 @@ const SOUNDS = __SOUNDS__;
         const v = us.value; clearTimeout(tChk);
         if (!v || v === fr.user) { say(''); free = true; return; }
         if (!USER_RE.test(v)) { say('3 a 20', 'bad'); free = false; return; }
+        if (RESERVED_USER.test(v)) { say('Reservado', 'bad'); free = false; return; }
         say('…');
         tChk = setTimeout(() => db.ref('usernames/' + v).once('value').then(x => { if (us.value !== v) return; free = !x.exists() || x.val() === me; say(free ? 'Libre' : 'Ocupado', free ? 'ok' : 'bad'); }).catch(() => say('')), 350);
       };
@@ -3737,11 +3741,12 @@ const SOUNDS = __SOUNDS__;
         const btn = e.currentTarget;
         const n = nk.value.trim().slice(0, 20), v = us.value.trim();
         if (!n) { err.textContent = 'Escribí un apodo para que tu rival sepa quién sos.'; nk.focus(); return; }
-        if (v && v !== fr.user && !USER_RE.test(v)) { err.textContent = 'El usuario tiene que tener entre 3 y 20 caracteres: minúsculas, números, punto o guion bajo.'; us.focus(); return; }
+        if (v && !fr.user && !USER_RE.test(v)) { err.textContent = 'El usuario tiene que tener entre 3 y 20 caracteres: minúsculas, números, punto o guion bajo.'; us.focus(); return; }
+        if (v && !fr.user && RESERVED_USER.test(v)) { err.textContent = '@' + v + ' está reservado. Probá con otro.'; us.focus(); return; }
         btn.disabled = true; err.textContent = '';
         try {
           if (n !== getNick()) setNick(n);
-          if (v && v !== fr.user) {
+          if (v && !fr.user) {
             if ((await db.ref('usernames/' + v).once('value')).exists()) { err.textContent = '@' + v + ' ya está ocupado. Probá con otro.'; btn.disabled = false; return; }
             await saveUser(v);
           }
@@ -4287,6 +4292,7 @@ const SOUNDS = __SOUNDS__;
   const fr = { uid: null, refs: [], friends: {}, reqIn: {}, sent: {}, inv: {}, invGame: {}, prof: {}, profP: {}, pres: {}, presRefs: {}, sentRefs: {},
                out: {}, user: undefined, loaded: {}, asked: false, tab: 'games', found: null, removing: {}, hooks: [], last: {}, lastRefs: {}, seenAt: {} };
   const USER_RE = /^[a-z0-9._]{3,20}$/;
+  const RESERVED_USER = /^(admin|administrador|administrator|chaskiboom|chaskibum|soporte|support|ayuda|help|moderador|moderator|mod|staff|sistema|system|oficial|official|root)$/;
   const isReg = () => !!(db && me && googleUser());
   const emailKey = e => { if (!e) return null; const k = String(e).trim().toLowerCase(); return /[#$\[\]\/\s]/.test(k) ? null : k.replace(/\./g, ','); };
   const rel = uid => fr.friends[uid] ? 'friend' : fr.sent[uid] ? 'sent' : fr.reqIn[uid] ? 'in' : 'none';
@@ -4550,12 +4556,14 @@ const SOUNDS = __SOUNDS__;
     }
     return base.slice(0, 14) + Date.now().toString(36).slice(-6);
   }
-  // toma el nuevo, actualiza el perfil y libera el viejo, todo en una escritura (las reglas exigen que coincidan)
+  /* v1.73: el @usuario es definitivo: se elige una sola vez (las reglas no dejan cambiarlo ni liberarlo; si hace falta, a mano en la
+     consola). Antes se podía cambiar y el viejo quedaba libre para otro, que podía hacerse pasar por vos ante quien te buscaba.
+     También hay nombres reservados (RESERVED_USER, igual que en las reglas). Toma el nombre y lo pone en el perfil en una escritura. */
   async function saveUser(n) {
-    const old = fr.user, u = {};
+    if (fr.user) throw new Error('el usuario ya está elegido');
+    const u = {};
     u['usernames/' + n] = me;
     u['profiles/' + me + '/user'] = n;
-    if (old && old !== n) u['usernames/' + old] = null;
     await db.ref().update(u);
     fr.user = n; fRender();
   }
@@ -4568,7 +4576,7 @@ const SOUNDS = __SOUNDS__;
       const inp = box.querySelector('input'), msg = box.querySelector('.msg'), [ok, no] = box.querySelectorAll('button');
       const say = (t, bad) => { msg.textContent = t; msg.classList.toggle('bad', !!bad); };
       showModal(first ? 'Elegí tu usuario' : 'Cambiar tu usuario',
-        first ? 'Con este nombre te encuentran tus amigos para agregarte. En las partidas se sigue viendo tu apodo.' : 'Tus amigos te buscan con este nombre. El anterior queda libre para otro.', [], { node: box });
+        'Con este nombre te encuentran tus amigos para agregarte. Es definitivo: después no se puede cambiar. En las partidas se sigue viendo tu apodo.', [], { node: box });
       $('mBtns').hidden = true;
       const done = v => { $('mBtns').hidden = false; closeModal(); res(v); };
       if (fr.user) inp.value = fr.user;
@@ -4577,8 +4585,10 @@ const SOUNDS = __SOUNDS__;
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok.click(); });
       ok.addEventListener('click', async () => {
         const v = inp.value.trim();
+        if (fr.user) { done(fr.user); return; }
         if (!USER_RE.test(v)) { say('Tiene que tener entre 3 y 20 caracteres: minúsculas, números, punto o guion bajo.', true); inp.focus(); return; }
-        if (v === fr.user) { done(v); return; }
+        if (RESERVED_USER.test(v)) { say('@' + v + ' está reservado. Probá con otro.', true); inp.focus(); return; }
+        if (fr.user) { done(fr.user); return; }
         ok.disabled = true; say('Guardando…');
         try {
           if ((await db.ref('usernames/' + v).once('value')).exists()) { say('@' + v + ' ya está ocupado. Probá con otro.', true); return; }

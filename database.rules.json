@@ -89,7 +89,7 @@
         ".read": "auth != null && auth.token.email_verified === true",
         ".write": "auth != null && auth.token.email_verified === true && auth.uid === $uid",
         "user": {
-          ".validate": "newData.isString() && newData.parent().parent().parent().child('usernames/' + newData.val()).val() === $uid"
+          ".validate": "newData.isString() && (!data.exists() || data.val() === newData.val()) && newData.parent().parent().parent().child('usernames/' + newData.val()).val() === $uid"
         },
         "nick": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
@@ -105,7 +105,7 @@
     "usernames": {
       ".read": "auth != null && auth.token.email_verified === true",
       "$name": {
-        ".write": "auth != null && auth.token.email_verified === true && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && (!newData.exists() || newData.val() === auth.uid)))",
+        ".write": "auth != null && auth.token.email_verified === true && ((!data.exists() && newData.val() === auth.uid && !root.child('profiles/' + auth.uid + '/user').exists() && !$name.matches(/^(admin|administrador|administrator|chaskiboom|chaskibum|soporte|support|ayuda|help|moderador|moderator|mod|staff|sistema|system|oficial|official|root)$/)) || (data.val() === auth.uid && newData.val() === auth.uid))",
         ".validate": "$name.matches(/^[a-z0-9._]{3,20}$/) && newData.val() === auth.uid && newData.parent().parent().child('profiles/' + auth.uid + '/user').val() === $name"
       }
     },

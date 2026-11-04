@@ -347,6 +347,11 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   vuelve al inicio (`sheetAfter` en `closeSheet`). «Cerrar sesión» con dos toques (`signOutAcct`). `homeAcct()` se refresca con
   `onAuthStateChanged` (escucha fija en `fbResume`, `authKnown`), `setNick` y `chooseMode`. Mientras no se sabe si hay sesión (o en el artifact)
   se ve Online como antes. Prueba: `t_home.py` con un Firebase falso (no está en el repo).
+- **@usuario definitivo (en /dev/, sin versión todavía):** se elige una sola vez (`saveUser` falla si ya hay; en «Tu cuenta» queda de solo
+  lectura). Reglas: `usernames/$name` solo se toma si está libre, si `profiles/<uid>/user` no existe y si no es reservado; ya no se libera.
+  `profiles/<uid>/user` no puede cambiar de valor. Reservados (`RESERVED_USER` y la regla, iguales): admin, administrador, chaskiboom, soporte,
+  support, ayuda, help, moderador, mod, staff, sistema, system, oficial, official, root… Daniel es @admin. Para cambiar el de alguien, a mano en
+  la consola: borrar `usernames/<viejo>`, crear `usernames/<nuevo>` = uid y poner `profiles/<uid>/user`.
 - **Chat entre amigos fuera de las partidas (v1.72):** `chats/<uidA_uidB>/msgs/<clave>` = `{ uid, name, text, at }`
   (uids ordenados, `pairId`) y `chats/<par>/last` (+ `k`) para los avisos; `users/<uid>/chatSeen/<amigo>` = hasta dónde leyó. Solo amigos (lo
   verifican las reglas con `friends/<yo>/<otro>`; cada uno borra solo lo suyo). En una partida contra un amigo, lo escrito va a la partida y a la
@@ -504,6 +509,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **v1.11:** confeti de 1 s al ganar (`confetti()` en un canvas propio, sin librerías; respeta «reducir movimiento»).
 
 ## Pendientes / ideas
+
+- **@usuario definitivo:** pegar `database.rules.json` en la consola de Firebase (reglas de `usernames` y `profiles/user`).
 
 - **Chat entre amigos:** pegar `database.rules.json` (nodo `chats`) en la consola y probar con dos cuentas: chat suelto, chat en partida contra un amigo y su continuidad, avisos y no leídos.
 
