@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.72** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.73** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -341,14 +341,14 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     (botón)» en `removeFriend`, «pasó a ser amigo», «desapareció de la lista (no lo quité yo)», «ya no era amigo al abrir» (compara con
     la lista guardada en localStorage `chaskiboom.friends.<uid>`) y «aceptar falló: …». Cada entrada lleva versión, build y navegador.
     En la consola: `verAmigosLog()`.
-- **Cuenta en la pantalla inicial (en /dev/, sin versión todavía):** sin sesión de Google, la tarjeta Online se oculta y aparece
+- **Cuenta en la pantalla inicial (v1.73):** sin sesión de Google, la tarjeta Online se oculta y aparece
   «Iniciar sesión» (`data-go="login"`, `homeLogin`: `googleSignIn()` en el mismo toque, después `fbInit()`; en `IN_APP`, `needGoogle()`).
   Con sesión, renglón `.hAcct` arriba de las tarjetas con foto, apodo y @usuario (o el email si no tiene); tocarlo abre «Tu cuenta» y al cerrarla
   vuelve al inicio (`sheetAfter` en `closeSheet`). «Cerrar sesión» con dos toques (`signOutAcct`). `homeAcct()` se refresca con
   `onAuthStateChanged` (escucha fija en `fbResume`, `authKnown`), `setNick` y `chooseMode`. Mientras no se sabe si hay sesión (o en el artifact)
   se ve Online como antes. Tras iniciar sesión desde el inicio, `afterLogin()` conecta y, si no tiene @usuario, abre `askUser(true)` en el momento;
   mientras no lo tenga, el renglón dice «Elegí tu usuario ›» en dorado. Pruebas: `t_home.py` y `t_newuser.py` con un Firebase falso (no están en el repo).
-- **@usuario definitivo (en /dev/, sin versión todavía):** se elige una sola vez (`saveUser` falla si ya hay; en «Tu cuenta» queda de solo
+- **@usuario definitivo (v1.73):** se elige una sola vez (`saveUser` falla si ya hay; en «Tu cuenta» queda de solo
   lectura). Reglas: `usernames/$name` solo se toma si está libre, si `profiles/<uid>/user` no existe y si no es reservado; ya no se libera.
   `profiles/<uid>/user` no puede cambiar de valor. Reservados (`RESERVED_USER` y la regla, iguales): admin, administrador, chaskiboom, soporte,
   support, ayuda, help, moderador, mod, staff, sistema, system, oficial, official, root… Daniel es @admin. Para cambiar el de alguien, a mano en
@@ -408,6 +408,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.73:** la pantalla inicial muestra la cuenta (foto, apodo, @usuario y «Cerrar sesión») o «Iniciar sesión» en lugar de Online; las formas de jugar van en un recuadro «Jugar»; el @usuario se pide apenas se inicia sesión y es definitivo, con nombres reservados. Reglas nuevas (`usernames`, `profiles/user`).
 - **v1.72:** chat entre amigos que sigue fuera de las partidas (ícono de chat en Amigos, avisos y no leídos); en una partida contra un amigo, el chat se guarda en la conversación de los dos. Reglas nuevas (`chats`).
 - **v1.71:** al ofrecer tablas online el botón pasa a «Enviando oferta…» / «Tablas ofrecidas» (dorado) y sale un aviso afuera del tablero (`drawNote`, `setDrawBtn`, `online.myOffer`); aviso con sonido si el rival las rechaza o juega sin contestar. La jugada propia ya no borra la oferta propia (antes ofrecer y mover la anulaba).
 - **v1.70:** cartel de tablas con retrato propio («Good Game», `assets/draw.webp`), como los de ganar y perder.
