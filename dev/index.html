@@ -506,6 +506,12 @@
   .hAcct .me .nBadge { min-width: 22px; height: 22px; border-radius: 11px; font-size: 13px; line-height: 22px; flex: none; }
   .hAcct .me .arr { flex: none; margin-left: auto; padding-left: 4px; font-size: 22px; color: var(--muted); }
   .hAcct .who { flex: 1; }
+  #paneAcct { display: grid; gap: 14px; margin-bottom: 18px; }
+  #paneAcct[hidden], #paneOut[hidden], #acctChip[hidden] { display: none; }
+  #paneOut { margin-top: 18px; }
+  #paneAcct .shMsg.ok { color: #6fcf74; }
+  #acctChip { position: relative; }
+  #acctChip #frBadge { position: absolute; top: -6px; right: -6px; }
   .hAcct .who span.need { color: var(--torch); font-weight: 600; }
   .hAcct .out { flex: none; padding: 6px 12px; font-size: 15px; background: none; color: var(--muted); border: 1px solid var(--line); border-radius: 16px; }
   .hAcct .out.sure { color: #fff; background: #b8382b; border-color: #e0554a; }
@@ -719,12 +725,12 @@
     <header class="lbHead">
       <button id="lbClose" class="iconBtn" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
       <h2 id="lbTitle">Online</h2>
-      <button id="acctChip" aria-label="Tu cuenta"><span class="who"><b id="chipNick"></b><span id="chipUser"></span></span><span class="av" id="acctAv" hidden></span></button>
+      <button id="acctChip" aria-label="Tu perfil"><span class="who"><b id="chipNick"></b><span id="chipUser"></span></span><span class="av" id="acctAv" hidden></span><span id="frBadge" class="nBadge" hidden></span></button>
     </header>
     <div id="lbMain">
-      <div class="segTabs" id="lbTabs" role="tablist">
+      <div class="segTabs" id="lbTabs" role="tablist" hidden>
         <button id="tabGames" role="tab" aria-selected="true" aria-controls="paneGames">Partidas</button>
-        <button id="tabFriends" role="tab" aria-selected="false" aria-controls="paneFriends">Amigos<span id="frBadge" class="nBadge" hidden></span></button>
+        <button id="tabFriends" role="tab" aria-selected="false" aria-controls="paneFriends">Amigos</button>
       </div>
       <div id="paneGames" role="tabpanel">
         <button id="lbNew" class="primary big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nueva partida</button>
@@ -734,13 +740,16 @@
         <p id="lbEmpty" class="muted center" hidden>Todavía no tenés partidas online. Tocá Nueva partida para desafiar a alguien.</p>
         <details id="lbPast" hidden><summary><span>Terminadas</span><span id="lbPastN">0</span></summary><ul id="lbPastList" class="gList"></ul></details>
       </div>
+      <div id="paneAcct" hidden></div>
       <div id="paneFriends" role="tabpanel" hidden>
         <div id="frNoUser" hidden><p class="muted">Elegí tu nombre de usuario para que tus amigos te encuentren.</p><button id="frPickUser" class="primary big">Elegir usuario</button></div>
+        <h3>Agregar un amigo</h3>
         <form class="fSearch" id="frForm" autocomplete="off"><label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="frQ" type="search" maxlength="80" placeholder="Agregar por @usuario o email" aria-label="Buscar amigos por usuario o email" autocapitalize="none" spellcheck="false"></label><button id="frGo">Buscar</button></form>
         <ul id="frFound" class="fList" hidden></ul>
         <section id="secReq" hidden><h3 class="hot">Solicitudes · <span id="nReq">0</span></h3><ul id="frReq" class="fList"></ul></section>
         <section><h3>Tus amigos<span id="nFr"></span></h3><ul id="frList" class="fList"><li class="empty">Cargando…</li></ul></section>
       </div>
+      <div id="paneOut" hidden></div>
     </div>
     <div id="lbJoin" hidden>
       <p id="lbJoinTitle" class="jTitle"></p>
@@ -2737,11 +2746,11 @@ const SOUNDS = {
     const sub = hAcct.querySelector('.who span');
     sub.textContent = fr.user ? '@' + fr.user : fr.user === null ? 'Elegí tu usuario ›' : (u.email || '');
     sub.classList.toggle('need', fr.user === null);   // sin @usuario: en dorado, tocar el renglón abre «Tu cuenta» para elegirlo
-    hAcct.querySelector('.me').setAttribute('aria-label', 'Tus partidas, amigos y chats: ' + nick + (fr.user ? ', @' + fr.user : ''));
+    hAcct.querySelector('.me').setAttribute('aria-label', 'Tu perfil, amigos y chats: ' + nick + (fr.user ? ', @' + fr.user : ''));
     setAvatar(hAcct.querySelector('.av'), myPhoto(), nick, true);
   }
   // tocar la cuenta lleva a la sala (tus partidas, amigos y chats); «Tu cuenta» (apodo, usuario, salir) está en su chip de arriba a la derecha
-  hAcct.querySelector('.me').addEventListener('click', () => { closeModal(); openLobby(); });
+  hAcct.querySelector('.me').addEventListener('click', () => { closeModal(); openProfile(); });
   hAcct.querySelector('.out').addEventListener('click', async () => {
     const b = hAcct.querySelector('.out');
     if (!b.classList.contains('sure')) {
@@ -3860,10 +3869,13 @@ const SOUNDS = {
       if (!online && !started && !ended && modal.hidden) chooseMode();
     } catch (e) { console.error(e); $('lbMsg').textContent = 'No se pudo cerrar la sesión.'; }
   }
-  $('acctChip').addEventListener('click', () => openAccount());
+  $('acctChip').addEventListener('click', () => fTab('friends'));   // de Online a «Tu perfil»
 
   /* --- Sala de espera: apodo, desafío y «Mis partidas» --- */
   const lobby = $('lobby');
+  /* v1.74: «Tu perfil» (se llega tocando tu cuenta en el inicio o el chip de la sala): apodo, @usuario, amigos y chats, y Salir.
+     La sala Online queda solo con las partidas. Es el mismo #lobby en otro modo (fTab: 'games' = Online, 'friends' = perfil). */
+  function openProfile() { return openLobby('friends'); }
   async function openLobby(tab) {
     if (!HAS_FB) {
       if (/github\.io$/.test(location.hostname))
@@ -3877,9 +3889,9 @@ const SOUNDS = {
     if (!(await needGoogle())) { backHome(); return; }
     fStart();
     $('lbMain').hidden = false; $('lbWait').hidden = true; $('lbJoin').hidden = true; $('lbMsg').textContent = '';
-    $('lbTitle').textContent = 'Online';
+    $('lbTitle').textContent = tab === 'friends' ? 'Tu perfil' : 'Online';
     lobby.hidden = false;
-    acctUI(); listGames(); fLobby(tab);
+    acctUI(); listGames(); fLobby(tab === 'friends' ? 'friends' : 'games');
   }
   // si se canceló la entrada a online y no hay partida, vuelve a la elección inicial
   function backHome() { if (!online && !started && !ended && modal.hidden && lobby.hidden) chooseMode(); }
@@ -4148,10 +4160,13 @@ const SOUNDS = {
   $('lbNew').addEventListener('click', () => openNewGame());
 
   /* --- Tu cuenta (v1.61): apodo, @usuario (con aviso de si está libre) y salir --- */
-  function openAccount(msg) {
+  function openAccount(msg) { openSheet('Tu cuenta', body => buildAccount(body, msg)); }
+  // inline: dentro de «Tu perfil» (no cierra nada al guardar; «Salir» va al pie, después de los amigos)
+  function buildAccount(body, msg, inline) {
     const u = googleUser();
-    openSheet('Tu cuenta', body => {
-      shHead(body, 'Tu cuenta', [(u ? gName(u) || u.email : '') + ' · cuenta de Google'], { photo: myPhoto(), name: getNick() || (u && gName(u)) });
+    {
+      const hd = shHead(body, inline ? (getNick() || (u && gName(u)) || 'Tu cuenta') : 'Tu cuenta', [(u ? gName(u) || u.email : '') + ' · cuenta de Google'], { photo: myPhoto(), name: getNick() || (u && gName(u)) });
+      if (inline) hd.querySelector('.iconBtn').remove();   // en el perfil no hay panel que cerrar
       const f = document.createElement('div');
       f.style.display = 'grid'; f.style.gap = '14px';
       f.innerHTML = '<label class="fld">Tu apodo · lo ve tu rival en las partidas<input id="acNick" maxlength="20" autocomplete="nickname"></label>'
@@ -4197,14 +4212,20 @@ const SOUNDS = {
             if ((await db.ref('usernames/' + v).once('value')).exists()) { err.textContent = '@' + v + ' ya está ocupado. Probá con otro.'; btn.disabled = false; return; }
             await saveUser(v);
           }
+          if (inline) { buildProfileAcct('Guardado'); acctUI(); fRender(true); return; }
           closeSheet(); acctUI(); fRender(true);
         } catch (x) { console.warn(x); err.textContent = 'No se pudo guardar: puede que otro haya tomado @' + v + ' recién. Probá con otro.'; btn.disabled = false; }
       });
       const list = document.createElement('div'); list.className = 'actList';
       actBtn(list, ICO.out, 'Salir de la cuenta', () => signOutAcct(), { danger: true });
-      body.appendChild(list);
-      if (msg) setTimeout(() => nk.focus(), 50);
-    });
+      (inline ? $('paneOut') : body).appendChild(list);
+      if (msg && !inline) setTimeout(() => nk.focus(), 50);
+      if (inline && msg) { err.textContent = msg; err.classList.add('ok'); }
+    }
+  }
+  function buildProfileAcct(msg) {
+    $('paneAcct').innerHTML = ''; $('paneOut').innerHTML = '';
+    buildAccount($('paneAcct'), msg, true);
   }
 
   // el apodo se guarda al editarlo (no hace falta crear una partida)
@@ -4248,6 +4269,7 @@ const SOUNDS = {
     $('lbWaitTxt').textContent = g && g.inviteTo ? 'Le mandamos la invitación a ' + g.inviteTo.name + '. Cuando la acepte, se sortean los colores y empieza la partida. También podés mandarle el link.'
                                                : 'Mandale este link a tu amigo. Cuando entre, se sortean los colores y empieza la partida.';
     closeSheet();
+    fTab('games');   // si se creó desde «Tu perfil» (Jugar con un amigo), la espera es de Online
     $('lbMain').hidden = true; $('lbJoin').hidden = true; $('lbWait').hidden = false; $('lbMsg').textContent = '';
     lobby.hidden = false;
     $('lbCopy').onclick = () => {
@@ -5050,7 +5072,7 @@ const SOUNDS = {
 
   /* --- Sala: pestañas, bandeja (invitaciones y solicitudes), buscador y lista de amigos --- */
   async function fLobby(tab) {
-    fTab(tab === 'friends' ? 'friends' : fr.tab);
+    fTab(tab === 'friends' ? 'friends' : 'games');
     fRender(true);
     for (let i = 0; i < 30 && fr.user === undefined; i++) await new Promise(r => setTimeout(r, 100));
     // la primera vez que entra a Online (también los que ya jugaban antes de los amigos) se le pide el usuario
@@ -5058,6 +5080,11 @@ const SOUNDS = {
   }
   function fTab(t) {
     fr.tab = t;
+    const prof = t === 'friends';
+    $('lbTitle').textContent = prof ? 'Tu perfil' : 'Online';
+    $('acctChip').hidden = prof;   // en el perfil, la cuenta ya está a la vista
+    $('paneAcct').hidden = $('paneOut').hidden = !prof;
+    if (prof) buildProfileAcct(); else { $('paneAcct').innerHTML = ''; $('paneOut').innerHTML = ''; }
     $('tabGames').setAttribute('aria-selected', String(t === 'games'));
     $('tabFriends').setAttribute('aria-selected', String(t === 'friends'));
     $('paneGames').hidden = t !== 'games'; $('paneFriends').hidden = t !== 'friends';
@@ -5065,7 +5092,7 @@ const SOUNDS = {
   }
   $('tabGames').addEventListener('click', () => fTab('games'));
   $('tabFriends').addEventListener('click', () => fTab('friends'));
-  $('frPickUser').addEventListener('click', () => openAccount());
+  $('frPickUser').addEventListener('click', () => { const i = $('paneAcct').querySelector('#acUser'); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } else openAccount(); });
   let fRenderT = null;
   function fRender(now) {
     if (now) { clearTimeout(fRenderT); fRenderT = null; fPaint(); return; }
@@ -5831,7 +5858,7 @@ const SOUNDS = {
      (también en /dev/). Se consulta al abrir, al volver a la página o a la ventana, al terminar una partida y cada
      2 minutos: la app instalada en el celular puede quedar días abierta en segundo plano sin recargarse.
      Si hay una versión nueva y no hay partida en curso, se recarga sola; si la hay, se ofrece actualizar. */
-  const BUILD = '20261104010954';
+  const BUILD = '20261104011706';
   // en /dev/ se muestra también el código de build (en hora local), para saber qué build se está viendo: todas dicen la misma versión
   if (/\/dev\//.test(location.pathname) && /^\d{14}$/.test(BUILD)) {
     const b = BUILD, d = new Date(Date.UTC(+b.slice(0, 4), +b.slice(4, 6) - 1, +b.slice(6, 8), +b.slice(8, 10), +b.slice(10, 12), +b.slice(12, 14)));

@@ -344,7 +344,12 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - **Cuenta en la pantalla inicial (v1.73):** sin sesión de Google, la tarjeta Online se oculta y aparece
   «Iniciar sesión» (`data-go="login"`, `homeLogin`: `googleSignIn()` en el mismo toque, después `fbInit()`; en `IN_APP`, `needGoogle()`).
   Con sesión, renglón `.hAcct` arriba de las tarjetas con foto, apodo y @usuario (o el email si no tiene), «›» y el número de novedades
-  (`#acctBadge`); tocarlo abre la sala (partidas, amigos y chats; desde la v1.74, antes «Tu cuenta»). «Tu cuenta» sigue en el chip de la sala. «Cerrar sesión» con dos toques (`signOutAcct`). `homeAcct()` se refresca con
+  (`#acctBadge`); tocarlo abre **«Tu perfil»** (`openProfile`).
+- **«Tu perfil» y Online separados (en /dev/, sin versión todavía):** el mismo `#lobby` en dos modos (`fTab`: `'friends'` = perfil, `'games'` = Online;
+  las pestañas `#lbTabs` quedan ocultas). Perfil: la cuenta armada adentro (`buildAccount(body, msg, inline)` / `buildProfileAcct`: apodo, @usuario,
+  Guardar), Amigos (agregar, solicitudes, lista con chat y Jugar) y «Salir de la cuenta» al pie (`#paneOut`). Online: solo partidas e invitaciones;
+  el chip de la cuenta (con `#frBadge`: solicitudes y chats sin leer) lleva al perfil. `openLobby('friends')` (avisos de amigos) abre el perfil;
+  la espera de un desafío recién creado vuelve al modo Online. `openAccount()` (panel de abajo) queda para `askNick`. «Cerrar sesión» con dos toques (`signOutAcct`). `homeAcct()` se refresca con
   `onAuthStateChanged` (escucha fija en `fbResume`, `authKnown`), `setNick` y `chooseMode`. Mientras no se sabe si hay sesión (o en el artifact)
   se ve Online como antes. Tras iniciar sesión desde el inicio, `afterLogin()` conecta y, si no tiene @usuario, abre `askUser(true)` en el momento;
   mientras no lo tenga, el renglón dice «Elegí tu usuario ›» en dorado. Pruebas: `t_home.py` y `t_newuser.py` con un Firebase falso (no están en el repo).
