@@ -469,6 +469,18 @@ __PWA__
   .hCard.minor { border-style: dashed; border-color: var(--line); padding: 12px 16px; background: none; }
   .hCard.minor svg { width: 30px; height: 30px; color: var(--muted); }
   .hCard.minor .tx b { font-family: var(--body); font-size: 18px; color: var(--ink); letter-spacing: 0; }
+  .hCard[hidden] { display: none; }
+  .hCard.login .gIco { width: 38px; height: 38px; flex: none; display: grid; place-items: center; background: #fff; border-radius: 50%; }
+  .hCard.login .gIco svg { width: 22px; height: 22px; }
+  .hAcct { display: flex; align-items: center; gap: 8px; }
+  .hAcct[hidden] { display: none; }
+  .hAcct .me { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 4px 6px 4px 0; background: none; border: none; text-align: left; font: inherit; color: var(--ink); }
+  .hAcct .av { width: 36px; height: 36px; flex: none; }
+  .hAcct .who { display: flex; flex-direction: column; min-width: 0; }
+  .hAcct .who b { font-family: var(--display); font-weight: 600; font-size: 17px; color: var(--torch); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hAcct .who span { font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hAcct .out { flex: none; padding: 6px 12px; font-size: 15px; background: none; color: var(--muted); border: 1px solid var(--line); border-radius: 16px; }
+  .hAcct .out.sure { color: #fff; background: #b8382b; border-color: #e0554a; }
   .hCard .nBadge { min-width: 26px; height: 26px; border-radius: 13px; font-size: 15px; line-height: 26px; }
   #chatBadge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font: 600 12px/18px var(--body); }
   #chat { position: fixed; z-index: 15; right: 16px; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); width: min(340px, calc(100% - 32px)); height: min(460px, 60vh);
@@ -2271,18 +2283,68 @@ const SOUNDS = __SOUNDS__;
     + '<span class="tx"><b>Contra la CPU</b><span>6 niveles · elegís tu color</span></span></button>'
     + '<button type="button" class="hCard" data-go="online"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
     + '<span class="tx"><b>Online</b><span>Con tus amigos o por link</span></span><span class="nBadge" id="homeOnBadge" hidden></span></button>'
+    + '<button type="button" class="hCard login" data-go="login" hidden><span class="gIco"></span><span class="tx"><b>Iniciar sesión</b><span>Con Google, para jugar online con tus amigos o por link</span></span></button>'
     + '<button type="button" class="hCard minor" data-go="two"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>'
     + '<span class="tx"><b>Dos jugadores</b><span>En este mismo dispositivo</span></span></button>';
+  /* v1.73: la cuenta en la pantalla inicial. Sin sesión de Google: «Iniciar sesión» en lugar de Online. Con sesión: foto, apodo y
+     @usuario arriba de las tarjetas (tocarlo abre «Tu cuenta») y «Cerrar sesión» (dos toques). */
+  const hAcct = document.createElement('div');
+  hAcct.className = 'hAcct'; hAcct.hidden = true;
+  hAcct.innerHTML = '<button type="button" class="me"><span class="av"></span><span class="who"><b></b><span></span></span></button><button type="button" class="out">Cerrar sesión</button>';
+  homeEl.prepend(hAcct);
   homeEl.prepend(pendEl);
-  homeEl.querySelectorAll('.hCard').forEach(b => b.addEventListener('click', () => {
+  let authKnown = false, outT = null;
+  function homeAcct() {
+    const onCard = homeEl.querySelector('[data-go="online"]'), inCard = homeEl.querySelector('[data-go="login"]');
+    if (!HAS_FB || !authKnown) { hAcct.hidden = inCard.hidden = true; onCard.hidden = false; return; }   // artifact, o todavía no se sabe
+    const u = googleUser();
+    onCard.hidden = !u; inCard.hidden = !!u; hAcct.hidden = !u;
+    if (!inCard.querySelector('.gLogo')) inCard.querySelector('.gIco').innerHTML = G_LOGO;
+    if (!u) return;
+    const nick = getNick() || gName(u).split(' ')[0] || 'Tu cuenta';
+    hAcct.querySelector('b').textContent = nick;
+    hAcct.querySelector('.who span').textContent = fr.user ? '@' + fr.user : (u.email || '');
+    hAcct.querySelector('.me').setAttribute('aria-label', 'Tu cuenta: ' + nick + (fr.user ? ', @' + fr.user : ''));
+    setAvatar(hAcct.querySelector('.av'), myPhoto(), nick, true);
+  }
+  hAcct.querySelector('.me').addEventListener('click', () => {
     closeModal();
+    openAccount();
+    sheetAfter = () => { if (!online && !started && !ended && modal.hidden && lobby.hidden) chooseMode(); };   // al cerrar «Tu cuenta», de vuelta al inicio
+  });
+  hAcct.querySelector('.out').addEventListener('click', async () => {
+    const b = hAcct.querySelector('.out');
+    if (!b.classList.contains('sure')) {
+      b.classList.add('sure'); b.textContent = 'Tocá de nuevo para salir';
+      clearTimeout(outT); outT = setTimeout(() => { b.classList.remove('sure'); b.textContent = 'Cerrar sesión'; }, 5000);
+      return;
+    }
+    clearTimeout(outT); b.classList.remove('sure'); b.textContent = 'Cerrar sesión';
+    await signOutAcct();
+    homeAcct();
+  });
+  function homeLogin() {
+    if (IN_APP) { needGoogle().then(ok => { if (ok) homeAcct(); else chooseMode(); }); return; }   // el cartel de «Abrilo en Chrome o Safari»
+    // la ventana de Google se abre en el mismo toque (googleSignIn no necesita la base); después se conecta para vigilar partidas y amigos
+    googleSignIn().then(lost => {
+      fbInit().catch(e => console.error(e));
+      homeAcct();
+      if (lost) showModal('Entraste con tu cuenta de Google', 'Esa cuenta ya se usaba en otro dispositivo. ' + (lost === 1 ? 'La partida que tenías' : 'Las ' + lost + ' partidas que tenías') + ' sin cuenta en este dispositivo no se pueden pasar solas a tu cuenta.',
+        [{ label: 'Entendido', primary: true, onClick: chooseMode }]);
+      else chooseMode();
+    }, e => { authError(e); if (modal.hidden) chooseMode(); });
+  }
+  homeEl.querySelectorAll('.hCard').forEach(b => b.addEventListener('click', () => {
     const go = b.dataset.go;
+    if (go === 'login') { homeLogin(); return; }   // la pantalla queda abierta mientras está la ventana de Google
+    closeModal();
     if (go === 'cpu') { setMode(true); drawColors(chooseMode); }
     else if (go === 'two') { setMode(false); drawColors(chooseMode); }
     else openLobby();
   }));
   function chooseMode() {
     showModal('ChaskiBoom Battle Chess', '', [], { logo: true, node: homeEl });
+    homeAcct();
     updatePending();
   }
 
@@ -3127,6 +3189,7 @@ const SOUNDS = __SOUNDS__;
     try { localStorage.setItem('chaskiboom.nick', n); } catch (_) {}
     if (!fromAccount && n && db && me && googleUser()) db.ref('users/' + me + '/prefs/nick').set(n).catch(e => console.warn('nick', e));
     if (n && db && me && googleUser()) db.ref('profiles/' + me + '/nick').set(n.slice(0, 20)).catch(e => console.warn('perfil', e));   // lo que ven tus amigos
+    try { homeAcct(); } catch (_) {}
   };
 
   /* --- Correspondencia: plazo por jugada (1, 3 o 7 días, o sin límite) ---
@@ -3262,6 +3325,7 @@ const SOUNDS = __SOUNDS__;
     try {
       if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
       const off = firebase.auth().onAuthStateChanged(u => { off(); if (u) fbInit().catch(() => {}); });
+      firebase.auth().onAuthStateChanged(() => { authKnown = true; try { homeAcct(); } catch (_) {} });   // la pantalla inicial muestra la cuenta o «Iniciar sesión»
     } catch (e) { console.error(e); }
   }
 
@@ -3482,7 +3546,12 @@ const SOUNDS = __SOUNDS__;
     const f = body.querySelector('.primary') || body.querySelector('button');
     if (f) try { f.focus({ preventScroll: true }); } catch (_) {}
   }
-  function closeSheet() { if (sheet.hidden) return; sheet.hidden = true; sheet.querySelector('.shBody').innerHTML = ''; }
+  let sheetAfter = null;   // qué hacer al cerrar el panel (lo usa la cuenta abierta desde la pantalla inicial)
+  function closeSheet() {
+    if (sheet.hidden) return;
+    sheet.hidden = true; sheet.querySelector('.shBody').innerHTML = '';
+    const f = sheetAfter; sheetAfter = null; if (f) setTimeout(f, 0);
+  }
   sheet.querySelector('.shBack').addEventListener('click', closeSheet);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
   function shHead(body, title, sub, avInfo) {

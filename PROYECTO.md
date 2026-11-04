@@ -341,6 +341,12 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
     (botón)» en `removeFriend`, «pasó a ser amigo», «desapareció de la lista (no lo quité yo)», «ya no era amigo al abrir» (compara con
     la lista guardada en localStorage `chaskiboom.friends.<uid>`) y «aceptar falló: …». Cada entrada lleva versión, build y navegador.
     En la consola: `verAmigosLog()`.
+- **Cuenta en la pantalla inicial (en /dev/, sin versión todavía):** sin sesión de Google, la tarjeta Online se oculta y aparece
+  «Iniciar sesión» (`data-go="login"`, `homeLogin`: `googleSignIn()` en el mismo toque, después `fbInit()`; en `IN_APP`, `needGoogle()`).
+  Con sesión, renglón `.hAcct` arriba de las tarjetas con foto, apodo y @usuario (o el email si no tiene); tocarlo abre «Tu cuenta» y al cerrarla
+  vuelve al inicio (`sheetAfter` en `closeSheet`). «Cerrar sesión» con dos toques (`signOutAcct`). `homeAcct()` se refresca con
+  `onAuthStateChanged` (escucha fija en `fbResume`, `authKnown`), `setNick` y `chooseMode`. Mientras no se sabe si hay sesión (o en el artifact)
+  se ve Online como antes. Prueba: `t_home.py` con un Firebase falso (no está en el repo).
 - **Chat entre amigos fuera de las partidas (v1.72):** `chats/<uidA_uidB>/msgs/<clave>` = `{ uid, name, text, at }`
   (uids ordenados, `pairId`) y `chats/<par>/last` (+ `k`) para los avisos; `users/<uid>/chatSeen/<amigo>` = hasta dónde leyó. Solo amigos (lo
   verifican las reglas con `friends/<yo>/<otro>`; cada uno borra solo lo suyo). En una partida contra un amigo, lo escrito va a la partida y a la
