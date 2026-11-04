@@ -359,7 +359,9 @@ __PWA__
   .uField { display: flex; align-items: center; height: 48px; box-sizing: border-box; padding: 0 10px 0 12px; border: 1px solid var(--line); border-radius: 10px; background: #18131c; gap: 4px; }
   .uField > span:first-child { color: var(--muted); font-size: 18px; }
   .uField input { flex: 1; border: none !important; background: none !important; padding: 0 !important; height: 44px !important; }
-  .uField input[readonly] { color: var(--muted); }
+  .uField.fixed { background: none; border-style: dashed; }
+  .uField.fixed b { flex: 1; font-weight: 600; color: var(--ink); }
+  .uField.fixed svg { width: 18px; height: 18px; color: var(--muted); }
   .uField .st { font-size: 14px; color: var(--muted); white-space: nowrap; }
   .uField .st.ok { color: #6fcf74; }
   .uField .st.bad { color: #ff9a8a; }
@@ -3477,6 +3479,7 @@ const SOUNDS = __SOUNDS__;
     addUser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
     share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
     out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>',
     userX: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 8 5 5M22 8l-5 5"/></svg>'
   };
@@ -3726,7 +3729,16 @@ const SOUNDS = __SOUNDS__;
       body.appendChild(f);
       const nk = f.querySelector('#acNick'), us = f.querySelector('#acUser'), st = f.querySelector('.st'), err = f.querySelector('.shMsg');
       nk.value = getNick(); us.value = fr.user || '';
-      if (fr.user) { us.readOnly = true; us.closest('label').firstChild.textContent = 'Tu usuario · con este te buscan tus amigos (definitivo)'; }
+      if (fr.user) {
+        // definitivo: se muestra como texto (sin campo para escribir); el input queda fuera de la pantalla solo para la lógica de Guardar
+        const lab = us.closest('label'), box = lab.querySelector('.uField');
+        lab.firstChild.textContent = 'Tu usuario · con este te buscan tus amigos (definitivo)';
+        const fx = document.createElement('div'); fx.className = 'uField fixed';
+        fx.innerHTML = '<span>@</span><b></b>' + ICO.lock;
+        fx.querySelector('b').textContent = fr.user;
+        fx.title = 'El usuario es definitivo: no se puede cambiar';
+        box.replaceWith(fx);
+      }
       else us.closest('label').firstChild.textContent = 'Tu usuario · con este te buscan tus amigos. Elegilo bien: después no se puede cambiar';
       if (!fr.user) { us.placeholder = 'tu.usuario'; suggestUser().then(v => { if (!us.value) { us.value = v; check(); } }).catch(() => {}); }
       err.textContent = msg || '';
