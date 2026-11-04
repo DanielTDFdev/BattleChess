@@ -10,7 +10,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 - Sitio: https://danieltdfdev.github.io/BattleChess/ (GitHub Pages, rama `main`, raíz)
 - Copia de pruebas: https://danieltdfdev.github.io/BattleChess/dev/
 - Repo: https://github.com/DanielTDFdev/BattleChess (se movió desde `danieltdfdev/battlechess`; usar esta URL como remoto)
-- Versión actual: **v1.73** (ver `<span id="ver">` en `src/game_template.html`)
+- Versión actual: **v1.74** (ver `<span id="ver">` en `src/game_template.html`)
 
 ## Estructura del repo
 
@@ -345,7 +345,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   «Iniciar sesión» (`data-go="login"`, `homeLogin`: `googleSignIn()` en el mismo toque, después `fbInit()`; en `IN_APP`, `needGoogle()`).
   Con sesión, renglón `.hAcct` arriba de las tarjetas con foto, apodo y @usuario (o el email si no tiene), «›» y el número de novedades
   (`#acctBadge`); tocarlo abre **«Tu perfil»** (`openProfile`).
-- **«Tu perfil» y Online separados (en /dev/, sin versión todavía):** el mismo `#lobby` en dos modos (`fTab`: `'friends'` = perfil, `'games'` = Online;
+- **«Tu perfil» y Online separados (v1.74):** el mismo `#lobby` en dos modos (`fTab`: `'friends'` = perfil, `'games'` = Online;
   las pestañas `#lbTabs` quedan ocultas). Perfil: la cuenta armada adentro (`buildAccount(body, msg, inline)` / `buildProfileAcct`: apodo, @usuario,
   Guardar), Amigos (agregar, solicitudes, lista con chat y Jugar) y «Salir de la cuenta» al pie (`#paneOut`). Online: solo partidas e invitaciones;
   el chip de la cuenta (con `#frBadge`: solicitudes y chats sin leer) lleva al perfil. `openLobby('friends')` (avisos de amigos) abre el perfil;
@@ -413,6 +413,7 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
 
 ## Historial reciente
 
+- **v1.74:** «Tu perfil» (tocando tu cuenta en el inicio o el chip de Online): apodo, @usuario, amigos, chats y Salir; Online queda solo con las partidas.
 - **v1.73:** la pantalla inicial muestra la cuenta (foto, apodo, @usuario y «Cerrar sesión») o «Iniciar sesión» en lugar de Online; las formas de jugar van en un recuadro «Jugar»; el @usuario se pide apenas se inicia sesión y es definitivo, con nombres reservados. Reglas nuevas (`usernames`, `profiles/user`).
 - **v1.72:** chat entre amigos que sigue fuera de las partidas (ícono de chat en Amigos, avisos y no leídos); en una partida contra un amigo, el chat se guarda en la conversación de los dos. Reglas nuevas (`chats`).
 - **v1.71:** al ofrecer tablas online el botón pasa a «Enviando oferta…» / «Tablas ofrecidas» (dorado) y sale un aviso afuera del tablero (`drawNote`, `setDrawBtn`, `online.myOffer`); aviso con sonido si el rival las rechaza o juega sin contestar. La jugada propia ya no borra la oferta propia (antes ofrecer y mover la anulaba).
