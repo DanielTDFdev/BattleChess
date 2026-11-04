@@ -471,6 +471,9 @@ __PWA__
   .hCard.minor svg { width: 30px; height: 30px; color: var(--muted); }
   .hCard.minor .tx b { font-family: var(--body); font-size: 18px; color: var(--ink); letter-spacing: 0; }
   .hCard[hidden] { display: none; }
+  .hPlay { margin: 0; padding: 6px 12px 12px; border: 1px solid #5a4330; border-radius: 14px; min-width: 0; }
+  .hPlay legend { padding: 0 8px; margin: 0 auto; font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: .14em; text-transform: uppercase; color: var(--torch); }
+  .hPlay .in { display: grid; gap: 10px; }
   .hCard.login .gIco { width: 38px; height: 38px; flex: none; display: grid; place-items: center; background: #fff; border-radius: 50%; }
   .hCard.login .gIco svg { width: 22px; height: 22px; }
   .hAcct { display: flex; align-items: center; gap: 8px; }
@@ -2279,14 +2282,15 @@ const SOUNDS = __SOUNDS__;
      y Dos jugadores en el mismo dispositivo */
   const homeEl = document.createElement('div');
   homeEl.className = 'home';
-  homeEl.innerHTML =
-    '<button type="button" class="hCard main" data-go="cpu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg>'
+  homeEl.innerHTML = '<fieldset class="hPlay"><legend>Jugar</legend><div class="in">'   // v1.73: las formas de jugar en un recuadro
+    + '<button type="button" class="hCard main" data-go="cpu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg>'
     + '<span class="tx"><b>Contra la CPU</b><span>6 niveles · elegís tu color</span></span></button>'
     + '<button type="button" class="hCard" data-go="online"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
     + '<span class="tx"><b>Online</b><span>Con tus amigos o por link</span></span><span class="nBadge" id="homeOnBadge" hidden></span></button>'
-    + '<button type="button" class="hCard login" data-go="login" hidden><span class="gIco"></span><span class="tx"><b>Iniciar sesión</b><span>Con Google, para jugar online con tus amigos o por link</span></span></button>'
+    + '<button type="button" class="hCard login" data-go="login" hidden><span class="gIco"></span><span class="tx"><b>Iniciar sesión</b><span>Con Google, para jugar online</span></span></button>'
     + '<button type="button" class="hCard minor" data-go="two"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>'
-    + '<span class="tx"><b>Dos jugadores</b><span>En este mismo dispositivo</span></span></button>';
+    + '<span class="tx"><b>Dos jugadores</b><span>En este mismo dispositivo</span></span></button>'
+    + '</div></fieldset>';
   /* v1.73: la cuenta en la pantalla inicial. Sin sesión de Google: «Iniciar sesión» en lugar de Online. Con sesión: foto, apodo y
      @usuario arriba de las tarjetas (tocarlo abre «Tu cuenta») y «Cerrar sesión» (dos toques). */
   const hAcct = document.createElement('div');
