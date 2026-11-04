@@ -485,6 +485,9 @@ __PWA__
   .hAcct .who { display: flex; flex-direction: column; min-width: 0; }
   .hAcct .who b { font-family: var(--display); font-weight: 600; font-size: 17px; color: var(--torch); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hAcct .who span { font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hAcct .me .nBadge { min-width: 22px; height: 22px; border-radius: 11px; font-size: 13px; line-height: 22px; flex: none; }
+  .hAcct .me .arr { flex: none; margin-left: auto; padding-left: 4px; font-size: 22px; color: var(--muted); }
+  .hAcct .who { flex: 1; }
   .hAcct .who span.need { color: var(--torch); font-weight: 600; }
   .hAcct .out { flex: none; padding: 6px 12px; font-size: 15px; background: none; color: var(--muted); border: 1px solid var(--line); border-radius: 16px; }
   .hAcct .out.sure { color: #fff; background: #b8382b; border-color: #e0554a; }
@@ -2298,7 +2301,7 @@ const SOUNDS = __SOUNDS__;
      @usuario arriba de las tarjetas (tocarlo abre «Tu cuenta») y «Cerrar sesión» (dos toques). */
   const hAcct = document.createElement('div');
   hAcct.className = 'hAcct'; hAcct.hidden = true;
-  hAcct.innerHTML = '<button type="button" class="me"><span class="av"></span><span class="who"><b></b><span></span></span></button><button type="button" class="out">Cerrar sesión</button>';
+  hAcct.innerHTML = '<button type="button" class="me"><span class="av"></span><span class="who"><b></b><span></span></span><span class="nBadge" id="acctBadge" hidden></span><span class="arr" aria-hidden="true">›</span></button><button type="button" class="out">Cerrar sesión</button>';
   homeEl.prepend(hAcct);
   homeEl.prepend(pendEl);
   let authKnown = false, outT = null;
@@ -2314,14 +2317,11 @@ const SOUNDS = __SOUNDS__;
     const sub = hAcct.querySelector('.who span');
     sub.textContent = fr.user ? '@' + fr.user : fr.user === null ? 'Elegí tu usuario ›' : (u.email || '');
     sub.classList.toggle('need', fr.user === null);   // sin @usuario: en dorado, tocar el renglón abre «Tu cuenta» para elegirlo
-    hAcct.querySelector('.me').setAttribute('aria-label', 'Tu cuenta: ' + nick + (fr.user ? ', @' + fr.user : ''));
+    hAcct.querySelector('.me').setAttribute('aria-label', 'Tus partidas, amigos y chats: ' + nick + (fr.user ? ', @' + fr.user : ''));
     setAvatar(hAcct.querySelector('.av'), myPhoto(), nick, true);
   }
-  hAcct.querySelector('.me').addEventListener('click', () => {
-    closeModal();
-    openAccount();
-    sheetAfter = () => { if (!online && !started && !ended && modal.hidden && lobby.hidden) chooseMode(); };   // al cerrar «Tu cuenta», de vuelta al inicio
-  });
+  // tocar la cuenta lleva a la sala (tus partidas, amigos y chats); «Tu cuenta» (apodo, usuario, salir) está en su chip de arriba a la derecha
+  hAcct.querySelector('.me').addEventListener('click', () => { closeModal(); openLobby(); });
   hAcct.querySelector('.out').addEventListener('click', async () => {
     const b = hAcct.querySelector('.out');
     if (!b.classList.contains('sure')) {
@@ -4197,7 +4197,7 @@ const SOUNDS = __SOUNDS__;
     let L = [], nv = [];
     try { if (watch.list) L = pendingGames(); nv = fNews(); } catch (_) { return; }   // todavía no arrancó la parte online
     const n = L.length + nv.length;
-    [$('monBadge'), $('homeBadge'), homeEl.querySelector('#homeOnBadge')].forEach(bd => { bd.hidden = !n; bd.textContent = n; });
+    [$('monBadge'), $('homeBadge'), homeEl.querySelector('#homeOnBadge'), homeEl.querySelector('#acctBadge')].forEach(bd => { bd.hidden = !n; bd.textContent = n; });
     const gt = L.length ? 'Te toca en ' + L.length + (L.length === 1 ? ' partida online' : ' partidas online') : '';
     const ft = nv.length === 1 ? nv[0] : nv.length ? nv.length + ' novedades de tus amigos' : '';
     $('mon').title = [gt, ft].filter(Boolean).join(' · ');
