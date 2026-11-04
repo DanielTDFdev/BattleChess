@@ -346,7 +346,8 @@ pelean una batalla corta en 3D. Tiene vista 2D clásica, CPU con niveles y modo 
   Con sesión, renglón `.hAcct` arriba de las tarjetas con foto, apodo y @usuario (o el email si no tiene); tocarlo abre «Tu cuenta» y al cerrarla
   vuelve al inicio (`sheetAfter` en `closeSheet`). «Cerrar sesión» con dos toques (`signOutAcct`). `homeAcct()` se refresca con
   `onAuthStateChanged` (escucha fija en `fbResume`, `authKnown`), `setNick` y `chooseMode`. Mientras no se sabe si hay sesión (o en el artifact)
-  se ve Online como antes. Prueba: `t_home.py` con un Firebase falso (no está en el repo).
+  se ve Online como antes. Tras iniciar sesión desde el inicio, `afterLogin()` conecta y, si no tiene @usuario, abre `askUser(true)` en el momento;
+  mientras no lo tenga, el renglón dice «Elegí tu usuario ›» en dorado. Pruebas: `t_home.py` y `t_newuser.py` con un Firebase falso (no están en el repo).
 - **@usuario definitivo (en /dev/, sin versión todavía):** se elige una sola vez (`saveUser` falla si ya hay; en «Tu cuenta» queda de solo
   lectura). Reglas: `usernames/$name` solo se toma si está libre, si `profiles/<uid>/user` no existe y si no es reservado; ya no se libera.
   `profiles/<uid>/user` no puede cambiar de valor. Reservados (`RESERVED_USER` y la regla, iguales): admin, administrador, chaskiboom, soporte,

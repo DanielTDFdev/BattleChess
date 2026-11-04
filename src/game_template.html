@@ -485,6 +485,7 @@ __PWA__
   .hAcct .who { display: flex; flex-direction: column; min-width: 0; }
   .hAcct .who b { font-family: var(--display); font-weight: 600; font-size: 17px; color: var(--torch); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hAcct .who span { font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hAcct .who span.need { color: var(--torch); font-weight: 600; }
   .hAcct .out { flex: none; padding: 6px 12px; font-size: 15px; background: none; color: var(--muted); border: 1px solid var(--line); border-radius: 16px; }
   .hAcct .out.sure { color: #fff; background: #b8382b; border-color: #e0554a; }
   .hCard .nBadge { min-width: 26px; height: 26px; border-radius: 13px; font-size: 15px; line-height: 26px; }
@@ -2310,7 +2311,9 @@ const SOUNDS = __SOUNDS__;
     if (!u) return;
     const nick = getNick() || gName(u).split(' ')[0] || 'Tu cuenta';
     hAcct.querySelector('b').textContent = nick;
-    hAcct.querySelector('.who span').textContent = fr.user ? '@' + fr.user : (u.email || '');
+    const sub = hAcct.querySelector('.who span');
+    sub.textContent = fr.user ? '@' + fr.user : fr.user === null ? 'Elegí tu usuario ›' : (u.email || '');
+    sub.classList.toggle('need', fr.user === null);   // sin @usuario: en dorado, tocar el renglón abre «Tu cuenta» para elegirlo
     hAcct.querySelector('.me').setAttribute('aria-label', 'Tu cuenta: ' + nick + (fr.user ? ', @' + fr.user : ''));
     setAvatar(hAcct.querySelector('.av'), myPhoto(), nick, true);
   }
@@ -2334,12 +2337,20 @@ const SOUNDS = __SOUNDS__;
     if (IN_APP) { needGoogle().then(ok => { if (ok) homeAcct(); else chooseMode(); }); return; }   // el cartel de «Abrilo en Chrome o Safari»
     // la ventana de Google se abre en el mismo toque (googleSignIn no necesita la base); después se conecta para vigilar partidas y amigos
     googleSignIn().then(lost => {
-      fbInit().catch(e => console.error(e));
       homeAcct();
+      const next = () => afterLogin();
       if (lost) showModal('Entraste con tu cuenta de Google', 'Esa cuenta ya se usaba en otro dispositivo. ' + (lost === 1 ? 'La partida que tenías' : 'Las ' + lost + ' partidas que tenías') + ' sin cuenta en este dispositivo no se pueden pasar solas a tu cuenta.',
-        [{ label: 'Entendido', primary: true, onClick: chooseMode }]);
-      else chooseMode();
+        [{ label: 'Entendido', primary: true, onClick: next }]);
+      else next();
     }, e => { authError(e); if (modal.hidden) chooseMode(); });
+  }
+  /* Después de iniciar sesión desde la pantalla inicial: se conecta y, si todavía no tiene @usuario, se lo pide en el momento
+     (antes recién al entrar a Online, y quien iniciaba sesión desde el inicio no se enteraba). «Más tarde» vuelve al inicio. */
+  async function afterLogin() {
+    try { await fbInit(); fStart(); } catch (e) { console.error(e); chooseMode(); return; }
+    for (let i = 0; i < 40 && fr.user === undefined; i++) await new Promise(r => setTimeout(r, 100));   // hasta 4 s a que llegue el perfil
+    if (fr.user === null && !fr.asked && googleUser()) { fr.asked = true; await askUser(true); }
+    if (!online && !started && !ended && lobby.hidden) chooseMode(); else homeAcct();
   }
   homeEl.querySelectorAll('.hCard').forEach(b => b.addEventListener('click', () => {
     const go = b.dataset.go;
@@ -4688,6 +4699,7 @@ const SOUNDS = __SOUNDS__;
   }
   function fPaint() {
     fRunHooks();
+    try { homeAcct(); } catch (_) {}   // el @usuario del renglón de la cuenta en la pantalla inicial
     if (!lobby.hidden) try { acctUI(); } catch (_) {}
     if (!fr.uid) { updatePending(); return; }
     $('frNoUser').hidden = fr.user !== null;
